@@ -38,7 +38,7 @@ struct Params {
     Params( const int width, const int height, const Camera& camera, const std::string& fileName, int colorDepth = 8 )
         : width{ width }, height{ height }, camera{ camera }, fileName{
         fileName
-        }, maxColorComp{ (2 << colorDepth) - 1 } {
+        }, maxColorComp{ (1 << colorDepth) - 1 } {
     }
 };
 
@@ -69,7 +69,7 @@ void render( const std::vector<Triangle>& triangles, const Params& params ) {
         }
         std::cout << "\rLine: " << y + 1 << " / " << params.height << std::flush;
     }
- 
+
     ppmFileStream.close();
 }
 
@@ -109,11 +109,14 @@ void renderPyramid( Params& params ) {
     params.fileName = "Pyramid";
 
     Pyramid pyramid{ {0, 0, 0 } };
+    std::vector<Triangle> ground{getGround()};
+    pyramid.shape.insert( pyramid.shape.end(), ground.begin(), ground.end() );
 
     FVector3 location{ pyramid.getLocation() };
-    location.x = -1.5;
-
+    location.y = 1.f;
     //pyramid.move( location );
+    params.camera.moveRel( { 0.f, 0.f, 0.f } );
+    params.camera.rotate( { 0.f, 0.f, 0.f } );
 
     render( pyramid.shape, params );
 }
@@ -128,23 +131,45 @@ void renderCameraTruckAnimation( std::vector<Triangle> shape, Params& params ) {
     }
 }
 
+void renderPyramidTurntable( Params& params ) {
+    Pyramid pyramid{ {0, 0, 0 } };
+
+    const FVector3 pyramidLocation = pyramid.getLocation();
+    const FVector3 distToPyramid{ params.camera.getLocation() - pyramidLocation };
+
+    int frame{};
+    do {
+        FVector3 camCurrLoc = params.camera.getLocation();
+        params.camera.moveRel( distToPyramid );
+        params.camera.rotate( { 0.f, 5.f, 0.f } );
+        params.camera.moveRel( -distToPyramid );
+
+        params.fileName = "PyramidTurntable" + std::to_string( frame + 1 );
+        render( pyramid.shape, params );
+        ++frame;
+    } while ( frame < 10 );
+}
+
+
 int main() {
     Camera camera{};
-    Params params{ 1280, 720, camera, "Test" };
+    Params params{ 1920, 1080, camera, "Test" };
 
     //changeFOV( camera );
 
     //renderOverlappingTriangles( params );
 
     renderPyramid( params );
+    //renderPyramidTurntable( params );
 
     //renderCameraTruckAnimation( Pyramid( { 0, 0, 0 } ).shape, params );
 
     // Camera Rotation
- 
+
     //params.camera.rotate( { 0.f, 20.f, 0.f } );
     //params.camera.GetForwardVector();
     //render( pyramid.shape, params);
+
 
     return 0;
 }

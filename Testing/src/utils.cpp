@@ -16,7 +16,7 @@ int getInt( const int min, const int max ) {
 }
 
 Color getRandomColor( const int colorDepth ) {
-    const int maxComponent{ (2 << colorDepth) - 1 };
+    const int maxComponent{ (1 << colorDepth) - 1 }; // 2^colorDepth
     return { getInt( 0, maxComponent ), getInt( 0, maxComponent ), getInt( 0, maxComponent ) };
 }
 
@@ -33,11 +33,11 @@ bool isGreaterThan( const float a, const float b, const float epsilon) {
 }
 
 bool isLessEqualThan( const float a, const float b, const float epsilon) {
-    return !(a - b > epsilon);
+    return (b - a) >= -epsilon;
 }
 
 bool isGreaterEqualThan( const float a, const float b, const float epsilon) {
-    return (b - a > epsilon);
+    return (a - b) >= -epsilon;
 }
 
 bool areAlmostEqual( float a, float b, float epsilon) {

@@ -38,7 +38,7 @@ public:
     // std::optional<FVector3> getVert( const int vertIdx ) const;
 
     // Get vertex at index
-    FVector3 getVert( const int vertIdx ) const; 
+    FVector3 getVert( const int vertIdx ) const;
 
     // Change vertex position and recalculate Normal Vector and Area
     void setVert( const FVector3& point, const int vertIdx );

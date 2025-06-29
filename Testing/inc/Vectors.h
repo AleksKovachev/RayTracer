@@ -45,8 +45,8 @@ struct FVector3 {
     // Make c-tor accept any combination of int/float values
     template <typename T1, typename T2, typename T3,
         typename = std::enable_if_t<
-        std::is_arithmetic_v<T1> && 
-        std::is_arithmetic_v<T2> && 
+        std::is_arithmetic_v<T1> &&
+        std::is_arithmetic_v<T2> &&
         std::is_arithmetic_v<T3>>>
     FVector3( T1 in_x, T2 in_y, T3 in_z )
         : x{ static_cast<float>(in_x) },
@@ -69,6 +69,7 @@ struct FVector3 {
 
     FVector3 operator+( const FVector3& other ) const;
     FVector3 operator-( const FVector3& other ) const;
+    FVector3 operator-() const;
     FVector3& operator+=( const FVector3& other );
     // Scalar multiplication
     FVector3 operator*( const float& other ) const;

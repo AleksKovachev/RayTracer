@@ -45,6 +45,8 @@ struct Camera : public Obj {
     virtual FVector3 getLocation() const override {
         return m_location;
     };
+
+    // Move camera to given absolute position
     virtual void move( const FVector3& pos ) override;
 
     // Initializes all variables that need calculation

@@ -40,6 +40,10 @@ FVector3 FVector3::operator-( const FVector3& other ) const {
 	return { x - other.x, y - other.y, z - other.z };
 }
 
+FVector3 FVector3::operator-() const {
+	return *this * -1;
+}
+
 FVector3& FVector3::operator+=( const FVector3& other ) {
 	x += other.x;
 	y += other.y;

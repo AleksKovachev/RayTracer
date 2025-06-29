@@ -1,7 +1,7 @@
 #include "Camera.h"
 #include "SpaceConversions.h"
 #include "Vectors.h"
-//#include "utils.h"
+#include "utils.h"
 
 #include <cmath>
 #include <numeric>
@@ -73,12 +73,12 @@ Color Camera::getTriangleIntersection(
     for ( const Triangle& triangle : triangles ) {
         // Ignore if Ray is parallel or hits triangle back.
         rayProj = ray.dot( triangle.getNormal() );
-        if ( rayProj >= 0.f )
+        if ( isGreaterEqualThan(rayProj, 0.f ) )
             continue;
 
         rayPlaneDist = (triangle.getVert( 0 ) - camera.m_location).dot( triangle.getNormal() );
         // Ray is not towards Triangle's plane
-        if ( rayPlaneDist >= 0.f )
+        if ( isGreaterEqualThan(rayPlaneDist, 0.f) )
             continue; // rayPlaneDist > 0 -> Back-face culling
 
         /* Check if rayPlaneDist direction is needed or length

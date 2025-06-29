@@ -33,7 +33,7 @@ public:
     Matrix3 operator*( const Matrix3& other ) const {
         Matrix3 result;
         for ( int i{}; i < 3; ++i ) {
-            for ( int j{}; j < 3; ++j){
+            for ( int j{}; j < 3; ++j ) {
                 result.m[i][j] = 0.f;
                 for ( int k{}; k < 3; ++k ) {
                     result.m[i][j] += m[i][k] * other.m[k][j];
