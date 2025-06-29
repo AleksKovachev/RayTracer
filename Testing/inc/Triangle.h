@@ -20,7 +20,7 @@ public:
     void init( const FVector3& v0, const FVector3& v1, const FVector3& v2 );
 
     virtual FVector3 getLocation() const override {
-        return m_location;
+        return m_position;
     }
 
     virtual void move( const FVector3& vec ) override;

@@ -161,6 +161,7 @@ echo ===========================================================================
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Bases.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\Triangle.cpp" />

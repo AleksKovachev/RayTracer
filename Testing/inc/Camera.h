@@ -15,11 +15,11 @@ struct ImagePlane : Obj {
     }
 
     virtual FVector3 getLocation() const override {
-        return m_location;
+        return m_position;
     }
 
     virtual void move( const FVector3& vec ) override {
-        m_location = vec;
+        m_position = vec;
     }
 
     virtual void rotate( const FVector3& vec ) override {
@@ -43,7 +43,7 @@ struct Camera : public Obj {
     };
 
     virtual FVector3 getLocation() const override {
-        return m_location;
+        return m_position;
     };
 
     // Move camera to given absolute position

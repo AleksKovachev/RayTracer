@@ -12,10 +12,10 @@ void Camera::move( const FVector3& pos ) {
     childrenRelPos.reserve( m_children.size() );
 
     for ( Obj* child : m_children )
-        childrenRelPos.push_back( m_location + child->getLocation() );
+        childrenRelPos.push_back( m_position + child->getLocation() );
         //childrenRelPos.push_back( child->getLocation() - m_location );
 
-    m_location = pos;
+    m_position = pos;
     for ( size_t i{}; i < m_children.size(); ++i )
         m_children[i]->move( pos + childrenRelPos[i] );
 }
@@ -23,14 +23,14 @@ void Camera::move( const FVector3& pos ) {
 void Camera::init() {
     m_children.reserve( 1 );
     m_children.push_back( &m_imgPlane );
-    m_distToPlane = (m_location - m_imgPlane.getLocation()).getLength();
+    m_distToPlane = (m_position - m_imgPlane.getLocation()).getLength();
 
     int gcd = std::gcd( static_cast<int>(m_imgPlane.resolution.x), static_cast<int>(m_imgPlane.resolution.y) );
     m_aspectRatio = { m_imgPlane.resolution.x / gcd, m_imgPlane.resolution.y / gcd };
 }
 
 void Camera::moveRel( const FVector3& rel_pos ) {
-    m_location += rel_pos;
+    m_position += rel_pos;
 
     for ( Obj* child : m_children )
         child->move( child->getLocation() + rel_pos );
@@ -45,15 +45,15 @@ FVector3 Camera::generateRay( const int x, const int y ) const {
 }
 
 void Camera::dolly( float val ) {
-    move( { m_location.x, m_location.y, val } );
+    move( { m_position.x, m_position.y, val } );
 }
 
 void Camera::truck( float val ) {
-    move( { val, m_location.y, m_location.z } );
+    move( { val, m_position.y, m_position.z } );
 }
 
 void Camera::pedestal( float val ) {
-    move( { m_location.x, val, m_location.z } );
+    move( { m_position.x, val, m_position.z } );
 }
 
 Color Camera::getTriangleIntersection(
@@ -63,20 +63,15 @@ Color Camera::getTriangleIntersection(
 ) const {
     Color blackBG{ 0, 0, 0 };
     Color& pixelColor{ blackBG };
-    float rayProj{};
-    float rayPlaneDist{};
-    float rayPointDist{}; // Ray-to-Point scale factor
-    FVector3 intersectionPt{};
-    float intersectionPLen{ std::numeric_limits<float>::max() };
     float closestIntersectionP{ std::numeric_limits<float>::max() };
 
     for ( const Triangle& triangle : triangles ) {
         // Ignore if Ray is parallel or hits triangle back.
-        rayProj = ray.dot( triangle.getNormal() );
+        float rayProj = ray.dot( triangle.getNormal() );
         if ( isGreaterEqualThan(rayProj, 0.f ) )
             continue;
 
-        rayPlaneDist = (triangle.getVert( 0 ) - camera.m_location).dot( triangle.getNormal() );
+        float rayPlaneDist = (triangle.getVert( 0 ) - camera.m_position).dot( triangle.getNormal() );
         // Ray is not towards Triangle's plane
         if ( isGreaterEqualThan(rayPlaneDist, 0.f) )
             continue; // rayPlaneDist > 0 -> Back-face culling
@@ -84,12 +79,13 @@ Color Camera::getTriangleIntersection(
         /* Check if rayPlaneDist direction is needed or length
         * abs(rayPlaneDist) should be multiplied by Ray length, but is
         * ommited as Rays are unit Vectors so their length is always 1 */
-        rayPointDist = abs( rayPlaneDist ) / abs( rayProj );
-        //rayPointDist = rayPlaneDist / rayProj;
+        float rayPointDist = rayPlaneDist / rayProj; // Ray-to-Point scale factor
+        //? Creates floating triangles if parallel check is ==, ray-towards-tri is >=.
+        //? float rayPointDist = abs( rayPlaneDist ) / abs( rayProj );
 
         // Ray parametric equation - represent points on a line going through a Ray.
-        intersectionPt = camera.m_location + (ray * rayPointDist);
-        intersectionPLen = intersectionPt.getLength();
+        FVector3 intersectionPt = camera.m_position + (ray * rayPointDist);
+        float intersectionPLen = intersectionPt.getLength();
 
         // Ignore intersection if a closer one to the Camera has already been found
         if ( intersectionPLen > closestIntersectionP )

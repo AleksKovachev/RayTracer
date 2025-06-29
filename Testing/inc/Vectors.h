@@ -37,7 +37,8 @@ struct Vector3 {
 
 /* FVector3 structure using floats supporting addition with another FVector3 and
 += addition. Initializes using floats or a Vector2 and a float. */
-struct FVector3 {
+class FVector3 {
+public:
     float x, y, z;
 
     FVector3() : x{ 0.f }, y{ 0.f }, z{ 0.f } { init(); };
@@ -76,7 +77,7 @@ struct FVector3 {
     // Cross product
     FVector3 operator*( const FVector3& other ) const;
 
-    // Returns vector length
+    // Returns vector length/magnitude
     float getLength() const;
     // Dot product with given vector
     float dot( const FVector3& other ) const;
@@ -87,7 +88,7 @@ struct FVector3 {
 private:
     float length;
 
-    // Calculates the length of this vector
+    // Calculates the length/magnitude of this vector
     void calculateLength();
 };
 

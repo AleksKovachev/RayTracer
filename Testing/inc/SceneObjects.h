@@ -68,11 +68,11 @@ struct Pyramid : Obj {
 	Color sideFace;
 
 	virtual FVector3 getLocation() const override {
-		return m_location;
+		return m_position;
 	}
 
 	virtual void move( const FVector3& vec ) override {
-		m_location = vec;
+		m_position = vec;
 		for ( Triangle& triangle : shape ) {
 			triangle.move( vec );
 		}
@@ -86,35 +86,35 @@ struct Pyramid : Obj {
 		float Y{ 0.f };
 		float Z{ 0.f };
 		shape.emplace_back(
-			FVector3{ 0.f + X, 1.52f + Y, -3.f + Z } + m_location,
-			FVector3{ -0.11f + X, -0.07f + Y, -1.12f + Z } + m_location,
-			FVector3{ 1.43f + X, -0.27f + Y, -2.38f + Z } + m_location
+			FVector3{ 0.f + X, 1.52f + Y, -3.f + Z } + m_position,
+			FVector3{ -0.11f + X, -0.07f + Y, -1.12f + Z } + m_position,
+			FVector3{ 1.43f + X, -0.27f + Y, -2.38f + Z } + m_position
 		);
 		shape.emplace_back(
-			FVector3{ 0.f + X, 1.52f + Y, -3.f + Z } + m_location,
-			FVector3{ -1.37f + X, -0.55f + Y, -2.6f + Z } + m_location,
-			FVector3{ -0.11f + X, -0.07f + Y, -1.12f + Z } + m_location
+			FVector3{ 0.f + X, 1.52f + Y, -3.f + Z } + m_position,
+			FVector3{ -1.37f + X, -0.55f + Y, -2.6f + Z } + m_position,
+			FVector3{ -0.11f + X, -0.07f + Y, -1.12f + Z } + m_position
 		);
 		shape.emplace_back(
-			FVector3{ 0.f + X, 1.52f + Y, -3.f + Z } + m_location,
-			FVector3{ 0.17f + X, -0.75f + Y, -3.86f + Z } + m_location,
-			FVector3{ -1.37f + X, -0.55f + Y, -2.6f + Z } + m_location
+			FVector3{ 0.f + X, 1.52f + Y, -3.f + Z } + m_position,
+			FVector3{ 0.17f + X, -0.75f + Y, -3.86f + Z } + m_position,
+			FVector3{ -1.37f + X, -0.55f + Y, -2.6f + Z } + m_position
 		);
 		shape.emplace_back(
-			FVector3{ 0.f + X, 1.52f + Y, -3.f + Z } + m_location,
-			FVector3{ 1.43f + X, -0.27f + Y, -2.38f + Z } + m_location,
-			FVector3{ 0.17f + X, -0.75f + Y, -3.86f + Z } + m_location
+			FVector3{ 0.f + X, 1.52f + Y, -3.f + Z } + m_position,
+			FVector3{ 1.43f + X, -0.27f + Y, -2.38f + Z } + m_position,
+			FVector3{ 0.17f + X, -0.75f + Y, -3.86f + Z } + m_position
 		);
 		// Base
 		shape.emplace_back(
-			FVector3{ 1.43f + X, -0.27f + Y, -2.38f + Z } + m_location,
-			FVector3{ -1.37f + X, -0.55f + Y, -2.6f + Z } + m_location,
-			FVector3{ 0.17f + X, -0.75f + Y, -3.86f + Z } + m_location
+			FVector3{ 1.43f + X, -0.27f + Y, -2.38f + Z } + m_position,
+			FVector3{ -1.37f + X, -0.55f + Y, -2.6f + Z } + m_position,
+			FVector3{ 0.17f + X, -0.75f + Y, -3.86f + Z } + m_position
 		);
 		shape.emplace_back(
-			FVector3{ 1.43f + X, -0.27f + Y, -2.38f + Z } + m_location,
-			FVector3{ -0.11f + X, -0.07f + Y, -1.12f + Z } + m_location,
-			FVector3{ -1.37f + X, -0.55f + Y, -2.6f + Z } + m_location
+			FVector3{ 1.43f + X, -0.27f + Y, -2.38f + Z } + m_position,
+			FVector3{ -0.11f + X, -0.07f + Y, -1.12f + Z } + m_position,
+			FVector3{ -1.37f + X, -0.55f + Y, -2.6f + Z } + m_position
 		);
 
 		shape[0].color = Color( frontFace );

@@ -16,9 +16,9 @@ void Triangle::init( const FVector3& v0, const FVector3& v1, const FVector3& v2 
 void Triangle::move( const FVector3& vec ) {
     // Update all vertices locations
     for ( int i{}; i < vertsInTriangle; ++i ) {
-        verts[i] = verts[i] - m_location + vec;
+        verts[i] = verts[i] - m_position + vec;
     }
-    m_location = vec;
+    m_position = vec;
     init( verts[0], verts[1], verts[2] );
 }
 

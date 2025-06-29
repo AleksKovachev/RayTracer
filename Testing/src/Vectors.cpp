@@ -73,14 +73,19 @@ float FVector3::dot( const FVector3& other ) const {
 }
 
 FVector3 FVector3::normalize() {
-	return { x / length, y / length, z / length };
+	if ( length > 0.f )
+		return { x / length, y / length, z / length };
+	return { 0.f, 0.f, 0.f };
 }
 
 void FVector3::normalizeInPlace() {
-	float vecLen{ sqrt( x * x + y * y + z * z ) };
-	x /= vecLen;
-	y /= vecLen;
-	z /= vecLen;
+	if ( length > 0.f ) {
+		x /= length;
+		y /= length;
+		z /= length;
+		return;
+	}
+	x = y = z = 0.f;
 }
 
 void FVector3::calculateLength() {

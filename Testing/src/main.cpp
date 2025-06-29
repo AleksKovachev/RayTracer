@@ -115,7 +115,7 @@ void renderPyramid( Params& params ) {
     FVector3 location{ pyramid.getLocation() };
     location.y = 1.f;
     //pyramid.move( location );
-    params.camera.moveRel( { 0.f, 0.f, 0.f } );
+    params.camera.moveRel( { 0.f, 2.f, 5.f } );
     params.camera.rotate( { 0.f, 0.f, 0.f } );
 
     render( pyramid.shape, params );
@@ -147,7 +147,7 @@ void renderPyramidTurntable( Params& params ) {
         params.fileName = "PyramidTurntable" + std::to_string( frame + 1 );
         render( pyramid.shape, params );
         ++frame;
-    } while ( frame < 10 );
+    } while ( frame < 5 );
 }
 
 
@@ -159,8 +159,8 @@ int main() {
 
     //renderOverlappingTriangles( params );
 
-    renderPyramid( params );
-    //renderPyramidTurntable( params );
+    //renderPyramid( params );
+    renderPyramidTurntable( params );
 
     //renderCameraTruckAnimation( Pyramid( { 0, 0, 0 } ).shape, params );
 
