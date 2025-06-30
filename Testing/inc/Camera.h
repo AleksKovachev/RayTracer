@@ -35,14 +35,14 @@ struct Camera : public Obj {
         return m_position;
     };
 
-    // Move camera to given absolute position
-    virtual void Move( const FVector3& pos ) override;
+    // Move camera to given relative position
+    virtual void Move( const FVector3& relPos ) override;
 
     // Initializes all variables that need calculation
     void init();
 
-    // Move camera to given relative position
-    void MoveRel( const FVector3& rel_pos );
+    // Move camera to given absolute position
+    void MoveAbs( const FVector3& absPos );
 
     // Generate a normalized Camera Ray for Image Plane pixel (x, y) with applied orientation
     FVector3 GenerateRay( const int x, const int y ) const;
@@ -55,6 +55,18 @@ struct Camera : public Obj {
 
     // Move Camera up-down (Crane)
     void Pedestal( float val );
+
+    // Pan camera left-right
+    void Pan( const float deg );
+
+    // Tilt camera up-down
+    void Tilt( const float deg );
+
+    // Roll camera left-right
+    void Roll( const float deg );
+
+    // Rotate Camera around a point at a given distance with given degree
+    void RotateAroundPoint( const FVector3&, const FVector3& );
 
     // Returns the color of the Triangle closest to the camera ray
     Color GetTriangleIntersection(

@@ -14,10 +14,11 @@ class Matrix3 {
 public:
     // Identity matrix by default
     Matrix3();
-    Matrix3( std::initializer_list<std::initializer_list<float>> values );
+    Matrix3( std::initializer_list<std::initializer_list<float>> );
 
-    Matrix3 operator*( const Matrix3& other ) const;
+    Matrix3 operator*( const Matrix3& ) const;
     friend FVector3 operator*( const FVector3&, const Matrix3& );
+    Matrix3& operator*=( const Matrix3& );
 private:
     float m[3][3];
 };
@@ -50,6 +51,7 @@ public:
         m_position += moveDirInWorldSpace;
     }
     virtual void Rotate( const FVector3& vec );
+    virtual void Rotate( const float, const float, const float );
 
     // Get forward vector (negative Z in camera space)
     FVector3 GetForwardVector() const {

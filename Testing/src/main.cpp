@@ -85,11 +85,11 @@ void renderOverlappingTriangles( Params& params ) {
 
     // Lecture Triangle
     Triangle triangle1{ {-1.75f, -1.75f, -3.f}, {1.75f, -1.75f, -3.f}, {0.f, 1.75f, -3.f} };
-    triangle1.color = Color( getInt( 0, 255 ), getInt( 0, 255 ), getInt( 0, 255 ) );
+    triangle1.color = Color( 255, 0, 0 );
 
     // Made-up Traingle
     Triangle triangle2{ {-2.31f, -2.35f, -4.3f}, {5.03f, -0.93f, -5.2f}, {1.87f, 3.17f, -3.8f} };
-    triangle2.color = Color( getInt( 0, 255 ), getInt( 0, 255 ), getInt( 0, 255 ) );
+    triangle2.color = Color( 0, 255, 0 );
 
     tris.push_back( triangle1 );
     tris.push_back( triangle2 );
@@ -124,14 +124,13 @@ void renderPyramid( Params& params ) {
     render( pyramid.shape, params );
 }
 
-
 void renderRotationAroundPyramid( Params& params ) {
     Pyramid pyramid{ {0.f, 0.f, 0.f } };
 
     int frame{};
 
     float cameraDist{ 5.f };
-    params.camera.Move( { 0.f, 2.f, cameraDist } );
+    params.camera.Move( { 0.f, 2.f, cameraDist } ); // Set initial position
 
     do {
         params.camera.Move( { 0.f, 0.f, -cameraDist } );
@@ -144,6 +143,17 @@ void renderRotationAroundPyramid( Params& params ) {
     } while ( frame < 30 );
 }
 
+void interactiveRender(Params& params) {
+    iniData interactiveData;
+
+    while ( true ) {
+        interactiveData = readConfig();
+
+        renderPyramid( params );
+    }
+}
+
+
 int main() {
     Camera camera{};
     Params params{ 1920, 1080, camera, "Test" };
@@ -155,11 +165,7 @@ int main() {
 
     //renderCameraTruckAnimation( Pyramid( { 0, 0, 0 } ).shape, params );
 
-    // Camera Rotation
-
-    //params.camera.Rotate( { 0.f, 20.f, 0.f } );
-    //params.camera.GetForwardVector();
-    //render( pyramid.shape, params);
+    //interactiveRender( params );
 
     return 0;
 }

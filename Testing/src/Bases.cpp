@@ -1,4 +1,5 @@
 #include "Bases.h"
+#include "utils.h"
 
 // Multiplication with a Matrix3, assuming this is a column-major vector
 FVector3 operator*( const FVector3& vec, const Matrix3& mat ) {
@@ -39,11 +40,55 @@ Matrix3 Matrix3::operator*( const Matrix3& other ) const {
     return result;
 }
 
+Matrix3& Matrix3::operator*=( const Matrix3& other ) {
+    *this = *this * other;
+    return *this;
+}
+
 void Obj::Rotate( const FVector3& vec ) {
-    Matrix3 rotX = GetXRotMatrix( vec.x ); // pitch
-    Matrix3 rotY = GetYRotMatrix( vec.y ); // yaw
-    Matrix3 rotZ = GetZRotMatrix( vec.z ); // roll
-    m_orientation = rotZ * rotY * rotX; // Z-Y-X order
+    bool assigned{ false };
+
+    if ( !areEqual( vec.x, 0.f ) ) { // pitch
+        m_orientation = GetXRotMatrix( vec.x );
+        assigned = true;
+    }
+    if ( !areEqual( vec.y, 0.f ) ) { // yaw
+        if ( assigned )
+            m_orientation *= GetYRotMatrix( vec.y );
+        else {
+            m_orientation = GetYRotMatrix( vec.y );
+            assigned = true;
+        }
+    }
+    if ( !areEqual( vec.z, 0.f ) ) { // roll
+        if ( assigned )
+            m_orientation *= GetZRotMatrix( vec.z );
+        else
+            m_orientation = GetZRotMatrix( vec.z );
+    }
+}
+
+void Obj::Rotate( const float x, const float y, const float z ) {
+    bool assigned{ false };
+
+    if ( !areEqual( x, 0.f ) ) { // pitch
+        m_orientation = GetXRotMatrix( x );
+        assigned = true;
+    }
+    if ( !areEqual( y, 0.f ) ) { // yaw
+        if ( assigned )
+            m_orientation *= GetYRotMatrix( y );
+        else {
+            m_orientation = GetYRotMatrix( y );
+            assigned = true;
+        }
+    }
+    if ( !areEqual( z, 0.f ) ) { // roll
+        if ( assigned )
+            m_orientation *= GetYRotMatrix( z );
+        else
+            m_orientation = GetYRotMatrix( z );
+    }
 }
 
 Matrix3 Obj::GetXRotMatrix( const float deg ) const {

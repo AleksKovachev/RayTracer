@@ -8,8 +8,8 @@
 #include <vector>
 
 //? Currently is moving relatively? Check!!! Fix MoveRel if needed - moveAbs.
-void Camera::Move( const FVector3& pos ) {
-    const FVector3 moveDirInWorldSpace{ pos * m_orientation };
+void Camera::Move( const FVector3& relPos ) {
+    const FVector3 moveDirInWorldSpace{ relPos * m_orientation };
 
     std::vector<FVector3> childrenRelPos;
     childrenRelPos.reserve( m_children.size() );
@@ -20,7 +20,7 @@ void Camera::Move( const FVector3& pos ) {
 
     m_position += moveDirInWorldSpace;
     for ( size_t i{}; i < m_children.size(); ++i )
-        m_children[i]->Move( pos + childrenRelPos[i] );
+        m_children[i]->Move( relPos + childrenRelPos[i] );
 }
 
 void Camera::init() {
@@ -28,11 +28,10 @@ void Camera::init() {
     m_aspectRatio = { m_imgPlane.resolution.x / gcd, m_imgPlane.resolution.y / gcd };
 }
 
-void Camera::MoveRel( const FVector3& rel_pos ) {
-    m_position += rel_pos;
+void Camera::MoveAbs( const FVector3& absPos ) {
+    m_position = absPos;
 
-    for ( Obj* child : m_children )
-        child->Move( child->GetLocation() + rel_pos );
+    // TODO Handle children movement
 }
 
 FVector3 Camera::GenerateRay( const int x, const int y ) const {
@@ -53,6 +52,24 @@ void Camera::Truck( float val ) {
 
 void Camera::Pedestal( float val ) {
     Move( { m_position.x, val, m_position.z } );
+}
+
+void Camera::Pan( const float deg ) {
+    Rotate( 0.f, deg, 0.f );
+}
+
+void Camera::Tilt( const float deg ) {
+    Rotate( deg, 0.f, 0.f );
+}
+
+void Camera::Roll( const float deg ) {
+    Rotate( 0.f, 0.f, deg );
+}
+
+void Camera::RotateAroundPoint( const FVector3& dist, const FVector3& angle ) {
+    Move( dist );
+    Rotate( angle );
+    Move( -dist );
 }
 
 Color Camera::GetTriangleIntersection(

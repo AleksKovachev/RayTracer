@@ -3,8 +3,11 @@
 
 #include <cmath>
 #include <random>
+#include <unordered_map>
 
 #include "Bases.h"
+
+typedef std::unordered_map<std::string, float> iniData;
 
 // Return the normalized value based on a current and a max value.
 template <typename T>
@@ -33,5 +36,7 @@ bool isGreaterEqualThan( const float a, const float b, const float epsilon = 1e-
 
 // Relative Comparison for floats that vary greatly in magnitude
 bool areAlmostEqual( float a, float b, float epsilon = 1e-9 );
+
+iniData readConfig();
 
 #endif // UTILS_H
