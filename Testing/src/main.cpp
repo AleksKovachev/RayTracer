@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <random>
 #include <limits>
+#include <filesystem>
 
 #include "Bases.h"
 #include "Camera.h"
@@ -52,7 +53,9 @@ void writeColorToFile( std::ofstream& stream, const Color& pixelColor ) {
 }
 
 void render( const std::vector<Triangle>& triangles, const Params& params ) {
-    std::ofstream ppmFileStream( params.fileName + ".ppm", std::ios::binary );
+    std::string saveDir{ "renders" };
+    std::filesystem::create_directories( saveDir );
+    std::ofstream ppmFileStream( saveDir + "/" + params.fileName + ".ppm", std::ios::binary);
     ppmFileStream << "P6\n";
     ppmFileStream << params.width << " " << params.height << "\n";
     ppmFileStream << params.maxColorComp << "\n";
@@ -63,25 +66,14 @@ void render( const std::vector<Triangle>& triangles, const Params& params ) {
 
     for ( int y{}; y < params.height; ++y ) {
         for ( int x{}; x < params.width; ++x ) {
-            ray = params.camera.generateRay( x, y );
-            pixelColor = params.camera.getTriangleIntersection( ray, triangles, params.camera );
+            ray = params.camera.GenerateRay( x, y );
+            pixelColor = params.camera.GetTriangleIntersection( ray, triangles, params.camera );
             writeColorToFile( ppmFileStream, pixelColor );
         }
         std::cout << "\rLine: " << y + 1 << " / " << params.height << std::flush;
     }
 
     ppmFileStream.close();
-}
-
-
-void changeFOV( Camera& camera ) {
-    // FoV => camera.z = 30, imgPlane.z = -20 => 50mm
-    FVector3 cameraLoc = camera.getLocation();
-    cameraLoc.z = 30.f;
-    camera.move( cameraLoc );
-    FVector3 imgPlaneLoc = camera.m_imgPlane.getLocation();
-    imgPlaneLoc.z = -20.f;
-    camera.m_imgPlane.move( imgPlaneLoc );
 }
 
 void renderOverlappingTriangles( Params& params ) {
@@ -105,71 +97,69 @@ void renderOverlappingTriangles( Params& params ) {
     render( tris, params );
 }
 
-void renderPyramid( Params& params ) {
-    params.fileName = "Pyramid";
-
-    Pyramid pyramid{ {0, 0, 0 } };
-    std::vector<Triangle> ground{getGround()};
-    pyramid.shape.insert( pyramid.shape.end(), ground.begin(), ground.end() );
-
-    FVector3 location{ pyramid.getLocation() };
-    location.y = 1.f;
-    //pyramid.move( location );
-    params.camera.moveRel( { 0.f, 2.f, 5.f } );
-    params.camera.rotate( { 0.f, 0.f, 0.f } );
-
-    render( pyramid.shape, params );
-}
-
 void renderCameraTruckAnimation( std::vector<Triangle> shape, Params& params ) {
     for ( int i{}; i < 30; ++i ) {
-        FVector3 camCurrLoc = params.camera.getLocation();
+        FVector3 camCurrLoc = params.camera.GetLocation();
         camCurrLoc.x -= 0.2f;
-        params.camera.move( camCurrLoc );
+        params.camera.Move( camCurrLoc );
         params.fileName = "Truck" + std::to_string( i );
         render( shape, params );
     }
 }
 
-void renderPyramidTurntable( Params& params ) {
-    Pyramid pyramid{ {0, 0, 0 } };
+void renderPyramid( Params& params ) {
+    params.fileName = "Pyramid";
 
-    const FVector3 pyramidLocation = pyramid.getLocation();
-    const FVector3 distToPyramid{ params.camera.getLocation() - pyramidLocation };
+    Pyramid pyramid{ { 0, 0, 0 } };
+    std::vector<Triangle> ground{getGround()};
+    //pyramid.shape.insert( pyramid.shape.end(), ground.begin(), ground.end() );
+    params.camera.m_imgPlane.distanceFromCamera = 10.f; // Change FoV
+
+    FVector3 location{ pyramid.GetLocation() };
+    location.y = 1.f;
+    //pyramid.Move( location );
+    params.camera.Move( { 0.f, 100.f, 0.f } );
+    params.camera.Rotate( { 90.f, 0.f, 0.f } );
+
+    render( pyramid.shape, params );
+}
+
+
+void renderRotationAroundPyramid( Params& params ) {
+    Pyramid pyramid{ {0.f, 0.f, 0.f } };
 
     int frame{};
+
+    float cameraDist{ 5.f };
+    params.camera.Move( { 0.f, 2.f, cameraDist } );
+
     do {
-        FVector3 camCurrLoc = params.camera.getLocation();
-        params.camera.moveRel( distToPyramid );
-        params.camera.rotate( { 0.f, 5.f, 0.f } );
-        params.camera.moveRel( -distToPyramid );
+        params.camera.Move( { 0.f, 0.f, -cameraDist } );
+        params.camera.Rotate( { 0.f, frame * 10.f, 0.f } );
+        params.camera.Move( { 0.f, 0.f, cameraDist } );
 
         params.fileName = "PyramidTurntable" + std::to_string( frame + 1 );
         render( pyramid.shape, params );
         ++frame;
-    } while ( frame < 5 );
+    } while ( frame < 30 );
 }
-
 
 int main() {
     Camera camera{};
     Params params{ 1920, 1080, camera, "Test" };
 
-    //changeFOV( camera );
-
     //renderOverlappingTriangles( params );
 
     //renderPyramid( params );
-    renderPyramidTurntable( params );
+    //renderRotationAroundPyramid( params );
 
     //renderCameraTruckAnimation( Pyramid( { 0, 0, 0 } ).shape, params );
 
     // Camera Rotation
 
-    //params.camera.rotate( { 0.f, 20.f, 0.f } );
+    //params.camera.Rotate( { 0.f, 20.f, 0.f } );
     //params.camera.GetForwardVector();
     //render( pyramid.shape, params);
-
 
     return 0;
 }

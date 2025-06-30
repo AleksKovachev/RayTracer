@@ -19,33 +19,33 @@ public:
     // Calculates Edges, Normal Vector and Area
     void init( const FVector3& v0, const FVector3& v1, const FVector3& v2 );
 
-    virtual FVector3 getLocation() const override {
+    virtual FVector3 GetLocation() const override {
         return m_position;
     }
 
-    virtual void move( const FVector3& vec ) override;
+    virtual void Move( const FVector3& vec ) override;
 
     // Returns Normal Vector
-    FVector3 getNormal() const {
+    FVector3 GetNormal() const {
         return normal;
     }
 
     // Returns Triangle Area
-    float getArea() const {
+    float GetArea() const {
         return area;
     }
 
-    // std::optional<FVector3> getVert( const int vertIdx ) const;
+    // std::optional<FVector3> GetVert( const int vertIdx ) const;
 
     // Get vertex at index
-    FVector3 getVert( const int vertIdx ) const;
+    FVector3 GetVert( const int vertIdx ) const;
 
     // Change vertex position and recalculate Normal Vector and Area
-    void setVert( const FVector3& point, const int vertIdx );
-    std::optional<FVector3> getEdge( const int edgeIdx ) const;
+    void SetVert( const FVector3& point, const int vertIdx );
+    std::optional<FVector3> GetEdge( const int edgeIdx ) const;
 
     // Checks if a given point is inside the triangle
-    bool isPointInside( const FVector3& point ) const;
+    bool IsPointInside( const FVector3& point ) const;
 private:
     /* v0, v1, v2 are the indices of this array. The order matters
     for cross product and Triangle normal vector calculation. */
@@ -54,8 +54,8 @@ private:
     FVector3 normal;
     float area;
 
-    void calculateNormal();
-    void calculateArea();
+    void CalculateNormal();
+    void CalculateArea();
 };
 
 #endif // SHAPES_H

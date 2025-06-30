@@ -39,21 +39,14 @@ Matrix3 Matrix3::operator*( const Matrix3& other ) const {
     return result;
 }
 
-void Obj::UpdateOrientation() {
-    Matrix3 rotX = getXRotMatrix( m_rotation.x );
-    Matrix3 rotY = getYRotMatrix( m_rotation.y );
-    Matrix3 rotZ = getZRotMatrix( m_rotation.z );
+void Obj::Rotate( const FVector3& vec ) {
+    Matrix3 rotX = GetXRotMatrix( vec.x ); // pitch
+    Matrix3 rotY = GetYRotMatrix( vec.y ); // yaw
+    Matrix3 rotZ = GetZRotMatrix( vec.z ); // roll
     m_orientation = rotZ * rotY * rotX; // Z-Y-X order
 }
 
-void Obj::rotate( const FVector3& vec ) {
-    m_rotation.x += vec.x; // pitch
-    m_rotation.y += vec.y; // yaw
-    m_rotation.z += vec.z; // roll
-    UpdateOrientation();
-}
-
-Matrix3 Obj::getXRotMatrix( const float deg ) const {
+Matrix3 Obj::GetXRotMatrix( const float deg ) const {
     const float rad{ static_cast<float>(deg * (std::numbers::pi / 180.f)) };
     float cosR{ cosf( rad ) };
     float sinR{ sinf( rad ) };
@@ -62,7 +55,7 @@ Matrix3 Obj::getXRotMatrix( const float deg ) const {
              {0.f, sinR, cosR}} };
 }
 
-Matrix3 Obj::getYRotMatrix( const float deg ) const {
+Matrix3 Obj::GetYRotMatrix( const float deg ) const {
     const float rad{ static_cast<float>(deg * (std::numbers::pi / 180.f)) };
     float cosR{ cosf( rad ) };
     float sinR{ sinf( rad ) };
@@ -71,7 +64,7 @@ Matrix3 Obj::getYRotMatrix( const float deg ) const {
              {sinR, 0.f, cosR}} };
 }
 
-Matrix3 Obj::getZRotMatrix( const float deg ) const {
+Matrix3 Obj::GetZRotMatrix( const float deg ) const {
     const float rad{ static_cast<float>(deg * (std::numbers::pi / 180.f)) };
     float cosR{ cosf( rad ) };
     float sinR{ sinf( rad ) };
@@ -80,24 +73,16 @@ Matrix3 Obj::getZRotMatrix( const float deg ) const {
              {0.f, 0.f, 1.f}} };
 }
 
-Color::Color( int in_r, int in_g, int in_b )
-    : r{ x }, g{ y }, b{ z } {
-    r = in_r;
-    g = in_g;
-    b = in_b;
-}
-
 Color::Color( float in_r, float in_g, float in_b )
-    : r{ x }, g{ y }, b{ z } {
-    r = static_cast<int>(round( in_r * 255.f ));
-    g = static_cast<int>(round( in_g * 255.f ));
-    b = static_cast<int>(round( in_b * 255.f ));
+    : r{ static_cast<int>(round(in_r * 255.f)) },
+    g{ static_cast<int>(round( in_g * 255.f)) },
+    b{ static_cast<int>(round(in_b * 255.f)) } {
 }
 
 Color& Color::operator=( const Color& other ) {
-    x = other.x;
-    y = other.y;
-    z = other.z;
+    r = other.r;
+    g = other.g;
+    b = other.b;
     return *this;
 }
 

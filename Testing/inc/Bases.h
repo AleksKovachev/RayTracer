@@ -29,15 +29,12 @@ public:
     Obj()
         : m_position{ 0.f, 0.f, 0.f }, m_rotation{ 0.f, 0.f, 0.f } {
     }
-    Obj( FVector3 pos, FVector3 rot = { 0.f, 0.f, 0.f } )
-        : m_position{ pos }, m_rotation{ rot } {
+    Obj( FVector3 pos )
+        : m_position{ pos }, m_rotation{ 0.f, 0.f, 0.f } {
     }
-    Obj( Vector3 pos, FVector3 rot = { 0.f, 0.f, 0.f } )
-        : m_position{ FVector3( pos ) }, m_rotation{ FVector3( rot ) } {
+    Obj( Vector3 pos )
+        : m_position{ FVector3( pos ) }, m_rotation{ 0.f, 0.f, 0.f } {
     }
-
-    // Combine rotations and update orientation matrix
-    void UpdateOrientation();
 
     // Apply rotation to a direction vector (to the location)
     FVector3 ApplyRotation( const FVector3& direction ) const {
@@ -45,11 +42,14 @@ public:
     }
 
     // Returns object's current coordinates
-    virtual FVector3 getLocation() const = 0;
+    virtual FVector3 GetLocation() const = 0;
 
     // Set absolute object location
-    virtual void move( const FVector3& vec ) = 0;
-    virtual void rotate( const FVector3& vec );
+    virtual void Move( const FVector3& pos ) {
+        const FVector3 moveDirInWorldSpace{ pos * m_orientation };
+        m_position += moveDirInWorldSpace;
+    }
+    virtual void Rotate( const FVector3& vec );
 
     // Get forward vector (negative Z in camera space)
     FVector3 GetForwardVector() const {
@@ -59,21 +59,24 @@ public:
 protected:
     FVector3 m_position;
     FVector3 m_rotation; // Euler angles (pitch, yaw, roll) in radians
+    // Each row holds the direction of the rotated unit vector of the camera's local coordinate system
     Matrix3 m_orientation;
 
-    Matrix3 getXRotMatrix( const float deg ) const;
-    Matrix3 getYRotMatrix( const float deg ) const;
-    Matrix3 getZRotMatrix( const float deg ) const;
+    Matrix3 GetXRotMatrix( const float deg ) const;
+    Matrix3 GetYRotMatrix( const float deg ) const;
+    Matrix3 GetZRotMatrix( const float deg ) const;
 };
 
 /* Color class that works with integers.
 Initializes with R, G, B integer values or normalized float values. */
-struct Color : protected Vector3 {
-    int& r;
-    int& g;
-    int& b;
+struct Color {
+    int r;
+    int g;
+    int b;
 
-    Color( int in_r = 0, int in_g = 0, int in_b = 0 );
+    Color( int in_r = 0, int in_g = 0, int in_b = 0 )
+        : r{ in_r }, g{ in_g }, b{ in_b } {
+    }
     Color( float in_r, float in_g, float in_b );
 
     // Copy assignment

@@ -11,32 +11,33 @@
 
 std::vector<Triangle> getGround() {
 	std::vector<Triangle> shape;
-	Color groundColor;
+	Color groundColor{ 60, 60, 60 };
+	int idxColor{};
 
 	// Ground
 	float groundSize{ 10.f };
 	shape.emplace_back(
 		FVector3{ -1.f, 0.f, -1.f } *groundSize,
-		FVector3{ -1.f, 0.f,  1.f } *groundSize,
+		FVector3{ -1.f, 0.f,  0.f } *groundSize,
 		FVector3{ 1.f, 0.f, -1.f } *groundSize
 	);
 	shape.emplace_back(
-		FVector3{ 1.f, 0.f, -1.f } *groundSize,
-		FVector3{ -1.f, 0.f,  1.f } *groundSize,
-		FVector3{ 1.f, 0.f,  1.f } *groundSize
+		FVector3{ -1.f, 0.f, 0.f } *groundSize,
+		FVector3{ 1.f, 0.f,  1.f } *groundSize,
+		FVector3{ 1.f, 0.f,  -1.f } *groundSize
 	);
-	shape[0].color = Color( groundColor );
-	shape[1].color = Color( groundColor );
+	shape[idxColor++].color = Color( groundColor );
+	shape[idxColor++].color = Color( groundColor );
 
 	// Ground markers
 	float centerMarkerSize{ 0.2f };
 	float markerSize{ 0.1f };
-	int colorCount = 3;
 	shape.emplace_back(
 		FVector3{ 1.f, 0.f, 0.f } *centerMarkerSize,
 		FVector3{ 0.f, 1.f, 0.f } *centerMarkerSize,
 		FVector3{ -1.f, 0.f, 0.f } *centerMarkerSize
 	);
+	shape[idxColor++].color = { 255, 0, 0 };
 
 	for ( int i{}; i < 5; ++i ) {
 		float pt = (i + 1.f) * 10.f;
@@ -45,17 +46,19 @@ std::vector<Triangle> getGround() {
 			FVector3{ -pt, 1.f, 0.f } *markerSize,
 			FVector3{ -pt - 1.f, 0.f, 0.f } *markerSize
 		);
+		shape[idxColor++].color = { 255, 0, 0 };
 		shape.emplace_back(
 			FVector3{ pt + 1.f, 0.f, 0.f } *markerSize,
 			FVector3{ pt, 1.f, 0.f } *markerSize,
 			FVector3{ pt - 1.f, 0.f, 0.f } *markerSize
 		);
+		shape[idxColor++ ].color = { 255, 0, 0 };
 		shape.emplace_back(
 			FVector3{ 1.f, 0.f, -pt } *markerSize,
 			FVector3{ 0.f, 1.f, -pt } *markerSize,
 			FVector3{ -1.f, 0.f, -pt } *markerSize
 		);
-		colorCount += 3;
+		shape[idxColor++].color = { 255, 0, 0 };
 	}
 	return shape;
 }
@@ -63,65 +66,65 @@ std::vector<Triangle> getGround() {
 struct Pyramid : Obj {
 	std::vector<Triangle> shape;
 	Color baseColor;
-	Color groundColor;
 	Color frontFace;
 	Color sideFace;
 
-	virtual FVector3 getLocation() const override {
+	virtual FVector3 GetLocation() const override {
 		return m_position;
 	}
 
-	virtual void move( const FVector3& vec ) override {
-		m_position = vec;
+	virtual void Move( const FVector3& pos ) override {
+		const FVector3 moveDirInWorldSpace{ pos * m_orientation };
+		m_position += moveDirInWorldSpace;
 		for ( Triangle& triangle : shape ) {
-			triangle.move( vec );
+			triangle.Move( pos );
 		}
 	}
 
 	Pyramid( FVector3 position )
-		: baseColor{ 60, 40, 60 }, frontFace{ 220, 150, 0 }, sideFace{ 90, 80, 20 }, groundColor{ 60, 60, 60 }, Obj( position ) {
+		: baseColor{ 60, 40, 60 }, frontFace{ 220, 150, 0 }, sideFace{ 90, 80, 20 }, Obj( position ) {
 
 		// Walls
 		float X{ 0.f };
 		float Y{ 0.f };
-		float Z{ 0.f };
+		float Z{ -2.f };
 		shape.emplace_back(
-			FVector3{ 0.f + X, 1.52f + Y, -3.f + Z } + m_position,
-			FVector3{ -0.11f + X, -0.07f + Y, -1.12f + Z } + m_position,
-			FVector3{ 1.43f + X, -0.27f + Y, -2.38f + Z } + m_position
+			FVector3{ 0.f + X, 2.27f + Y, -1.07f + Z } + m_position,
+			FVector3{ -0.11f + X, 0.68f + Y, 0.81f + Z } + m_position,
+			FVector3{ 1.43f + X, 0.48f + Y, -0.45f + Z } + m_position
 		);
 		shape.emplace_back(
-			FVector3{ 0.f + X, 1.52f + Y, -3.f + Z } + m_position,
-			FVector3{ -1.37f + X, -0.55f + Y, -2.6f + Z } + m_position,
-			FVector3{ -0.11f + X, -0.07f + Y, -1.12f + Z } + m_position
+			FVector3{ 0.f + X, 2.27f + Y, -1.07f + Z } + m_position,
+			FVector3{ -1.37f + X, 0.2f + Y, -0.67f + Z } + m_position,
+			FVector3{ -0.11f + X, 0.68f + Y, 0.81f + Z } + m_position
 		);
 		shape.emplace_back(
-			FVector3{ 0.f + X, 1.52f + Y, -3.f + Z } + m_position,
-			FVector3{ 0.17f + X, -0.75f + Y, -3.86f + Z } + m_position,
-			FVector3{ -1.37f + X, -0.55f + Y, -2.6f + Z } + m_position
+			FVector3{ 0.f + X, 2.27f + Y, -1.07f + Z } + m_position,
+			FVector3{ 0.17f + X, 0.f + Y, -1.93f + Z } + m_position,
+			FVector3{ -1.37f + X, 0.2f + Y, -0.67f + Z } + m_position
 		);
 		shape.emplace_back(
-			FVector3{ 0.f + X, 1.52f + Y, -3.f + Z } + m_position,
-			FVector3{ 1.43f + X, -0.27f + Y, -2.38f + Z } + m_position,
-			FVector3{ 0.17f + X, -0.75f + Y, -3.86f + Z } + m_position
+			FVector3{ 0.f + X, 2.27f + Y, -1.07f + Z } + m_position,
+			FVector3{ 1.43f + X, 0.48f + Y, -0.45f + Z } + m_position,
+			FVector3{ 0.17f + X, 0.f + Y, -1.93f + Z } + m_position
 		);
 		// Base
 		shape.emplace_back(
-			FVector3{ 1.43f + X, -0.27f + Y, -2.38f + Z } + m_position,
-			FVector3{ -1.37f + X, -0.55f + Y, -2.6f + Z } + m_position,
-			FVector3{ 0.17f + X, -0.75f + Y, -3.86f + Z } + m_position
+			FVector3{ 1.43f + X, 0.48f + Y, -0.45f + Z } + m_position,
+			FVector3{ -1.37f + X, 0.2f + Y, -0.67f + Z } + m_position,
+			FVector3{ 0.17f + X, 0.f + Y, -1.93f + Z } + m_position
 		);
 		shape.emplace_back(
-			FVector3{ 1.43f + X, -0.27f + Y, -2.38f + Z } + m_position,
-			FVector3{ -0.11f + X, -0.07f + Y, -1.12f + Z } + m_position,
-			FVector3{ -1.37f + X, -0.55f + Y, -2.6f + Z } + m_position
+			FVector3{ 1.43f + X, 0.48f + Y, -0.45f + Z } + m_position,
+			FVector3{ -0.11f + X, 0.68f + Y, 0.81f + Z } + m_position,
+			FVector3{ -1.37f + X, 0.2f + Y, -0.67f + Z } + m_position
 		);
 
 		shape[0].color = Color( frontFace );
 		shape[1].color = Color( sideFace );
 		shape[2].color = Color( 0, 0, 255 ); // Back Face
-		shape[3].color = Color( 255, 255, 0 ); // Back Face
-		shape[4].color = Color( { 0, 255, 0 } );
+		shape[3].color = Color( 0, 255, 0 ); // Back Face
+		shape[4].color = Color( baseColor );
 		shape[5].color = Color( baseColor );
 	}
 

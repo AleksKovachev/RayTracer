@@ -7,56 +7,55 @@
 #include <numeric>
 #include <vector>
 
-void Camera::move( const FVector3& pos ) {
+//? Currently is moving relatively? Check!!! Fix MoveRel if needed - moveAbs.
+void Camera::Move( const FVector3& pos ) {
+    const FVector3 moveDirInWorldSpace{ pos * m_orientation };
+
     std::vector<FVector3> childrenRelPos;
     childrenRelPos.reserve( m_children.size() );
 
     for ( Obj* child : m_children )
-        childrenRelPos.push_back( m_position + child->getLocation() );
+        childrenRelPos.push_back( m_position + child->GetLocation() );
         //childrenRelPos.push_back( child->getLocation() - m_location );
 
-    m_position = pos;
+    m_position += moveDirInWorldSpace;
     for ( size_t i{}; i < m_children.size(); ++i )
-        m_children[i]->move( pos + childrenRelPos[i] );
+        m_children[i]->Move( pos + childrenRelPos[i] );
 }
 
 void Camera::init() {
-    m_children.reserve( 1 );
-    m_children.push_back( &m_imgPlane );
-    m_distToPlane = (m_position - m_imgPlane.getLocation()).getLength();
-
     int gcd = std::gcd( static_cast<int>(m_imgPlane.resolution.x), static_cast<int>(m_imgPlane.resolution.y) );
     m_aspectRatio = { m_imgPlane.resolution.x / gcd, m_imgPlane.resolution.y / gcd };
 }
 
-void Camera::moveRel( const FVector3& rel_pos ) {
+void Camera::MoveRel( const FVector3& rel_pos ) {
     m_position += rel_pos;
 
     for ( Obj* child : m_children )
-        child->move( child->getLocation() + rel_pos );
+        child->Move( child->GetLocation() + rel_pos );
 }
 
-FVector3 Camera::generateRay( const int x, const int y ) const {
+FVector3 Camera::GenerateRay( const int x, const int y ) const {
     FVector2 ndcCoords = ray2NDC( x, y, m_imgPlane );
     FVector2 screenCoords = NDC2ScreenSpace( ndcCoords );
     FVector2 fixedAspectRatio = getFixedAspectRatio( screenCoords, m_imgPlane );
-    FVector3 rayDirection = FVector3{ fixedAspectRatio, m_imgPlane.getLocation().z }.normalize();
-    return ApplyRotation( rayDirection );
+    FVector3 rayDirection = FVector3{ fixedAspectRatio, -1.f * m_imgPlane.distanceFromCamera };
+    return ApplyRotation( rayDirection ).normalize();
 }
 
-void Camera::dolly( float val ) {
-    move( { m_position.x, m_position.y, val } );
+void Camera::Dolly( float val ) {
+    Move( { m_position.x, m_position.y, val } );
 }
 
-void Camera::truck( float val ) {
-    move( { val, m_position.y, m_position.z } );
+void Camera::Truck( float val ) {
+    Move( { val, m_position.y, m_position.z } );
 }
 
-void Camera::pedestal( float val ) {
-    move( { m_position.x, val, m_position.z } );
+void Camera::Pedestal( float val ) {
+    Move( { m_position.x, val, m_position.z } );
 }
 
-Color Camera::getTriangleIntersection(
+Color Camera::GetTriangleIntersection(
     const FVector3 ray,
     const std::vector<Triangle>& triangles,
     const Camera& camera
@@ -67,11 +66,11 @@ Color Camera::getTriangleIntersection(
 
     for ( const Triangle& triangle : triangles ) {
         // Ignore if Ray is parallel or hits triangle back.
-        float rayProj = ray.dot( triangle.getNormal() );
+        float rayProj = ray.Dot( triangle.GetNormal() );
         if ( isGreaterEqualThan(rayProj, 0.f ) )
             continue;
 
-        float rayPlaneDist = (triangle.getVert( 0 ) - camera.m_position).dot( triangle.getNormal() );
+        float rayPlaneDist = (triangle.GetVert( 0 ) - camera.m_position).Dot( triangle.GetNormal() );
         // Ray is not towards Triangle's plane
         if ( isGreaterEqualThan(rayPlaneDist, 0.f) )
             continue; // rayPlaneDist > 0 -> Back-face culling
@@ -85,13 +84,13 @@ Color Camera::getTriangleIntersection(
 
         // Ray parametric equation - represent points on a line going through a Ray.
         FVector3 intersectionPt = camera.m_position + (ray * rayPointDist);
-        float intersectionPLen = intersectionPt.getLength();
+        float intersectionPLen = intersectionPt.GetLength();
 
         // Ignore intersection if a closer one to the Camera has already been found
         if ( intersectionPLen > closestIntersectionP )
             continue;
 
-        if ( triangle.isPointInside( intersectionPt ) ) {
+        if ( triangle.IsPointInside( intersectionPt ) ) {
             closestIntersectionP = intersectionPLen;
             pixelColor = triangle.color;
         }

@@ -78,18 +78,18 @@ public:
     FVector3 operator*( const FVector3& other ) const;
 
     // Returns vector length/magnitude
-    float getLength() const;
+    float GetLength() const;
     // Dot product with given vector
-    float dot( const FVector3& other ) const;
+    float Dot( const FVector3& other ) const;
     // Returns normalized version of this vector
     FVector3 normalize();
     // Normalizes this vector in-place
-    void normalizeInPlace();
+    void NormalizeInPlace();
 private:
     float length;
 
     // Calculates the length/magnitude of this vector
-    void calculateLength();
+    void CalculateLength();
 };
 
 // Easy printing of a Vector2
