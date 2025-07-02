@@ -3,8 +3,10 @@
 
 #include <vector>
 
-#include "Bases.h"
+#include "Bases.h"    // Obj, Color
 #include "Triangle.h"
+
+class Scene;
 
 // Camera Image Plane object with a given resolution and position.
 struct ImagePlane {
@@ -66,13 +68,13 @@ struct Camera : public Obj {
     void Roll( const float deg );
 
     // Rotate Camera around a point at a given distance with given degree
-    void RotateAroundPoint( const FVector3&, const FVector3& );
+    void RotateAroundPoint( const FVector3& dist, const FVector3& angle );
 
     // Returns the color of the Triangle closest to the camera ray
     Color GetTriangleIntersection(
-        const FVector3 ray,
+        const FVector3& ray,
         const std::vector<Triangle>& triangles,
-        const Camera& camera
+        const Color& BGColor = { 0.f, 0.f, 0.f }
     ) const;
 
 private:

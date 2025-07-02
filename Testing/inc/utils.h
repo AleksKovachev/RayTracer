@@ -5,7 +5,7 @@
 #include <random>
 #include <unordered_map>
 
-#include "Bases.h"
+#include "Bases.h" // Color
 
 typedef std::unordered_map<std::string, float> iniData;
 
@@ -18,6 +18,9 @@ int getInt( const int min, const int max );
 
 // Returns a random Color
 Color getRandomColor( const int bitDepth = 8 );
+
+// Takes a stream and a Color to write to a PPM file in P6 format
+void writeColorToFile( std::ofstream& stream, const Color& pixelColor );
 
 // Check if 2 float values are equal with an epsilon range of error
 bool areEqual( const float a, const float b, const float epsilon = 1e-9 );
@@ -38,5 +41,9 @@ bool isGreaterEqualThan( const float a, const float b, const float epsilon = 1e-
 bool areAlmostEqual( float a, float b, float epsilon = 1e-9 );
 
 iniData readConfig();
+
+/* Checks if any of provided characters is in the provided string.
+* If no characters are provided - check for forbidden name characters. */
+bool areCharsInString( const std::string& str, const std::vector<char>* chars = nullptr );
 
 #endif // UTILS_H

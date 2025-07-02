@@ -23,6 +23,15 @@ Color getRandomColor( const int colorDepth ) {
     return { getInt( 0, maxComponent ), getInt( 0, maxComponent ), getInt( 0, maxComponent ) };
 }
 
+void writeColorToFile( std::ofstream& stream, const Color& pixelColor ) {
+    unsigned char r = static_cast<unsigned char>(pixelColor.r);
+    unsigned char g = static_cast<unsigned char>(pixelColor.g);
+    unsigned char b = static_cast<unsigned char>(pixelColor.b);
+    stream.write( reinterpret_cast<const char*>(&r), 1 );
+    stream.write( reinterpret_cast<const char*>(&g), 1 );
+    stream.write( reinterpret_cast<const char*>(&b), 1 );
+}
+
 bool areEqual( const float a, const float b, const float epsilon) {
     return std::fabs( a - b ) < epsilon;
 }
@@ -106,4 +115,31 @@ iniData readConfig() {
 
     file.close();
     return values;
+}
+
+bool areCharsInString( const std::string& str, const std::vector<char>* passedChars ) {
+    if ( !str.size() )
+        return false;
+
+    std::vector<char> chars{};
+
+    if ( passedChars == nullptr ) {
+        std::vector<char> forbiddenChars{ '<', '>', ':', '"', '/', '\\', '|', '?', '*' };
+        forbiddenChars.reserve( 41 );
+        for ( int i{}; i < 32; ++i )
+            forbiddenChars.emplace_back( static_cast<char>(i) );
+        chars = forbiddenChars;
+    } else {
+        chars = *passedChars;
+    }
+
+    for ( const char chStr : str ) {
+        for ( const char chVec : chars ) {
+            if ( chStr == chVec )
+                return false;
+        }
+    }
+
+
+    return true;
 }

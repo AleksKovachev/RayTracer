@@ -1,6 +1,6 @@
 #include "Triangle.h"
 
-Triangle::Triangle( FVector3 vert0, FVector3 vert1, FVector3 vert2 )
+Triangle::Triangle( const FVector3& vert0, const FVector3& vert1, const FVector3& vert2 )
     : verts{ vert0, vert1, vert2 } {
     init( vert0, vert1, vert2 );
 }

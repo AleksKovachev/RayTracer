@@ -1,4 +1,6 @@
 #include "SpaceConversions.h"
+#include "Camera.h"
+#include "Vectors.h"
 
 FVector2 world2RasterSpace( const FVector2& w_coords, const ImagePlane& imgPlane ) {
     return { w_coords.x - (imgPlane.resolution.x / 2.f),
