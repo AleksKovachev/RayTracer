@@ -90,6 +90,8 @@ struct Color {
     // Copy assignment
     Color& operator=( const Color& other );
 
+    Color& operator+=( const Color& other );
+    Color& operator/=( const int val );
     bool operator==( const Color& other );
 };
 

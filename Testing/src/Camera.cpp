@@ -7,6 +7,7 @@
 #include "utils.h" // isGreaterEqualThan
 #include "Vectors.h" // FVector3
 
+#include <algorithm>
 #include <cmath>
 #include <numeric>
 #include <vector>
@@ -77,17 +78,25 @@ void Camera::RotateAroundPoint( const FVector3& dist, const FVector3& angle ) {
 }
 
 Color shade( const Scene& scene, const FVector3& intersectionPt, const FVector3& triNormal ) {
+    std::vector<Color> lightsHit{};
+
     for ( Light* light : scene.GetLights() ) {
         FVector3 lightDir = light->getPosition() - intersectionPt;
-        //if ( isLessEqualThan( lightDir.Dot( triNormal ), 0 ) ) {
-        if ( isGreaterThan( lightDir.Dot( triNormal ), 0 ) ) {
-            return { 255, 255, 255 };
-            //! Preparation for later
-            continue; // Isn't facing the light source
-        }
+        lightDir.NormalizeInPlace();
+        // Negative numbers are 0 in color. Positive numbers above 1 are clipped
+        float cosLaw = std::min( 1.f, std::max( 0.f, lightDir.Dot( triNormal ) ));
+        lightsHit.emplace_back( cosLaw, cosLaw, cosLaw );
     }
 
-    return { 0.f, 0.f, 0.f };
+    if ( lightsHit.size() == 0 )
+        return { 0.f, 0.f, 0.f };
+
+    Color finalColor{};
+    for ( const Color& color : lightsHit )
+        finalColor += color;
+
+    finalColor /= lightsHit.size();
+    return finalColor;
 }
 
 
@@ -102,13 +111,15 @@ Color Camera::GetTriangleIntersection(
     for ( const Triangle& triangle : triangles ) {
         // Ignore if Ray is parallel or hits triangle back.
         float rayProj = ray.Dot( triangle.GetNormal() );
-        if ( isGreaterEqualThan( rayProj, 0.f ) )
+        if ( areEqual( rayProj, 0.f ) )
             continue;
 
         float rayPlaneDist = (triangle.GetVert( 0 ) - m_position).Dot( triangle.GetNormal() );
+
+        //! Skip backface check so backface triangles can cast shadows
         // Ray is not towards Triangle's plane
-        if ( isGreaterEqualThan( rayPlaneDist, 0.f ) )
-            continue; // rayPlaneDist > 0 -> Back-face culling
+        //if ( isGreaterEqualThan( rayPlaneDist, 0.f ) )
+        //    continue; // rayPlaneDist > 0 -> Back-face culling
 
         /* Check if rayPlaneDist direction is needed or length
         * abs(rayPlaneDist) should be multiplied by Ray length, but is

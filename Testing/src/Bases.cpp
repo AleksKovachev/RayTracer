@@ -137,6 +137,20 @@ Color& Color::operator=( const Color& other ) {
     return *this;
 }
 
+Color& Color::operator+=( const Color& other ) {
+    r += other.r;
+    g += other.g;
+    b += other.b;
+    return *this;
+}
+
+Color& Color::operator/=( const int val ) {
+    r /= val;
+    g /= val;
+    b /= val;
+    return *this;
+}
+
 bool Color::operator==( const Color& other ) {
     return r == other.r && g == other.g && b == other.b;
 }
