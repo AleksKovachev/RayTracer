@@ -33,6 +33,11 @@ struct Camera : public Obj {
         init();
     };
 
+    ~Camera() {
+        for ( Obj* obj : m_children )
+            delete obj;
+    }
+
     virtual FVector3 GetLocation() const override {
         return m_position;
     };

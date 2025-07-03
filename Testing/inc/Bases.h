@@ -35,6 +35,8 @@ public:
         : m_position{ pos }, m_rotation{ 0.f, 0.f, 0.f } {
     }
 
+    virtual ~Obj() = default;
+
     // Apply rotation to a direction vector (to the location)
     FVector3 ApplyRotation( const FVector3& direction ) const {
         return direction * m_orientation;

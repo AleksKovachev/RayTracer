@@ -8,6 +8,7 @@
 
 #include "Bases.h"   // Color
 #include "Camera.h"
+#include "Lights.h"
 #include "RenderSettings.h"
 #include "Vectors.h" // FVector3
 
@@ -34,6 +35,8 @@ class Scene {
 public:
 	Scene( const std::string& sceneFileName );
 
+	~Scene();
+
 	void ParseSceneFile();
 
 	std::string GetFileName() const { return m_fileName; }
@@ -49,11 +52,13 @@ private:
 	std::vector<Mesh> m_meshes; // Scene objects
 	Camera m_camera; // Main scene Camera
 	Settings m_settings; // Global scene settings
+	std::vector<Light*> m_lights;
 
 private:
 	void ParseSettingsTag( const rapidjson::Document& );
 	void ParseCameraTag( const rapidjson::Document& );
 	void ParseObjectsTag( const rapidjson::Document& );
+	void ParseLightsTag( const rapidjson::Document& );
 };
 
 #endif // SCENE_H
