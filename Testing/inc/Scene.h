@@ -43,6 +43,7 @@ public:
 	const std::vector<Mesh>& GetMeshes() const { return m_meshes; }
 	const Camera& GetCamera() const { return m_camera; }
 	const Settings& GetSettings() const { return m_settings; }
+	const std::vector<Light*>& GetLights() const { return m_lights; }
 
 	void SetSaveFileName( const std::string& saveName );
 	void SetColorMode( const ColorMode colorMode );

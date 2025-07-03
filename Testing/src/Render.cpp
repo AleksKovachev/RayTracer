@@ -39,19 +39,27 @@ std::vector<Triangle> calculateMeshes( const std::vector<Mesh>& meshes, const Co
     return outTriangles;
 }
 
-void render( const Scene& scene, const Camera* overrideCamera, const std::string* overrideSaveName ) {
+std::ofstream prepareScene( const Scene& scene, const std::string* overrideSaveName ) {
     const int& width{ scene.GetSettings().renderWidth };
     const int& height{ scene.GetSettings().renderHeight };
-    const Camera& camera{ ( overrideCamera == nullptr ? scene.GetCamera() : *overrideCamera ) };
     const std::string& saveDir{ scene.GetSettings().saveDir };
     const std::string& saveName{
-        ( overrideSaveName == nullptr ? scene.GetSettings().saveName : *overrideSaveName ) };
+        (overrideSaveName == nullptr ? scene.GetSettings().saveName : *overrideSaveName) };
 
     std::filesystem::create_directories( saveDir );
     std::ofstream ppmFileStream( saveDir + "/" + saveName + ".ppm", std::ios::binary );
     ppmFileStream << "P6\n";
     ppmFileStream << width << " " << height << "\n";
     ppmFileStream << scene.GetSettings().maxColorComp << "\n";
+
+    return ppmFileStream;
+}
+
+void render( const Scene& scene, const Camera* overrideCamera, const std::string* overrideSaveName ) {
+    const int& width{ scene.GetSettings().renderWidth };
+    const int& height{ scene.GetSettings().renderHeight };
+    const Camera& camera{ ( overrideCamera == nullptr ? scene.GetCamera() : *overrideCamera ) };
+    std::ofstream ppmFileStream = prepareScene( scene, overrideSaveName );
 
     std::vector<Triangle> meshes{ calculateMeshes( scene.GetMeshes(), scene.GetSettings().colorMode ) };
 
@@ -62,7 +70,7 @@ void render( const Scene& scene, const Camera* overrideCamera, const std::string
     for ( int y{}; y < height; ++y ) {
         for ( int x{}; x < width; ++x ) {
             FVector3 ray = camera.GenerateRay( x, y );
-            Color pixelColor = camera.GetTriangleIntersection( ray, meshes, scene.GetSettings().BGColor );
+            Color pixelColor = camera.GetTriangleIntersection( ray, meshes, scene );
             writeColorToFile( ppmFileStream, pixelColor );
         }
         std::cout << "\rLine: " << y + 1 << " / " << height << std::flush;

@@ -1,5 +1,7 @@
 #include "Bases.h" // Color
 #include "Camera.h"
+#include "Lights.h" // Light
+#include "Scene.h" // Scene
 #include "SpaceConversions.h" // ray2NDC, NDC2ScreenSpace, getFixedAspectRatio
 #include "Triangle.h"
 #include "utils.h" // isGreaterEqualThan
@@ -74,12 +76,27 @@ void Camera::RotateAroundPoint( const FVector3& dist, const FVector3& angle ) {
     Move( dist );
 }
 
+Color shade( const Scene& scene, const FVector3& intersectionPt, const FVector3& triNormal ) {
+    for ( Light* light : scene.GetLights() ) {
+        FVector3 lightDir = light->getPosition() - intersectionPt;
+        //if ( isLessEqualThan( lightDir.Dot( triNormal ), 0 ) ) {
+        if ( isGreaterThan( lightDir.Dot( triNormal ), 0 ) ) {
+            return { 255, 255, 255 };
+            //! Preparation for later
+            continue; // Isn't facing the light source
+        }
+    }
+
+    return { 0.f, 0.f, 0.f };
+}
+
+
 Color Camera::GetTriangleIntersection(
     const FVector3& ray,
     const std::vector<Triangle>& triangles,
-    const Color& BGColor
+    const Scene& scene
 ) const {
-    Color pixelColor{ BGColor };
+    Color pixelColor{ scene.GetSettings().BGColor };
     float closestIntersectionP{ std::numeric_limits<float>::max() };
 
     for ( const Triangle& triangle : triangles ) {
@@ -110,7 +127,8 @@ Color Camera::GetTriangleIntersection(
 
         if ( triangle.IsPointInside( intersectionPt ) ) {
             closestIntersectionP = intersectionPLen;
-            pixelColor = triangle.color;
+            //pixelColor = triangle.color;
+            pixelColor = shade( scene, intersectionPt, triangle.GetNormal() );
         }
     }
 

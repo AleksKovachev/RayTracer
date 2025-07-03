@@ -137,6 +137,10 @@ Color& Color::operator=( const Color& other ) {
     return *this;
 }
 
+bool Color::operator==( const Color& other ) {
+    return r == other.r && g == other.g && b == other.b;
+}
+
 // Easy printing of a Color (inline prevents linker error as this is in a header)
 inline std::ostream& operator<<( std::ostream& os, const Color& color ) {
     os << std::setw( 3 ) << color.r << " " << std::setw( 3 ) << color.g << " " << std::setw( 3 ) << color.b;

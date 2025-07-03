@@ -89,6 +89,8 @@ struct Color {
 
     // Copy assignment
     Color& operator=( const Color& other );
+
+    bool operator==( const Color& other );
 };
 
 #endif // BASES_H

@@ -79,7 +79,7 @@ struct Camera : public Obj {
     Color GetTriangleIntersection(
         const FVector3& ray,
         const std::vector<Triangle>& triangles,
-        const Color& BGColor = { 0.f, 0.f, 0.f }
+        const Scene& scene
     ) const;
 
 private:

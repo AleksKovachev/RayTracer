@@ -1,3 +1,4 @@
+#include "Lights.h" // Light
 #include "Scene.h" // Scene, Mesh
 #include "utils.h" // getRandomColor
 
@@ -131,7 +132,8 @@ void Scene::ParseLightsTag( const rapidjson::Document& doc ) {
 			assert( lightsArr[i].IsObject() );
 			const rapidjson::Value& light{ lightsArr[i] };
 			assert( light.HasMember(t_position) && light[t_position].IsArray());
-			m_lights.emplace_back( loadVector3<FVector3>( light[t_position].GetArray() ) );
+			const FVector3 lightPos = loadVector3<FVector3>( light[t_position].GetArray() );
+			m_lights.emplace_back( new Light( lightPos ) );
 		}
 	}
 }
