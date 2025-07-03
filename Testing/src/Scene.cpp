@@ -124,6 +124,7 @@ void Scene::ParseLightsTag( const rapidjson::Document& doc ) {
 	// JSON Tags to look for
 	char t_lights[]{ "lights" };
 	char t_position[]{ "position" };
+	char t_intensity[]{ "intensity" };
 
 	if ( doc.HasMember( t_lights ) && doc[t_lights].IsArray() ) {
 		const rapidjson::Value::ConstArray& lightsArr = doc[t_lights].GetArray();
@@ -133,7 +134,13 @@ void Scene::ParseLightsTag( const rapidjson::Document& doc ) {
 			const rapidjson::Value& light{ lightsArr[i] };
 			assert( light.HasMember(t_position) && light[t_position].IsArray());
 			const FVector3 lightPos = loadVector3<FVector3>( light[t_position].GetArray() );
-			m_lights.emplace_back( new Light( lightPos ) );
+
+			// Not using assert because if no intensity is specified - simply init it to 1.
+			float ligthIntensity = 1.f;
+			if ( light.HasMember( t_intensity ) && light[t_intensity].IsNumber() )
+				ligthIntensity = static_cast<float>( light[t_intensity].GetDouble() );
+
+			m_lights.emplace_back( new PointLight( lightPos, ligthIntensity ) );
 		}
 	}
 }

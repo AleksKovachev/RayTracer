@@ -81,10 +81,11 @@ Color shade( const Scene& scene, const FVector3& intersectionPt, const FVector3&
     std::vector<Color> lightsHit{};
 
     for ( Light* light : scene.GetLights() ) {
-        FVector3 lightDir = light->getPosition() - intersectionPt;
+        FVector3 lightDir = light->GetPosition() - intersectionPt;
         lightDir.NormalizeInPlace();
         // Negative numbers are 0 in color. Positive numbers above 1 are clipped
         float cosLaw = std::min( 1.f, std::max( 0.f, lightDir.Dot( triNormal ) ));
+        cosLaw *= light->GetIntensity();
         lightsHit.emplace_back( cosLaw, cosLaw, cosLaw );
     }
 
@@ -93,9 +94,9 @@ Color shade( const Scene& scene, const FVector3& intersectionPt, const FVector3&
 
     Color finalColor{};
     for ( const Color& color : lightsHit )
-        finalColor += color;
+        finalColor += color ;
 
-    finalColor /= lightsHit.size();
+    finalColor /= static_cast<int>( lightsHit.size() );
     return finalColor;
 }
 

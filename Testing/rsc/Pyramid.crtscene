@@ -22,11 +22,13 @@
 
 	"lights": [
         {
+            "intensity": 1,
             "position": [
                 0, 0, 0
             ]
         },
         {
+            "intensity": 2,
             "position": [
                 2, 2, 0
             ]
