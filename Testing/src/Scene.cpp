@@ -42,7 +42,7 @@ void Scene::ParseSceneFile() {
 	ParseLightsTag( doc );
 
 	for ( Mesh& mesh : m_meshes ) {
-		mesh.color = getRandomColor();
+		mesh.albedo = getRandomColor();
 	}
 }
 

@@ -87,10 +87,15 @@ struct Color {
     }
     Color( float in_r, float in_g, float in_b );
 
+    void ConvertToRange( const unsigned colorDepth = 8 );
+    void Clamp( const unsigned colorDepth = 8 );
+
     // Copy assignment
     Color& operator=( const Color& other );
 
+    Color operator/( const int val );
     Color& operator+=( const Color& other );
+    Color& operator*=( const Color& other );
     Color& operator/=( const int val );
     bool operator==( const Color& other );
 };

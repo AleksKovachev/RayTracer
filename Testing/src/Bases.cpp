@@ -1,6 +1,8 @@
 #include "Bases.h" // Obj, Matrix3, Color
 #include "utils.h" // areEqual
 
+#include <cmath>
+
 // Multiplication with a Matrix3, assuming this is a column-major vector
 FVector3 operator*( const FVector3& vec, const Matrix3& mat ) {
     return {
@@ -130,11 +132,44 @@ Color::Color( float in_r, float in_g, float in_b )
     b{ static_cast<int>(round(in_b * 255.f)) } {
 }
 
+void Color::ConvertToRange( const unsigned colorDepth ) {
+    if ( 0 <= r && r <= 255 && 0 <= g && g <= 255 && 0 <= b && b <= 255 )
+        return; // No need to do anything
+
+    // Get max color component
+    int maxColor{ r };
+    if ( g > maxColor )
+        maxColor = g;
+    if ( b > maxColor )
+        maxColor = b;
+
+    float R = static_cast<float>(r) / maxColor;
+    float G = static_cast<float>(g) / maxColor;
+    float B = static_cast<float>(b) / maxColor;
+
+    r = static_cast<int>(round( R * static_cast<float>((1 << colorDepth) - 1) ));
+    g = static_cast<int>(round( G * static_cast<float>((1 << colorDepth) - 1) ));
+    b = static_cast<int>(round( B * static_cast<float>((1 << colorDepth) - 1) ));
+}
+
+void Color::Clamp( const unsigned colorDepth ) {
+    int maxComp = (1 << colorDepth) - 1;
+    r = (r > maxComp) ? maxComp : r;
+    g = (g > maxComp) ? maxComp : g;
+    b = (b > maxComp) ? maxComp : b;
+}
+
 Color& Color::operator=( const Color& other ) {
     r = other.r;
     g = other.g;
     b = other.b;
     return *this;
+}
+
+Color Color::operator/( const int val ) {
+    return { static_cast<int>(roundf( static_cast<float>(r) / val )),
+        static_cast<int>(roundf( static_cast<float>(g) / val )),
+            static_cast<int>(roundf( static_cast<float>(b) / val )) };
 }
 
 Color& Color::operator+=( const Color& other ) {
@@ -144,10 +179,22 @@ Color& Color::operator+=( const Color& other ) {
     return *this;
 }
 
+Color& Color::operator*=( const Color& other ) {
+    r *= other.r;
+    g *= other.g;
+    b *= other.b;
+    return *this;
+}
+
 Color& Color::operator/=( const int val ) {
-    r /= val;
-    g /= val;
-    b /= val;
+    if ( val == 0 ) {
+        std::cerr << "Value cannot be 0. Division by 0 error!\n";
+        std::exit( 1 );
+    }
+
+    r = static_cast<int>(roundf( static_cast<float>(r) / val ));
+    g = static_cast<int>(roundf( static_cast<float>(g) / val ));
+    b = static_cast<int>(roundf( static_cast<float>(b) / val ));
     return *this;
 }
 

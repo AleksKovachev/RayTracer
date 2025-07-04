@@ -188,6 +188,7 @@ echo ===========================================================================
     <ClInclude Include="inc\DebugObjects.h" />
     <ClInclude Include="inc\Triangle.h" />
     <ClInclude Include="inc\SpaceConversions.h" />
+    <ClInclude Include="inc\Types.h" />
     <ClInclude Include="inc\utils.h" />
     <ClInclude Include="inc\Vectors.h" />
   </ItemGroup>

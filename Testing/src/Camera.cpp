@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <numbers>
 #include <numeric>
 #include <vector>
 
@@ -77,72 +78,110 @@ void Camera::RotateAroundPoint( const FVector3& dist, const FVector3& angle ) {
     Move( dist );
 }
 
-Color shade( const Scene& scene, const FVector3& intersectionPt, const FVector3& triNormal ) {
-    std::vector<Color> lightsHit{};
+Color shade( const Scene& scene, const FVector3& intersectionPt, const FVector3& triNormal, const Mesh& mesh ) {
+    float R{};
+    float G{};
+    float B{};
+    float falloff{};
+    int lightsCounter{};
+    Color pixelColor{};
 
-    for ( Light* light : scene.GetLights() ) {
-        FVector3 lightDir = light->GetPosition() - intersectionPt;
+    for ( const Light* light : scene.GetLights() ) {
+        const PointLight* ptLight = static_cast<const PointLight*>(light);
+
+        FVector3 lightDir = ptLight->GetPosition() - intersectionPt;
+        float lightDirLen = lightDir.GetLength();
         lightDir.NormalizeInPlace();
         // Negative numbers are 0 in color. Positive numbers above 1 are clipped
-        float cosLaw = std::min( 1.f, std::max( 0.f, lightDir.Dot( triNormal ) ));
-        cosLaw *= light->GetIntensity();
-        lightsHit.emplace_back( cosLaw, cosLaw, cosLaw );
+        float cosLaw =  std::max( 0.f, lightDir.Dot( triNormal ) );
+        falloff += 4 * static_cast<float>( std::numbers::pi ) * lightDirLen * lightDirLen;
+        cosLaw *= ptLight->GetIntensity() / falloff;
+        //! Clamp here to make 1.0 the max intensity!
+        // cosLaw = std::min( 1.f, cosLaw );
+
+        R += cosLaw;
+
+        lightsCounter++;
     }
 
-    if ( lightsHit.size() == 0 )
+    if ( lightsCounter == 0 )
         return { 0.f, 0.f, 0.f };
 
-    Color finalColor{};
-    for ( const Color& color : lightsHit )
-        finalColor += color ;
+    R /= lightsCounter;
+    G = B = R;
 
-    finalColor /= static_cast<int>( lightsHit.size() );
-    return finalColor;
+    // multiply by normalized albedo
+    const int& maxComp = scene.GetSettings().maxColorComp;
+    R *= static_cast<float>(mesh.albedo.r) / maxComp;
+    G *= static_cast<float>(mesh.albedo.g) / maxComp;
+    B *= static_cast<float>(mesh.albedo.b) / maxComp;
+
+    //! Clamp here to make everything > 1.0 clip back to 1.0!
+    pixelColor.r = static_cast<int>(round( R * maxComp ));
+    pixelColor.g = static_cast<int>(round( G * maxComp ));
+    pixelColor.b = static_cast<int>(round( B * maxComp ));
+    pixelColor.Clamp();
+
+    //!? Keep colors as if light was 1.0. Remove Clamp to use.
+    //pixelColor.ConvertToRange( static_cast<unsigned>( log2( maxComp + 1 ) ) );
+
+    return pixelColor;
 }
 
 
 Color Camera::GetTriangleIntersection(
     const FVector3& ray,
-    const std::vector<Triangle>& triangles,
+    const MeshInfo& meshes,
     const Scene& scene
 ) const {
     Color pixelColor{ scene.GetSettings().BGColor };
+    int colorCounter{};
     float closestIntersectionP{ std::numeric_limits<float>::max() };
 
-    for ( const Triangle& triangle : triangles ) {
-        // Ignore if Ray is parallel or hits triangle back.
-        float rayProj = ray.Dot( triangle.GetNormal() );
-        if ( areEqual( rayProj, 0.f ) )
-            continue;
+    for ( const auto& mesh : meshes ) {
 
-        float rayPlaneDist = (triangle.GetVert( 0 ) - m_position).Dot( triangle.GetNormal() );
+        for ( const Triangle& triangle : mesh.second ) {
+            // Ignore if Ray is parallel or hits triangle back.
+            float rayProj = ray.Dot( triangle.GetNormal() );
+            if ( areEqual( rayProj, 0.f ) )
+                continue;
 
-        //! Skip backface check so backface triangles can cast shadows
-        // Ray is not towards Triangle's plane
-        //if ( isGreaterEqualThan( rayPlaneDist, 0.f ) )
-        //    continue; // rayPlaneDist > 0 -> Back-face culling
+            float rayPlaneDist = (triangle.GetVert( 0 ) - m_position).Dot( triangle.GetNormal() );
 
-        /* Check if rayPlaneDist direction is needed or length
-        * abs(rayPlaneDist) should be multiplied by Ray length, but is
-        * ommited as Rays are unit Vectors so their length is always 1 */
-        float rayPointDist = rayPlaneDist / rayProj; // Ray-to-Point scale factor
-        //? Creates floating triangles if parallel check is ==, ray-towards-tri is >=.
-        //? float rayPointDist = abs( rayPlaneDist ) / abs( rayProj );
+            //! Skip backface check so backface triangles can cast shadows
+            // Ray is not towards Triangle's plane
+            //if ( isGreaterEqualThan( rayPlaneDist, 0.f ) )
+            //    continue; // rayPlaneDist > 0 -> Back-face culling
 
-        // Ray parametric equation - represent points on a line going through a Ray.
-        FVector3 intersectionPt = m_position + (ray * rayPointDist);
-        float intersectionPLen = intersectionPt.GetLength();
+            /* Check if rayPlaneDist direction is needed or length
+            * abs(rayPlaneDist) should be multiplied by Ray length, but is
+            * ommited as Rays are unit Vectors so their length is always 1 */
+            float rayPointDist = rayPlaneDist / rayProj; // Ray-to-Point scale factor
+            //? Creates floating triangles if parallel check is ==, ray-towards-tri is >=.
+            //? float rayPointDist = abs( rayPlaneDist ) / abs( rayProj );
 
-        // Ignore intersection if a closer one to the Camera has already been found
-        if ( intersectionPLen > closestIntersectionP )
-            continue;
+            // Ray parametric equation - represent points on a line going through a Ray.
+            FVector3 intersectionPt = m_position + (ray * rayPointDist);
+            float intersectionPLen = intersectionPt.GetLength();
 
-        if ( triangle.IsPointInside( intersectionPt ) ) {
-            closestIntersectionP = intersectionPLen;
-            //pixelColor = triangle.color;
-            pixelColor = shade( scene, intersectionPt, triangle.GetNormal() );
+            // Ignore intersection if a closer one to the Camera has already been found
+            if ( intersectionPLen > closestIntersectionP )
+                continue;
+
+            if ( triangle.IsPointInside( intersectionPt ) ) {
+                closestIntersectionP = intersectionPLen;
+                //pixelColor = triangle.color;
+                Color shadedColor = shade( scene, intersectionPt, triangle.GetNormal(), *mesh.first );
+                if ( colorCounter == 0 )
+                    pixelColor = shadedColor;
+                else
+                    pixelColor += shadedColor;
+                colorCounter++;
+            }
         }
     }
+
+    pixelColor = (colorCounter > 0) ? pixelColor / colorCounter : pixelColor;
 
     return pixelColor;
 }

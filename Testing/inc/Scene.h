@@ -17,10 +17,10 @@
 // Collection of triangles representing a 3D object
 class Mesh {
 public:
-	Color color;
+	Color albedo;
 
 	Mesh( const std::vector<FVector3>& verts, const std::vector<int>& triangles )
-		: vertices{ verts }, triangles{ triangles }, color{ 255, 0, 0 } {
+		: vertices{ verts }, triangles{ triangles }, albedo{ 255, 0, 0 } {
 	}
 
 	std::vector<FVector3> GetVertices() const { return vertices; }

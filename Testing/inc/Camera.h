@@ -5,6 +5,7 @@
 
 #include "Bases.h"    // Obj, Color
 #include "Triangle.h"
+#include "Types.h" // MeshInfo
 
 class Scene;
 
@@ -78,7 +79,7 @@ struct Camera : public Obj {
     // Returns the color of the Triangle closest to the camera ray
     Color GetTriangleIntersection(
         const FVector3& ray,
-        const std::vector<Triangle>& triangles,
+        const MeshInfo& meshes,
         const Scene& scene
     ) const;
 
