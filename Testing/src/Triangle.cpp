@@ -1,4 +1,5 @@
 #include "Triangle.h"
+#include "utils.h"
 
 Triangle::Triangle( const FVector3& vert0, const FVector3& vert1, const FVector3& vert2 )
     : verts{ vert0, vert1, vert2 } {
@@ -27,11 +28,11 @@ FVector3 Triangle::GetVert( const int vertIdx ) const {
 }
 
 bool Triangle::IsPointInside( const FVector3& point ) const {
-    if ( (edges[0] * (point - verts[0])).Dot( normal ) <= 0.f )
+    if ( isLessThan( (edges[0] * (point - verts[0])).Dot( normal ), 0.f ) )
         return false;
-    if ( (edges[1] * (point - verts[1])).Dot( normal ) <= 0.f )
+    if ( isLessThan( (edges[1] * (point - verts[1])).Dot( normal ), 0.f ) )
         return false;
-    if ( (edges[2] * (point - verts[2])).Dot( normal ) <= 0.f )
+    if ( isLessThan( (edges[2] * (point - verts[2])).Dot( normal ), 0.f ) )
         return false;
 
     return true;

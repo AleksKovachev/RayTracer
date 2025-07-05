@@ -165,7 +165,7 @@ bool Camera::IsInShadow( const FVector3& rayDir, const IntersectionData& data, c
              *           Ray hits at or very near the hitPoint (self-intersection)
              *           Ray hits beyond the light source */
 
-            if ( rayPointDist < shadowBias || rayPointDist >= rayDir.GetLength() - shadowBias )
+            if ( rayPointDist < shadowBias )
                 continue; // This intersection is not valid for shadow casting
 
             // Ray parametric equation - represent points on a line going through a Ray.
