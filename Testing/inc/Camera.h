@@ -6,7 +6,7 @@
 #include "Bases.h" // Obj
 #include "Colors.h" // Color, Colors::Black
 #include "Mesh.h" // PreparedMesh
-#include "RenderSettings.h" // IntersectionData
+#include "RenderSettings.h" // IntersectionData, RenderMode
 #include "Triangle.h"
 #include "Vectors.h" // FVector3
 

@@ -44,4 +44,13 @@ struct IntersectionData {
 };
 
 
+// Enum for choosing render style
+enum class RenderMode {
+	ObjectColor,
+	ShadedFlat,
+	ShadedSmooth,
+	Barycentric
+};
+
+
 #endif // RENDER_SETTINGS_H

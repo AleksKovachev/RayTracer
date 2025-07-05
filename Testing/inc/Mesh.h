@@ -20,16 +20,16 @@ public:
 private:
 	std::vector<FVector3> vertices; // 3D coordinates for the whole mesh
 	std::vector<int> triangles; // Each triple of vertices form a triangle
+	std::vector<FVector3> m_faceNormals;
+	std::vector<FVector3> m_vertexNormals;
 };
 
 // Collection of built Triangles representing a 3D object
-class PreparedMesh {
-public:
+struct PreparedMesh {
 	Color m_albedo;
 	std::vector<Triangle> m_triangles;
 
 	void PrepMesh( const Mesh& mesh, const ColorMode& colorMode );
-
 };
 
 #endif // MESH_H

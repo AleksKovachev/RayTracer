@@ -1,8 +1,6 @@
 #ifndef SHAPES_H
 #define SHAPES_H
 
-#include <optional>
-
 #include "Colors.h" // Color
 #include "Vectors.h" // FVector3
 
@@ -22,6 +20,9 @@ public:
     // Returns Normal Vector
     FVector3 GetNormal() const;
 
+    // Returns Triangle Area
+    float GetArea() const;
+
     // std::optional<FVector3> GetVert( const int vertIdx ) const;
 
     // Get vertex at index
@@ -35,8 +36,10 @@ private:
     FVector3 verts[vertsInTriangle];
     FVector3 edges[vertsInTriangle];
     FVector3 normal;
+    float area;
 
     void CalculateNormal();
+    void CalculateArea();
 };
 
 #endif // SHAPES_H

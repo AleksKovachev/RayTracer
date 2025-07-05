@@ -20,8 +20,10 @@ void PreparedMesh::PrepMesh( const Mesh& mesh, const ColorMode& colorMode ) {
             vertices[triangles[triIdx + 1]],
             vertices[triangles[triIdx + 2]] );
 
-        if ( colorMode == ColorMode::RandomMeshColor )
+        if ( colorMode == ColorMode::RandomMeshColor ) {
             m_triangles[m_triangles.size() - 1].color = mesh.albedo;
+            m_albedo = mesh.albedo;
+        }
         else if ( colorMode == ColorMode::RandomTriangleColor )
             m_triangles[m_triangles.size() - 1].color = getRandomColor();
     }

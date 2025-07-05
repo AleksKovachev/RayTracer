@@ -20,7 +20,7 @@ std::vector<PreparedMesh> calculateMeshes( const std::vector<Mesh>& meshes, cons
 
     for ( const Mesh& mesh : meshes ) {
         outGeometry.emplace_back();
-        outGeometry[counter++].PrepMesh( mesh, ColorMode::RandomMeshColor );
+        outGeometry[counter++].PrepMesh( mesh, ColorMode::RandomTriangleColor );
 
         // readyMesh.m_albedo = getRandomColor();
     }

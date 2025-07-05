@@ -7,13 +7,15 @@
 #include "rapidjson/document.h"
 
 #include "Camera.h"
-#include "Lights.h"
-#include "Mesh.h"
-#include "RenderSettings.h"
+#include "Lights.h" // Light
+#include "Mesh.h" // Mesh
+#include "RenderSettings.h" // Settings, RenderMode
 
 
 class Scene {
 public:
+	RenderMode renderMode;
+
 	Scene( const std::string& sceneFileName );
 
 	~Scene();

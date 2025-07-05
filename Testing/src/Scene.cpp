@@ -16,7 +16,7 @@ std::vector<int> loadMeshTris( const rapidjson::Value::ConstArray& arr );
 
 
 Scene::Scene( const std::string& sceneFileName )
-	: m_fileName { sceneFileName } {
+	: m_fileName{ sceneFileName }, renderMode{ RenderMode::ShadedSmooth } {
 	std::filesystem::path path( m_fileName );
 	m_settings.saveName = path.stem().string();
 }

@@ -1,5 +1,5 @@
 #include "Camera.h"
-#include "Lights.h" // Light
+#include "Lights.h" // Light, PointLight
 #include "Scene.h" // Scene
 #include "SpaceConversions.h" // ray2NDC, NDC2ScreenSpace, getFixedAspectRatio
 #include "utils.h" // isGreaterEqualThan
@@ -222,15 +222,31 @@ Color Camera::GetTriangleIntersection(
             FVector3 intersectionPt = m_position + (ray * rayPointDist);
 
             // Ignore intersection if a closer one to the Camera has already been found
-            if ( rayPointDist > closestIntersectionP )
+            if ( rayPointDist > closestIntersectionP || isLessEqualThan( rayPointDist, 0.f ) )
                 continue;
 
             if ( triangle.IsPointInside( intersectionPt ) ) {
                 closestIntersectionP = rayPointDist;
-                //pixelColor = triangle.color;
-                IntersectionData intersectionData( meshes, mesh, scene, intersectionPt );
 
-                pixelColor = shade( intersectionData, triangle );
+                if ( scene.renderMode == RenderMode::ObjectColor ) {
+                    pixelColor = triangle.color;
+                    continue;
+                }
+                FVector3 v0p = intersectionPt - triangle.GetVert( 0 );
+                FVector3 v0v2 = triangle.GetVert( 2 ) - triangle.GetVert( 0 );
+                FVector3 v0v1 = triangle.GetVert( 1 ) - triangle.GetVert( 0 );
+                float U = (v0p * v0v2).GetLength() / ( triangle.GetArea() * 2 );
+                float V = (v0v1 * v0p).GetLength() / ( triangle.GetArea() * 2 );
+
+                if ( scene.renderMode == RenderMode::Barycentric ) {
+                    pixelColor = { U, V, 0.f }; // Display Barycentric Coordinates
+                    continue;
+                }
+
+                if ( scene.renderMode == RenderMode::ShadedSmooth ) {
+                    IntersectionData intersectionData( meshes, mesh, scene, intersectionPt );
+                    pixelColor = shade( intersectionData, triangle );
+                }
             }
         }
     }

@@ -11,14 +11,23 @@ void Triangle::init( const FVector3& v0, const FVector3& v1, const FVector3& v2 
     edges[1] = v2 - v1;
     edges[2] = v0 - v2;
     CalculateNormal();
+    CalculateArea();
 }
 
 FVector3 Triangle::GetNormal() const {
     return normal;
 }
 
+float Triangle::GetArea() const {
+    return area;
+}
+
 void Triangle::CalculateNormal() {
     normal = (edges[0] * (verts[2] - verts[0])).normalize();
+}
+
+void Triangle::CalculateArea() {
+    area = (edges[0] * edges[1]).GetLength() / 2.f;
 }
 
 FVector3 Triangle::GetVert( const int vertIdx ) const {
