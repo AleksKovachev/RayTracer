@@ -87,31 +87,41 @@ Color shade( const IntersectionData& intersectionData, const Triangle& triangle 
     float R{};
     float G{};
     float B{};
-    float falloff{};
     Color pixelColor{};
 
     for ( const Light* light : intersectionData.scene.GetLights() ) {
         //! If Scene lights get more types, replace static_cast with dynamic to check light type.
         const PointLight* ptLight = static_cast<const PointLight*>(light);
+
+        // Compute Light Direction
         FVector3 lightDir = ptLight->GetPosition() - intersectionData.intersectionPt;
+
+        // Compute distance from intersection point to light source (sphere radius)
+        float lightDirLen = lightDir.GetLength();
+
+        // Normalize vector
+        lightDir.NormalizeInPlace();
+
+        // Avoid 0-division after falloff calculation
+        if ( areEqual( lightDirLen, 0.f ) )
+            continue;
+
+        // Negative numbers are 0 in color. Positive numbers above 1 are clipped
+        // Calculate the Cosine Law
+        float cosLaw = std::max( 0.f, lightDir.Dot( triangle.GetNormal() ) );
+        if ( areEqual(cosLaw, 0.f) )
+            continue;
+
+        // Compute sphere area
+        float falloff = 4 * static_cast<float>( std::numbers::pi ) * lightDirLen * lightDirLen;
 
         // If there's something on the way to the light - leave the color as is and continue
         if ( Camera::IsInShadow(lightDir, intersectionData, triangle.GetNormal() ) )
             continue;
 
-        float lightDirLen = lightDir.GetLength();
-        // Avoid 0-division after falloff calculation
-        if ( areEqual( lightDirLen, 0.f ) )
-            continue;
-
-        lightDir.NormalizeInPlace();
-        // Negative numbers are 0 in color. Positive numbers above 1 are clipped
-        float cosLaw = std::max( 0.f, lightDir.Dot( triangle.GetNormal() ) );
-        if ( areEqual(cosLaw, 0.f) )
-            continue;
-
-        falloff = 4 * static_cast<float>( std::numbers::pi ) * lightDirLen * lightDirLen;
+        // Cibsuder light Intensity and falloff in the value
         cosLaw *= ptLight->GetIntensity() / falloff;
+
         //! Clamp here to make 1.0 the max intensity!
         // cosLaw = std::min( 1.f, cosLaw );
 
@@ -139,19 +149,21 @@ Color shade( const IntersectionData& intersectionData, const Triangle& triangle 
 
 //TODO: Check why removing the epsilon results in complete darkness instead of broken lighting. Ask!!!
 //TODO: Check if the rayPointDist < shadowBias... row is correct
-bool Camera::IsInShadow( const FVector3& rayDir, const IntersectionData& data, const FVector3& triN ) {
-    // Define a small epsilon to avoid self-intersection artifacts
-    // Often 1e-3 - 1e-5 is used for ray origins.
-    constexpr float shadowBias{ 1e-4f }; // Smaller value if scene scale is tiny
+bool Camera::IsInShadow( const FVector3& lightDir, const IntersectionData& data, const FVector3& triN ) {
+    //? Put as scene setting?
+    /* Define a small epsilon to avoid self - intersection artifacts
+     * Often 1e-3 - 1e-5 is used for ray origins.
+     * Smaller value if scene scale is tiny */
+    constexpr float shadowBias{ 1e-4f };
 
     /* Offset the hitPoint slightly along the normal to avoid self - intersection
      * Another common technique is to check rayPointDist > EPSILON */
-    const FVector3 offsetHitPoint{ data.intersectionPt + triN * shadowBias };
+    const FVector3 offsetHitPoint{ data.intersectionPt + ( triN * shadowBias ) };
 
     for ( const PreparedMesh& mesh : data.meshes ) {
         for ( const Triangle& triangle : mesh.m_triangles ) {
             // If Ray is parallel - Ignore, it can't be hit.
-            float rayProj = rayDir.Dot( triangle.GetNormal() );
+            float rayProj = lightDir.Dot( triangle.GetNormal() );
             if ( areEqual( rayProj, 0.f ) )
                 continue;
 
@@ -164,12 +176,11 @@ bool Camera::IsInShadow( const FVector3& rayDir, const IntersectionData& data, c
             /* Check if: Ray hits behind the hitPoint(negative rayPointDist)
              *           Ray hits at or very near the hitPoint (self-intersection)
              *           Ray hits beyond the light source */
-
             if ( rayPointDist < shadowBias )
                 continue; // This intersection is not valid for shadow casting
 
             // Ray parametric equation - represent points on a line going through a Ray.
-            FVector3 intersectionPt = offsetHitPoint + (rayDir * rayPointDist);
+            FVector3 intersectionPt = offsetHitPoint + (lightDir * rayPointDist);
 
             if ( triangle.IsPointInside( intersectionPt ) )
                 return true;
