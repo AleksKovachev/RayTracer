@@ -57,6 +57,11 @@ void Scene::SetColorMode( const ColorMode colorMode ) {
 	m_settings.colorMode = colorMode;
 }
 
+void Scene::SetRenderResolution( const int width, const int height ) {
+	m_settings.renderWidth = width;
+	m_settings.renderHeight = height;
+}
+
 
 void Scene::ParseSettingsTag(const rapidjson::Document& doc) {
 	// JSON Tags to look for

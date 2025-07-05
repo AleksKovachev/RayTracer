@@ -28,6 +28,7 @@ public:
 
 	void SetSaveFileName( const std::string& saveName );
 	void SetColorMode( const ColorMode colorMode );
+	void SetRenderResolution( const int width, const int height );
 
 private:
 	std::string m_fileName;

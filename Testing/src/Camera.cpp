@@ -96,7 +96,7 @@ Color shade( const IntersectionData& intersectionData, const Triangle& triangle 
         FVector3 lightDir = ptLight->GetPosition() - intersectionData.intersectionPt;
 
         // If there's something on the way to the light - leave the color as is and continue
-        if ( Camera::IsInShadow(lightDir, intersectionData ) )
+        if ( Camera::IsInShadow(lightDir, intersectionData, triangle.GetNormal() ) )
             continue;
 
         float lightDirLen = lightDir.GetLength();
@@ -134,23 +134,19 @@ Color shade( const IntersectionData& intersectionData, const Triangle& triangle 
     pixelColor.g = static_cast<int>(round( std::min( 1.f, G ) * maxComp ));
     pixelColor.b = static_cast<int>(round( std::min( 1.f, B ) * maxComp ));
 
-
-
     return pixelColor;
 }
 
 //TODO: Check why removing the epsilon results in complete darkness instead of broken lighting. Ask!!!
-bool Camera::IsInShadow( const FVector3& rayDir, const IntersectionData& data ) {
-    const FVector3& origin{ data.intersectionPt };
-
+//TODO: Check if the rayPointDist < shadowBias... row is correct
+bool Camera::IsInShadow( const FVector3& rayDir, const IntersectionData& data, const FVector3& triN ) {
     // Define a small epsilon to avoid self-intersection artifacts
     // Often 1e-3 - 1e-5 is used for ray origins.
-    constexpr float offset{ 1e-4f }; // Smaller value if scene scale is tiny
+    constexpr float shadowBias{ 1e-4f }; // Smaller value if scene scale is tiny
 
-    /* Offset the origin slightly along the normal to avoid self - intersection
-     * FVector3 offsetOrigin{ origin + data.normal * offset };
-     * Another common technique is to check rayPointDist > EPSILON, which is used
-     * here for simplicity. */
+    /* Offset the hitPoint slightly along the normal to avoid self - intersection
+     * Another common technique is to check rayPointDist > EPSILON */
+    const FVector3 offsetHitPoint{ data.intersectionPt + triN * shadowBias };
 
     for ( const PreparedMesh& mesh : data.meshes ) {
         for ( const Triangle& triangle : mesh.m_triangles ) {
@@ -159,20 +155,21 @@ bool Camera::IsInShadow( const FVector3& rayDir, const IntersectionData& data ) 
             if ( areEqual( rayProj, 0.f ) )
                 continue;
 
-            // If rayProj > 0, ray is pointing towards from triangle back face.
+            // If rayProj > 0, ray is pointing towards triangle back face.
             // If rayProj < 0, ray is pointing towards triangle front face.
 
-            float rayPlaneDist = (triangle.GetVert( 0 ) - origin).Dot( triangle.GetNormal() );
+            float rayPlaneDist = (triangle.GetVert( 0 ) - offsetHitPoint).Dot( triangle.GetNormal() );
             float rayPointDist = rayPlaneDist / rayProj; // Ray-to-Point scale factor
 
-            /* Check if: Ray hits behind the origin(negative rayPointDist)
-             *           Ray hits at or very near the origin (self-intersection)
+            /* Check if: Ray hits behind the hitPoint(negative rayPointDist)
+             *           Ray hits at or very near the hitPoint (self-intersection)
              *           Ray hits beyond the light source */
-            if ( rayPointDist < offset || rayPointDist >= origin.GetLength() - offset )
+
+            if ( rayPointDist < shadowBias || rayPointDist >= rayDir.GetLength() - shadowBias )
                 continue; // This intersection is not valid for shadow casting
 
             // Ray parametric equation - represent points on a line going through a Ray.
-            FVector3 intersectionPt = origin + (rayDir * rayPointDist);
+            FVector3 intersectionPt = offsetHitPoint + (rayDir * rayPointDist);
 
             if ( triangle.IsPointInside( intersectionPt ) )
                 return true;
@@ -188,56 +185,44 @@ Color Camera::GetTriangleIntersection(
     const Scene& scene
 ) const {
     Color pixelColor{ scene.GetSettings().BGColor };
-    int colorCounter{};
     float closestIntersectionP{ std::numeric_limits<float>::max() };
 
     for ( const auto& mesh : meshes ) {
 
         for ( const Triangle& triangle : mesh.m_triangles ) {
-            // If Ray is parallel - Ignore, it can't be hit. Use >= to ignore back-face.
+            // rayProj = 0 -> Ray is parallel to surface - Ignore, it can't hit.
+            // rayProj > 0 -> back-face
+            // rayProj < 0 -> front-face
             float rayProj = ray.Dot( triangle.GetNormal() );
-            if ( areEqual( rayProj, 0.f ) )
+            if ( isGreaterEqualThan( rayProj, 0.f ) ) // Ignore back-face
                 continue;
 
             float rayPlaneDist = (triangle.GetVert( 0 ) - m_position)
                 .Dot( triangle.GetNormal() );
 
-            //! Skip backface check so backface triangles can cast shadows
             // Ray is not towards Triangle's plane
-            //if ( isGreaterEqualThan( rayPlaneDist, 0.f ) )
-            //    continue; // rayPlaneDist > 0 -> Back-face culling
+            if ( isGreaterEqualThan( rayPlaneDist, 0.f ) )
+                continue;
 
-            /* Check if rayPlaneDist direction is needed or length
-            * abs(rayPlaneDist) should be multiplied by Ray length, but is
-            * ommited as Rays are unit Vectors so their length is always 1 */
-            float rayPointDist = rayPlaneDist / rayProj; // Ray-to-Point scale factor
-            //? Creates floating triangles if parallel check is ==, ray-towards-tri is >=.
-            //? float rayPointDist = abs( rayPlaneDist ) / abs( rayProj );
+            // Ray-to-Point scale factor for unit vector to reach the Point
+            float rayPointDist = rayPlaneDist / rayProj;
 
             // Ray parametric equation - represent points on a line going through a Ray.
             FVector3 intersectionPt = m_position + (ray * rayPointDist);
-            float intersectionPLen = intersectionPt.GetLength();
 
             // Ignore intersection if a closer one to the Camera has already been found
-            if ( intersectionPLen > closestIntersectionP )
+            if ( rayPointDist > closestIntersectionP )
                 continue;
 
             if ( triangle.IsPointInside( intersectionPt ) ) {
-                closestIntersectionP = intersectionPLen;
+                closestIntersectionP = rayPointDist;
                 //pixelColor = triangle.color;
                 IntersectionData intersectionData( meshes, mesh, scene, intersectionPt );
 
-                Color shadedColor = shade( intersectionData, triangle );
-                if ( colorCounter == 0 )
-                    pixelColor = shadedColor;
-                else
-                    pixelColor += shadedColor;
-                colorCounter++;
+                pixelColor = shade( intersectionData, triangle );
             }
         }
     }
-
-    pixelColor = (colorCounter > 0) ? pixelColor / colorCounter : pixelColor;
 
     return pixelColor;
 }
