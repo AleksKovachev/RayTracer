@@ -1,17 +1,27 @@
-#include "Bases.h" // Color
 #include "Camera.h"
 #include "Lights.h" // Light
 #include "Scene.h" // Scene
 #include "SpaceConversions.h" // ray2NDC, NDC2ScreenSpace, getFixedAspectRatio
-#include "Triangle.h"
 #include "utils.h" // isGreaterEqualThan
-#include "Vectors.h" // FVector3
 
-#include <algorithm>
-#include <cmath>
-#include <numbers>
-#include <numeric>
+#include <algorithm> // round
+#include <limits> // numeric_limits<float>::max
+#include <numbers> // pi
+#include <numeric> // gcd
 #include <vector>
+
+Camera::Camera( ImagePlane imgPlane, FVector3 direction, FVector3 pos ) {
+    init();
+}
+
+Camera::~Camera() {
+    for ( Obj* obj : m_children )
+        delete obj;
+}
+
+FVector3 Camera::GetLocation() const {
+    return m_position;
+};
 
 //? Currently is moving relatively? Check!!! Fix MoveRel if needed - moveAbs.
 void Camera::Move( const FVector3& relPos ) {
@@ -30,14 +40,9 @@ void Camera::Move( const FVector3& relPos ) {
 }
 
 void Camera::init() {
-    int gcd = std::gcd( static_cast<int>(m_imgPlane.resolution.x), static_cast<int>(m_imgPlane.resolution.y) );
+    int gcd = std::gcd( static_cast<int>(m_imgPlane.resolution.x),
+        static_cast<int>(m_imgPlane.resolution.y) );
     m_aspectRatio = { m_imgPlane.resolution.x / gcd, m_imgPlane.resolution.y / gcd };
-}
-
-void Camera::MoveAbs( const FVector3& absPos ) {
-    m_position = absPos;
-
-    // TODO Handle children movement
 }
 
 FVector3 Camera::GenerateRay( const int x, const int y ) const {
@@ -78,60 +83,108 @@ void Camera::RotateAroundPoint( const FVector3& dist, const FVector3& angle ) {
     Move( dist );
 }
 
-Color shade( const Scene& scene, const FVector3& intersectionPt, const FVector3& triNormal, const Mesh& mesh ) {
+Color shade( const IntersectionData& intersectionData, const Triangle& triangle ) {
     float R{};
     float G{};
     float B{};
     float falloff{};
-    int lightsCounter{};
     Color pixelColor{};
 
-    for ( const Light* light : scene.GetLights() ) {
+    for ( const Light* light : intersectionData.scene.GetLights() ) {
+        //! If Scene lights get more types, replace static_cast with dynamic to check light type.
         const PointLight* ptLight = static_cast<const PointLight*>(light);
+        FVector3 lightDir = ptLight->GetPosition() - intersectionData.intersectionPt;
 
-        FVector3 lightDir = ptLight->GetPosition() - intersectionPt;
+        // If there's something on the way to the light - leave the color as is and continue
+        if ( Camera::IsInShadow(lightDir, intersectionData ) )
+            continue;
+
         float lightDirLen = lightDir.GetLength();
+        // Avoid 0-division after falloff calculation
+        if ( areEqual( lightDirLen, 0.f ) )
+            continue;
+
         lightDir.NormalizeInPlace();
         // Negative numbers are 0 in color. Positive numbers above 1 are clipped
-        float cosLaw =  std::max( 0.f, lightDir.Dot( triNormal ) );
-        falloff += 4 * static_cast<float>( std::numbers::pi ) * lightDirLen * lightDirLen;
+        float cosLaw = std::max( 0.f, lightDir.Dot( triangle.GetNormal() ) );
+        if ( areEqual(cosLaw, 0.f) )
+            continue;
+
+        falloff = 4 * static_cast<float>( std::numbers::pi ) * lightDirLen * lightDirLen;
         cosLaw *= ptLight->GetIntensity() / falloff;
         //! Clamp here to make 1.0 the max intensity!
         // cosLaw = std::min( 1.f, cosLaw );
 
         R += cosLaw;
-
-        lightsCounter++;
     }
 
-    if ( lightsCounter == 0 )
-        return { 0.f, 0.f, 0.f };
+    if ( areEqual( R, 0.f ) )
+        return Colors::Black;
 
-    R /= lightsCounter;
     G = B = R;
 
     // multiply by normalized albedo
-    const int& maxComp = scene.GetSettings().maxColorComp;
-    R *= static_cast<float>(mesh.albedo.r) / maxComp;
-    G *= static_cast<float>(mesh.albedo.g) / maxComp;
-    B *= static_cast<float>(mesh.albedo.b) / maxComp;
+    const int& maxComp = intersectionData.scene.GetSettings().maxColorComp;
+    R *= static_cast<float>(triangle.color.r) / maxComp;
+    G *= static_cast<float>(triangle.color.g) / maxComp;
+    B *= static_cast<float>(triangle.color.b) / maxComp;
 
     //! Clamp here to make everything > 1.0 clip back to 1.0!
-    pixelColor.r = static_cast<int>(round( R * maxComp ));
-    pixelColor.g = static_cast<int>(round( G * maxComp ));
-    pixelColor.b = static_cast<int>(round( B * maxComp ));
-    pixelColor.Clamp();
+    pixelColor.r = static_cast<int>(round( std::min( 1.f, R ) * maxComp ));
+    pixelColor.g = static_cast<int>(round( std::min( 1.f, G ) * maxComp ));
+    pixelColor.b = static_cast<int>(round( std::min( 1.f, B ) * maxComp ));
 
-    //!? Keep colors as if light was 1.0. Remove Clamp to use.
-    //pixelColor.ConvertToRange( static_cast<unsigned>( log2( maxComp + 1 ) ) );
+
 
     return pixelColor;
+}
+
+//TODO: Check why removing the epsilon results in complete darkness instead of broken lighting. Ask!!!
+bool Camera::IsInShadow( const FVector3& rayDir, const IntersectionData& data ) {
+    const FVector3& origin{ data.intersectionPt };
+
+    // Define a small epsilon to avoid self-intersection artifacts
+    // Often 1e-3 - 1e-5 is used for ray origins.
+    constexpr float offset{ 1e-4f }; // Smaller value if scene scale is tiny
+
+    /* Offset the origin slightly along the normal to avoid self - intersection
+     * FVector3 offsetOrigin{ origin + data.normal * offset };
+     * Another common technique is to check rayPointDist > EPSILON, which is used
+     * here for simplicity. */
+
+    for ( const PreparedMesh& mesh : data.meshes ) {
+        for ( const Triangle& triangle : mesh.m_triangles ) {
+            // If Ray is parallel - Ignore, it can't be hit.
+            float rayProj = rayDir.Dot( triangle.GetNormal() );
+            if ( areEqual( rayProj, 0.f ) )
+                continue;
+
+            // If rayProj > 0, ray is pointing towards from triangle back face.
+            // If rayProj < 0, ray is pointing towards triangle front face.
+
+            float rayPlaneDist = (triangle.GetVert( 0 ) - origin).Dot( triangle.GetNormal() );
+            float rayPointDist = rayPlaneDist / rayProj; // Ray-to-Point scale factor
+
+            /* Check if: Ray hits behind the origin(negative rayPointDist)
+             *           Ray hits at or very near the origin (self-intersection)
+             *           Ray hits beyond the light source */
+            if ( rayPointDist < offset || rayPointDist >= origin.GetLength() - offset )
+                continue; // This intersection is not valid for shadow casting
+
+            // Ray parametric equation - represent points on a line going through a Ray.
+            FVector3 intersectionPt = origin + (rayDir * rayPointDist);
+
+            if ( triangle.IsPointInside( intersectionPt ) )
+                return true;
+        }
+    }
+    return false;
 }
 
 
 Color Camera::GetTriangleIntersection(
     const FVector3& ray,
-    const MeshInfo& meshes,
+    const std::vector<PreparedMesh>& meshes,
     const Scene& scene
 ) const {
     Color pixelColor{ scene.GetSettings().BGColor };
@@ -140,13 +193,14 @@ Color Camera::GetTriangleIntersection(
 
     for ( const auto& mesh : meshes ) {
 
-        for ( const Triangle& triangle : mesh.second ) {
-            // Ignore if Ray is parallel or hits triangle back.
+        for ( const Triangle& triangle : mesh.m_triangles ) {
+            // If Ray is parallel - Ignore, it can't be hit. Use >= to ignore back-face.
             float rayProj = ray.Dot( triangle.GetNormal() );
             if ( areEqual( rayProj, 0.f ) )
                 continue;
 
-            float rayPlaneDist = (triangle.GetVert( 0 ) - m_position).Dot( triangle.GetNormal() );
+            float rayPlaneDist = (triangle.GetVert( 0 ) - m_position)
+                .Dot( triangle.GetNormal() );
 
             //! Skip backface check so backface triangles can cast shadows
             // Ray is not towards Triangle's plane
@@ -171,7 +225,9 @@ Color Camera::GetTriangleIntersection(
             if ( triangle.IsPointInside( intersectionPt ) ) {
                 closestIntersectionP = intersectionPLen;
                 //pixelColor = triangle.color;
-                Color shadedColor = shade( scene, intersectionPt, triangle.GetNormal(), *mesh.first );
+                IntersectionData intersectionData( meshes, mesh, scene, intersectionPt );
+
+                Color shadedColor = shade( intersectionData, triangle );
                 if ( colorCounter == 0 )
                     pixelColor = shadedColor;
                 else
@@ -184,4 +240,9 @@ Color Camera::GetTriangleIntersection(
     pixelColor = (colorCounter > 0) ? pixelColor / colorCounter : pixelColor;
 
     return pixelColor;
+}
+
+ImagePlane::ImagePlane( int width, int height, float distFromCamera )
+    : resolution{ static_cast<float>(width), static_cast<float>(height) },
+    distanceFromCamera{ distFromCamera } {
 }

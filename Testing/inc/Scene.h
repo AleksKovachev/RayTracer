@@ -6,29 +6,10 @@
 
 #include "rapidjson/document.h"
 
-#include "Bases.h"   // Color
 #include "Camera.h"
 #include "Lights.h"
+#include "Mesh.h"
 #include "RenderSettings.h"
-#include "Vectors.h" // FVector3
-
-
-// TODO: Inherit Obj and Movement/Rotation capabilities
-// Collection of triangles representing a 3D object
-class Mesh {
-public:
-	Color albedo;
-
-	Mesh( const std::vector<FVector3>& verts, const std::vector<int>& triangles )
-		: vertices{ verts }, triangles{ triangles }, albedo{ 255, 0, 0 } {
-	}
-
-	std::vector<FVector3> GetVertices() const { return vertices; }
-	std::vector<int> GetTriangles() const { return triangles; }
-private:
-	std::vector<FVector3> vertices; // 3D coordinates for the whole mesh
-	std::vector<int> triangles; // Each triple of vertices form a triangle
-};
 
 
 class Scene {
@@ -61,5 +42,6 @@ private:
 	void ParseObjectsTag( const rapidjson::Document& );
 	void ParseLightsTag( const rapidjson::Document& );
 };
+
 
 #endif // SCENE_H

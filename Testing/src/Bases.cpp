@@ -1,7 +1,8 @@
-#include "Bases.h" // Obj, Matrix3, Color
+#include "Bases.h"
 #include "utils.h" // areEqual
 
-#include <cmath>
+#include <cmath> // sinf, cosf
+#include <numbers> // pi
 
 // Multiplication with a Matrix3, assuming this is a column-major vector
 FVector3 operator*( const FVector3& vec, const Matrix3& mat ) {
@@ -53,6 +54,19 @@ Matrix3& Matrix3::operator*=( const Matrix3& other ) {
     return *this;
 }
 
+Obj::Obj() : m_position{ 0.f, 0.f, 0.f }, m_rotation{ 0.f, 0.f, 0.f } {}
+
+Obj::Obj( FVector3 pos ) : m_position{ pos }, m_rotation{ 0.f, 0.f, 0.f } {}
+
+FVector3 Obj::ApplyRotation( const FVector3& direction ) const {
+    return direction * m_orientation;
+}
+
+void Obj::Move( const FVector3& pos ) {
+    const FVector3 moveDirInWorldSpace{ pos * m_orientation };
+    m_position += moveDirInWorldSpace;
+}
+
 void Obj::Rotate( const FVector3& vec ) {
     bool assigned{ false };
 
@@ -99,6 +113,10 @@ void Obj::Rotate( const float x, const float y, const float z ) {
     }
 }
 
+FVector3 Obj::GetForwardVector() const {
+    return ApplyRotation( { 0, 0, -1 } );
+}
+
 Matrix3 Obj::GetXRotMatrix( const float deg ) const {
     const float rad{ static_cast<float>(deg * (std::numbers::pi / 180.f)) };
     float cosR{ cosf( rad ) };
@@ -124,86 +142,4 @@ Matrix3 Obj::GetZRotMatrix( const float deg ) const {
     return { {{cosR, sinR, 0.f},
              {-sinR, cosR, 0.f},
              {0.f, 0.f, 1.f}} };
-}
-
-Color::Color( float in_r, float in_g, float in_b )
-    : r{ static_cast<int>(round(in_r * 255.f)) },
-    g{ static_cast<int>(round( in_g * 255.f)) },
-    b{ static_cast<int>(round(in_b * 255.f)) } {
-}
-
-void Color::ConvertToRange( const unsigned colorDepth ) {
-    if ( 0 <= r && r <= 255 && 0 <= g && g <= 255 && 0 <= b && b <= 255 )
-        return; // No need to do anything
-
-    // Get max color component
-    int maxColor{ r };
-    if ( g > maxColor )
-        maxColor = g;
-    if ( b > maxColor )
-        maxColor = b;
-
-    float R = static_cast<float>(r) / maxColor;
-    float G = static_cast<float>(g) / maxColor;
-    float B = static_cast<float>(b) / maxColor;
-
-    r = static_cast<int>(round( R * static_cast<float>((1 << colorDepth) - 1) ));
-    g = static_cast<int>(round( G * static_cast<float>((1 << colorDepth) - 1) ));
-    b = static_cast<int>(round( B * static_cast<float>((1 << colorDepth) - 1) ));
-}
-
-void Color::Clamp( const unsigned colorDepth ) {
-    int maxComp = (1 << colorDepth) - 1;
-    r = (r > maxComp) ? maxComp : r;
-    g = (g > maxComp) ? maxComp : g;
-    b = (b > maxComp) ? maxComp : b;
-}
-
-Color& Color::operator=( const Color& other ) {
-    r = other.r;
-    g = other.g;
-    b = other.b;
-    return *this;
-}
-
-Color Color::operator/( const int val ) {
-    return { static_cast<int>(roundf( static_cast<float>(r) / val )),
-        static_cast<int>(roundf( static_cast<float>(g) / val )),
-            static_cast<int>(roundf( static_cast<float>(b) / val )) };
-}
-
-Color& Color::operator+=( const Color& other ) {
-    r += other.r;
-    g += other.g;
-    b += other.b;
-    return *this;
-}
-
-Color& Color::operator*=( const Color& other ) {
-    r *= other.r;
-    g *= other.g;
-    b *= other.b;
-    return *this;
-}
-
-Color& Color::operator/=( const int val ) {
-    if ( val == 0 ) {
-        std::cerr << "Value cannot be 0. Division by 0 error!\n";
-        std::exit( 1 );
-    }
-
-    r = static_cast<int>(roundf( static_cast<float>(r) / val ));
-    g = static_cast<int>(roundf( static_cast<float>(g) / val ));
-    b = static_cast<int>(roundf( static_cast<float>(b) / val ));
-    return *this;
-}
-
-bool Color::operator==( const Color& other ) {
-    return r == other.r && g == other.g && b == other.b;
-}
-
-// Easy printing of a Color (inline prevents linker error as this is in a header)
-inline std::ostream& operator<<( std::ostream& os, const Color& color ) {
-    os << std::setw( 3 ) << color.r << " " << std::setw( 3 ) << color.g << " " << std::setw( 3 ) << color.b;
-    return os;
 }

@@ -5,10 +5,6 @@
 #include <iostream>
 #include <string>
 
-template <typename T>
-float normalize( T val, T max ) {
-    return static_cast<float>(val) / max;
-}
 
 int getInt( const int min, const int max ) {
     std::random_device seed;

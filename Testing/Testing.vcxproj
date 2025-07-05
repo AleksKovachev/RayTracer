@@ -152,6 +152,7 @@ echo ===========================================================================
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>../Test2;inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <ShowIncludes>false</ShowIncludes>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -162,9 +163,11 @@ echo ===========================================================================
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Bases.cpp" />
+    <ClCompile Include="src\Colors.cpp" />
     <ClCompile Include="src\DebugObjects.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Camera.cpp" />
+    <ClCompile Include="src\Mesh.cpp" />
     <ClCompile Include="src\Render.cpp" />
     <ClCompile Include="src\RenderSettings.cpp" />
     <ClCompile Include="src\Scene.cpp" />
@@ -181,14 +184,15 @@ echo ===========================================================================
   <ItemGroup>
     <ClInclude Include="inc\Bases.h" />
     <ClInclude Include="inc\Camera.h" />
+    <ClInclude Include="inc\Colors.h" />
     <ClInclude Include="inc\Lights.h" />
+    <ClInclude Include="inc\Mesh.h" />
     <ClInclude Include="inc\Render.h" />
     <ClInclude Include="inc\RenderSettings.h" />
     <ClInclude Include="inc\Scene.h" />
     <ClInclude Include="inc\DebugObjects.h" />
     <ClInclude Include="inc\Triangle.h" />
     <ClInclude Include="inc\SpaceConversions.h" />
-    <ClInclude Include="inc\Types.h" />
     <ClInclude Include="inc\utils.h" />
     <ClInclude Include="inc\Vectors.h" />
   </ItemGroup>

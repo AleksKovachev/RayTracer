@@ -50,9 +50,9 @@ int main() {
     //params.camera.Tilt( 15 );
     //params.camera.RotateAroundPoint( {0, 0, -3}, {0, 45, 0});
 
-    //Scene scene( "./rsc/scene1.crtscene" );
+    Scene scene( "./rsc/scene3.crtscene" );
     //Scene scene( "./rsc/OverlappingTriangles.crtscene" );
-    Scene scene( "./rsc/Pyramid.crtscene" );
+    //Scene scene( "./rsc/Pyramid.crtscene" );
     scene.ParseSceneFile();
     render( scene );
     //renderCameraMoveAnimation( scene, { 0.f, 1.f, 5.f }, { 0.2f, 0.f, 0.f }, 10 );

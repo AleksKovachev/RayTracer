@@ -3,9 +3,12 @@
 
 #include <string>
 
-#include "Bases.h" // Color
+#include "Mesh.h" // PreparedMesh
 
 enum class ColorMode;
+struct Color;
+class Scene;
+class FVector3;
 
 // Global scene settings
 struct Settings {
@@ -21,11 +24,24 @@ struct Settings {
 };
 
 
-enum class ColorMode {
-	RandomMeshColor,
-	RandomTriangleColor
-};
+// A Structure that holds data crucial for rendering
+struct IntersectionData {
+	IntersectionData(
+		const std::vector<PreparedMesh>& meshes,
+		const PreparedMesh& currentMesh,
+		const Scene& scene,
+		const FVector3& intersectionPt
+	) : meshes{ meshes },
+		currentMesh{ currentMesh },
+		scene{ scene },
+		intersectionPt{ intersectionPt } {
+	}
 
+	const std::vector<PreparedMesh>& meshes;
+	const PreparedMesh& currentMesh;
+	const Scene& scene;
+	const FVector3& intersectionPt;
+};
 
 
 #endif // RENDER_SETTINGS_H

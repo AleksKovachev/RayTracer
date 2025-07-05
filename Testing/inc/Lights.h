@@ -1,7 +1,7 @@
 #ifndef LIGHTS_H
 #define LIGHTS_H
 
-#include "Vectors.h"
+#include "Vectors.h" // FVector3
 
 class Light {
 public:

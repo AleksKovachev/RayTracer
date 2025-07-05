@@ -1,11 +1,12 @@
-#include "Bases.h" // Color
 #include "Camera.h"
-#include "Render.h"
-#include "Scene.h" // Scene, Mesh
+#include "Colors.h" // Color
 #include "DebugObjects.h" // getGround
+#include "Mesh.h" // PreparedMesh
+#include "Render.h"
+#include "RenderSettings.h" // RenderData
+#include "Scene.h" // Scene, Mesh
 #include "Triangle.h"
-#include "Types.h" // MeshInfo
-#include "utils.h" // getRandomColor, writeColorToFile
+#include "utils.h" // writeColorToFile
 #include <Vectors.h> // FVector3
 
 #include <filesystem>
@@ -13,32 +14,15 @@
 #include <string>
 
 // TODO: Convert functions to a Render class. Global access to memebrs...
-MeshInfo calculateMeshes( const std::vector<Mesh>& meshes, const ColorMode colorMode ) {
-    MeshInfo outGeometry;
+std::vector<PreparedMesh> calculateMeshes( const std::vector<Mesh>& meshes, const ColorMode colorMode ) {
+    std::vector<PreparedMesh> outGeometry;
+    unsigned counter{};
 
     for ( const Mesh& mesh : meshes ) {
-        outGeometry.insert( { &mesh, std::vector<Triangle>() } );
-        const std::vector<FVector3>& vertices = mesh.GetVertices();
-        size_t vertSize = vertices.size();
-        const std::vector<int>& triangles = mesh.GetTriangles();
-        for ( size_t triIdx{}; triIdx + 2 < triangles.size(); triIdx += 3 ) {
-            // Skip a triangle if it requires a vertex with an invalid index
-            bool idx1ok = triangles[triIdx] > vertSize || triangles[triIdx] < 0;
-            bool idx2ok = triangles[triIdx + 1] > vertSize || triangles[triIdx + 1] < 0;
-            bool idx3ok = triangles[triIdx + 2] > vertSize || triangles[triIdx + 2] < 0;
-            if ( idx1ok || idx2ok || idx3ok )
-                continue;
+        outGeometry.emplace_back();
+        outGeometry[counter++].PrepMesh( mesh, ColorMode::RandomMeshColor );
 
-            std::vector<Triangle>& meshTriangles = outGeometry[&mesh];
-            meshTriangles.emplace_back(vertices[triangles[triIdx]],
-                vertices[triangles[triIdx + 1]],
-                vertices[triangles[triIdx + 2]] );
-
-            if ( colorMode == ColorMode::RandomMeshColor )
-                meshTriangles[meshTriangles.size() - 1].color = mesh.albedo;
-            else if ( colorMode == ColorMode::RandomTriangleColor )
-                meshTriangles[meshTriangles.size() - 1].color = getRandomColor();
-        }
+        // readyMesh.m_albedo = getRandomColor();
     }
 
     return outGeometry;
@@ -66,7 +50,8 @@ void render( const Scene& scene, const Camera* overrideCamera, const std::string
     const Camera& camera{ ( overrideCamera == nullptr ? scene.GetCamera() : *overrideCamera ) };
     std::ofstream ppmFileStream = prepareScene( scene, overrideSaveName );
 
-    MeshInfo meshes{ calculateMeshes( scene.GetMeshes(), scene.GetSettings().colorMode ) };
+    std::vector<PreparedMesh> meshes{
+        calculateMeshes( scene.GetMeshes(), scene.GetSettings().colorMode ) };
 
     //!? Add ground for debugging
     //std::vector<Triangle> ground{ getGround() };

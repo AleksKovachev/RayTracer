@@ -1,4 +1,8 @@
 #include "DebugObjects.h"
+#include "Colors.h" // Color
+
+#include "Vectors.h" // FVector3
+
 
 std::vector<Triangle> getGround() {
 	std::vector<Triangle> shape;
