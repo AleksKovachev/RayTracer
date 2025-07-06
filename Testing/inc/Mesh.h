@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Colors.h" // Color, ColorMode
+#include "Materials.h" // Material
 #include "Triangle.h"
 #include "Vectors.h" // FVector3
 
@@ -14,13 +15,18 @@
 class Mesh {
 public:
 	Color albedo;
-	int matIdx;
 
 	Mesh( const std::vector<FVector3>& verts, const std::vector<int>& triangles );
 
 	std::vector<FVector3> GetVertices() const;
 	std::vector<int> GetTriangles() const;
+	Material GetMaterial() const;
+	void SetMaterial( const Material& mat );
+	int GetMaterialIdx() const;
+	void SetMaterialIdx( const int idx );
 private:
+	Material material;
+	int matIdx;
 	std::vector<FVector3> vertices; // 3D coordinates for the whole mesh
 	std::vector<int> triangles; // Each triple of vertices form a triangle
 	std::vector<FVector3> m_faceNormals;
@@ -31,6 +37,7 @@ private:
 struct PreparedMesh {
 	Color m_albedo;
 	int m_matIdx;
+	Material material;
 	std::vector<Triangle> m_triangles;
 
 	void PrepMesh( const Mesh& mesh, const ColorMode& colorMode );

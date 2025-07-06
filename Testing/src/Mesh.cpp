@@ -74,3 +74,23 @@ std::vector<FVector3> Mesh::GetVertices() const {
 std::vector<int> Mesh::GetTriangles() const {
     return triangles;
 }
+
+Material Mesh::GetMaterial() const {
+    return material;
+}
+
+void Mesh::SetMaterial( const Material& mat ) {
+    material = mat;
+}
+
+int Mesh::GetMaterialIdx() const {
+    return matIdx;
+}
+
+void Mesh::SetMaterialIdx( const int idx ) {
+    if ( idx < 0 ) {
+        std::cerr << "Invalid material index! Not assigning: " << idx << "\n";
+        return;
+    }
+    matIdx = idx;
+}

@@ -35,7 +35,38 @@
         }
     ],
 
-	"objects": [{		
+	"materials": [{
+			"type": "diffuse",
+			"albedo": [
+				0.26667, 0.26667, 0.26667
+			],
+			"smooth_shading": false
+        },
+        {
+			"type": "diffuse",
+			"albedo": [
+				0.72549, 0.47843, 0.344117
+			],
+			"smooth_shading": false
+		}	
+	],
+
+	"objects": [{
+			"material_index": 0,		
+			"vertices": [
+				-1.5, -1, -1.5,
+				1.5, -1, -1.5,
+				-1.5, -1, -4.5,
+				1.5, -1, -4.5
+			],
+			
+			"triangles": [
+				0, 1, 2,
+				3, 2, 1
+			]
+		},
+        {
+            "material_index": 1,
 			"vertices": [
 				0, 2.27, -1.07,
 				-0.11, 0.68, 0.81,

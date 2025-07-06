@@ -28,7 +28,6 @@ public:
 	const Camera& GetCamera() const { return m_camera; }
 	const Settings& GetSettings() const { return m_settings; }
 	const std::vector<Light*>& GetLights() const { return m_lights; }
-	const std::vector<Material>& GetMaterials() const { return m_materials; }
 
 	void SetSaveFileName( const std::string& saveName );
 	void SetColorMode( const ColorMode colorMode );
@@ -40,7 +39,6 @@ private:
 	Camera m_camera; // Main scene Camera
 	Settings m_settings; // Global scene settings
 	std::vector<Light*> m_lights;
-	std::vector<Material> m_materials;
 
 private:
 	void ParseSettingsTag( const rapidjson::Document& );

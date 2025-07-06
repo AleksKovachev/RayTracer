@@ -26,7 +26,6 @@ Scene::~Scene() {
 		delete light;
 }
 
-
 void Scene::ParseSceneFile() {
 	std::ifstream ifs( m_fileName );
 	assert( ifs.is_open() );
@@ -125,7 +124,7 @@ void Scene::ParseObjectsTag( const rapidjson::Document& doc ) {
 				loadMeshTris( mesh[t_triangles].GetArray() ) );
 
 			if ( mesh.HasMember( t_matIdx ) && mesh[t_matIdx].IsInt() )
-				m_meshes[i].matIdx = mesh[t_matIdx].GetInt();
+				m_meshes[i].SetMaterialIdx( mesh[t_matIdx].GetInt() );
 		}
 	}
 }
@@ -181,7 +180,7 @@ void Scene::ParseMaterialsTag( const rapidjson::Document& doc ) {
 			mat.albedo = loadVector3<Color>( material[t_albedo].GetArray() );
 			mat.smoothShading = material[t_smShading].GetBool();
 
-			m_materials.push_back( mat );
+			m_meshes[i].SetMaterial(mat);
 		}
 	}
 }
