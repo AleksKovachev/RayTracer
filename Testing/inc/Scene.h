@@ -21,6 +21,7 @@ public:
 
 	~Scene();
 
+	// Parse the scene file to get all data
 	void ParseSceneFile();
 
 	std::string GetFileName() const { return m_fileName; }
@@ -29,8 +30,13 @@ public:
 	const Settings& GetSettings() const { return m_settings; }
 	const std::vector<Light*>& GetLights() const { return m_lights; }
 
+	// Define the name of the saved file
 	void SetSaveFileName( const std::string& saveName );
+
+	// Set a render color mode
 	void SetColorMode( const ColorMode colorMode );
+
+	// Set render resolutions
 	void SetRenderResolution( const int width, const int height );
 
 private:

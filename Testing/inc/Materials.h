@@ -15,6 +15,7 @@ struct Material {
 	bool smoothShading;
 
 	Material();
+	Material( const MaterialType& matType, const Color& albedo, const bool smShading );
 };
 
 #endif // MATERIALS_H

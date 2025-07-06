@@ -42,7 +42,9 @@ void Scene::ParseSceneFile() {
 	ParseMaterialsTag( doc );
 
 	for ( Mesh& mesh : m_meshes ) {
-		mesh.albedo = getRandomColor();
+		Material mat{};
+		mat.albedo = getRandomColor();
+		mesh.SetMaterialOverride( mat );
 	}
 }
 

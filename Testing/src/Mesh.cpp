@@ -43,12 +43,21 @@ void PreparedMesh::PrepMesh( const Mesh& mesh, const ColorMode& colorMode ) {
         vertexNormalCounts[idx1]++;
         vertexNormalCounts[idx2]++;
 
-        if ( colorMode == ColorMode::RandomMeshColor ) {
-            m_triangles[lastTriIdx].color = mesh.albedo;
-            m_albedo = mesh.albedo;
+        if ( colorMode == ColorMode::LoadedMaterial ) {
+            const Material& mat = mesh.GetMaterial();
+            // Backwards Compatible - needs removal
+            m_triangles[lastTriIdx].color = mat.albedo;
+            m_material = mat;
         }
-        else if ( colorMode == ColorMode::RandomTriangleColor )
+        else if ( colorMode == ColorMode::RandomMeshColor ) {
+            const Material& mat = mesh.GetMaterialOverride();
+            // Backwards Compatible - needs removal
+            m_triangles[lastTriIdx].color = mat.albedo;
+            m_material = mat;
+        }
+        else if ( colorMode == ColorMode::RandomTriangleColor ) {
             m_triangles[lastTriIdx].color = getRandomColor();
+        }
     }
 
     // Normalize all Vertex Normals
@@ -64,7 +73,10 @@ void PreparedMesh::PrepMesh( const Mesh& mesh, const ColorMode& colorMode ) {
 }
 
 Mesh::Mesh( const std::vector<FVector3>& verts, const std::vector<int>& triangles )
-    : vertices{ verts }, triangles{ triangles }, albedo{ 255, 0, 0 }, matIdx{ -1 } {
+    : vertices{ verts },
+    triangles{ triangles },
+    material{ Material( MaterialType::Diffuse, {255, 0, 0 }, false ) },
+    matIdx{ -1 } {
 }
 
 std::vector<FVector3> Mesh::GetVertices() const {
@@ -82,6 +94,15 @@ Material Mesh::GetMaterial() const {
 void Mesh::SetMaterial( const Material& mat ) {
     material = mat;
 }
+
+Material Mesh::GetMaterialOverride() const {
+    return m_materialOverride;
+}
+
+void Mesh::SetMaterialOverride( const Material& mat ) {
+    m_materialOverride = mat;
+}
+
 
 int Mesh::GetMaterialIdx() const {
     return matIdx;

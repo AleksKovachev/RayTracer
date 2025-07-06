@@ -21,6 +21,7 @@ struct Color {
 
 
 enum class ColorMode {
+    LoadedMaterial,
     RandomMeshColor,
     RandomTriangleColor
 };

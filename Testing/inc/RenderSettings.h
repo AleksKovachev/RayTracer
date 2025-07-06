@@ -19,6 +19,7 @@ struct Settings {
 	std::string saveDir;
 	std::string saveName;
 	ColorMode colorMode;
+	float shadowBias;
 
 	Settings( const int colorDepth = 8 );
 };

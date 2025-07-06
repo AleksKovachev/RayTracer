@@ -92,6 +92,7 @@ Color shade(
     float G{};
     float B{};
     Color pixelColor{};
+    Color renderColor{};
 
     const FVector3& surfaceNormal = (hitNormal == nullptr ? triangle.GetNormal() : *hitNormal);
 
@@ -139,11 +140,14 @@ Color shade(
 
     G = B = R;
 
+    renderColor = (intersectionData.scene.GetSettings().colorMode == ColorMode::RandomTriangleColor
+        ? triangle.color : intersectionData.currentMesh.m_material.albedo);
+
     // multiply by normalized albedo
     const int& maxComp = intersectionData.scene.GetSettings().maxColorComp;
-    R *= static_cast<float>(triangle.color.r) / maxComp;
-    G *= static_cast<float>(triangle.color.g) / maxComp;
-    B *= static_cast<float>(triangle.color.b) / maxComp;
+    R *= static_cast<float>(renderColor.r) / maxComp;
+    G *= static_cast<float>(renderColor.g) / maxComp;
+    B *= static_cast<float>(renderColor.b) / maxComp;
 
     //! Clamp here to make everything > 1.0 clip back to 1.0!
     pixelColor.r = static_cast<int>(round( std::min( 1.f, R ) * maxComp ));
@@ -160,11 +164,10 @@ bool Camera::IsInShadow(
     const FVector3& surfaceNormal,
     const float distToLight
 ) {
-    //? Put as scene setting?
     /* Define a small epsilon to avoid self - intersection artifacts
      * Often 1e-3 - 1e-5 is used for ray origins.
      * Smaller value if scene scale is tiny */
-    constexpr float shadowBias{ 1e-2f }; // Higher values create artifacts
+    const float shadowBias{ data.scene.GetSettings().shadowBias }; // Higher values create artifacts
 
     /* Offset the hitPoint slightly along the normal to avoid self - intersection
      * Another common technique is to check rayPointDist > EPSILON */
@@ -245,7 +248,10 @@ Color Camera::GetTriangleIntersection(
                 closestIntersectionP = rayPointDist;
 
                 if ( scene.renderMode == RenderMode::ObjectColor ) {
-                    pixelColor = triangle.color;
+                    if ( scene.GetSettings().colorMode == ColorMode::RandomTriangleColor )
+                        pixelColor = triangle.color;
+                    else
+                        pixelColor = mesh.m_material.albedo;
                     continue;
                 }
 
