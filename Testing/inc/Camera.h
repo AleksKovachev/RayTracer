@@ -67,7 +67,12 @@ struct Camera : public Obj {
     void RotateAroundPoint( const FVector3& dist, const FVector3& angle );
 
     // Traces ShadowRay from hit point to light sources.
-    static bool IsInShadow( const FVector3& ray, const IntersectionData& data, const FVector3& triN );
+    static bool IsInShadow(
+        const FVector3& ray,
+        const IntersectionData& data,
+        const FVector3& triN,
+        const float distToLight
+    );
 
     // Returns the color of the Triangle closest to the camera ray
     Color GetTriangleIntersection(

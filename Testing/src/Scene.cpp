@@ -40,6 +40,7 @@ void Scene::ParseSceneFile() {
 	ParseCameraTag( doc );
 	ParseObjectsTag( doc );
 	ParseLightsTag( doc );
+	ParseMaterialsTag( doc );
 
 	for ( Mesh& mesh : m_meshes ) {
 		mesh.albedo = getRandomColor();
@@ -110,6 +111,7 @@ void Scene::ParseObjectsTag( const rapidjson::Document& doc ) {
 	char t_objects[]{ "objects" };
 	char t_vertices[]{ "vertices" };
 	char t_triangles[]{ "triangles" };
+	char t_matIdx[]{ "material_index" };
 
 	if ( doc.HasMember( t_objects ) && doc[t_objects].IsArray() ) {
 		const rapidjson::Value::ConstArray& objArr = doc[t_objects].GetArray();
@@ -121,6 +123,9 @@ void Scene::ParseObjectsTag( const rapidjson::Document& doc ) {
 			assert( mesh.HasMember( t_triangles ) && mesh[t_triangles].IsArray() );
 			m_meshes.emplace_back( loadMeshVerts( mesh[t_vertices].GetArray() ),
 				loadMeshTris( mesh[t_triangles].GetArray() ) );
+
+			if ( mesh.HasMember( t_matIdx ) && mesh[t_matIdx].IsInt() )
+				m_meshes[i].matIdx = mesh[t_matIdx].GetInt();
 		}
 	}
 }
@@ -146,6 +151,37 @@ void Scene::ParseLightsTag( const rapidjson::Document& doc ) {
 				ligthIntensity = static_cast<float>( light[t_intensity].GetDouble() );
 
 			m_lights.emplace_back( new PointLight( lightPos, ligthIntensity ) );
+		}
+	}
+}
+
+void Scene::ParseMaterialsTag( const rapidjson::Document& doc ) {
+	// JSON Tags to look for
+	char t_materials[]{ "materials" };
+	char t_type[]{ "type" };
+	char t_albedo[]{ "albedo" };
+	char t_smShading[]{ "smooth_shading" };
+
+	if ( doc.HasMember( t_materials ) && doc[t_materials].IsArray() ) {
+		const rapidjson::Value::ConstArray& matsArr = doc[t_materials].GetArray();
+
+		for ( unsigned i{}; i < matsArr.Size(); ++i ) {
+			assert( matsArr[i].IsObject() );
+			const rapidjson::Value& material{ matsArr[i] };
+			assert( material.HasMember( t_type ) && material[t_type].IsString() );
+			assert( material.HasMember( t_albedo ) && material[t_albedo].IsArray() );
+			assert( material.HasMember( t_smShading ) && material[t_smShading].IsBool() );
+
+			Material mat;
+			if ( material[t_type].GetString() == "diffuse" )
+				mat.type = MaterialType::Diffuse;
+			else if ( material[t_type].GetString() == "reflective" )
+				mat.type = MaterialType::Reflective;
+
+			mat.albedo = loadVector3<Color>( material[t_albedo].GetArray() );
+			mat.smoothShading = material[t_smShading].GetBool();
+
+			m_materials.push_back( mat );
 		}
 	}
 }

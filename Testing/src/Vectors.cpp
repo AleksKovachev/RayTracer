@@ -35,6 +35,7 @@ FVector3& FVector3::operator+=( const FVector3& other ) {
 	x += other.x;
 	y += other.y;
 	z += other.z;
+	lengthCalculated = false;
 	return *this;
 }
 
@@ -51,7 +52,11 @@ FVector3 FVector3::operator*( const float& other ) const {
 }
 
 
-float FVector3::GetLength() const {
+float FVector3::GetLength() {
+	if ( !lengthCalculated ) {
+		CalculateLength();
+		lengthCalculated = true;
+	}
 	return length;
 }
 
@@ -59,13 +64,18 @@ float FVector3::Dot( const FVector3& other ) const {
 	return (x * other.x) + (y * other.y) + (z * other.z);
 }
 
-FVector3 FVector3::normalize() {
+FVector3 FVector3::Normalize() const {
 	if ( length > 0.f )
 		return { x / length, y / length, z / length };
 	return { 0.f, 0.f, 0.f };
 }
 
 void FVector3::NormalizeInPlace() {
+	if ( !lengthCalculated ) {
+		CalculateLength();
+		lengthCalculated = true;
+	}
+
 	if ( length > 0.f ) {
 		x /= length;
 		y /= length;

@@ -50,7 +50,7 @@ FVector3 Camera::GenerateRay( const int x, const int y ) const {
     FVector2 screenCoords = NDC2ScreenSpace( ndcCoords );
     FVector2 fixedAspectRatio = getFixedAspectRatio( screenCoords, m_imgPlane );
     FVector3 rayDirection = FVector3{ fixedAspectRatio, -1.f * m_imgPlane.distanceFromCamera };
-    return ApplyRotation( rayDirection ).normalize();
+    return ApplyRotation( rayDirection ).Normalize();
 }
 
 void Camera::Dolly( float val ) {
@@ -83,11 +83,17 @@ void Camera::RotateAroundPoint( const FVector3& dist, const FVector3& angle ) {
     Move( dist );
 }
 
-Color shade( const IntersectionData& intersectionData, const Triangle& triangle ) {
+Color shade(
+    const IntersectionData& intersectionData,
+    const Triangle& triangle,
+    const FVector3* hitNormal = nullptr
+) {
     float R{};
     float G{};
     float B{};
     Color pixelColor{};
+
+    const FVector3& surfaceNormal = (hitNormal == nullptr ? triangle.GetNormal() : *hitNormal);
 
     for ( const Light* light : intersectionData.scene.GetLights() ) {
         //! If Scene lights get more types, replace static_cast with dynamic to check light type.
@@ -108,7 +114,7 @@ Color shade( const IntersectionData& intersectionData, const Triangle& triangle 
 
         // Negative numbers are 0 in color. Positive numbers above 1 are clipped
         // Calculate the Cosine Law
-        float cosLaw = std::max( 0.f, lightDir.Dot( triangle.GetNormal() ) );
+        float cosLaw = std::max( 0.f, lightDir.Dot( surfaceNormal ) );
         if ( areEqual(cosLaw, 0.f) )
             continue;
 
@@ -116,7 +122,7 @@ Color shade( const IntersectionData& intersectionData, const Triangle& triangle 
         float falloff = 4 * static_cast<float>( std::numbers::pi ) * lightDirLen * lightDirLen;
 
         // If there's something on the way to the light - leave the color as is and continue
-        if ( Camera::IsInShadow(lightDir, intersectionData, triangle.GetNormal() ) )
+        if ( Camera::IsInShadow(lightDir, intersectionData, surfaceNormal, lightDirLen ) )
             continue;
 
         // Cibsuder light Intensity and falloff in the value
@@ -147,18 +153,22 @@ Color shade( const IntersectionData& intersectionData, const Triangle& triangle 
     return pixelColor;
 }
 
-//TODO: Check why removing the epsilon results in complete darkness instead of broken lighting. Ask!!!
-//TODO: Check if the rayPointDist < shadowBias... row is correct
-bool Camera::IsInShadow( const FVector3& lightDir, const IntersectionData& data, const FVector3& triN ) {
+// TODO: Ask about shadow Bias value. Why 1e-4f creates problems?
+bool Camera::IsInShadow(
+    const FVector3& lightDir,
+    const IntersectionData& data,
+    const FVector3& surfaceNormal,
+    const float distToLight
+) {
     //? Put as scene setting?
     /* Define a small epsilon to avoid self - intersection artifacts
      * Often 1e-3 - 1e-5 is used for ray origins.
      * Smaller value if scene scale is tiny */
-    constexpr float shadowBias{ 1e-4f };
+    constexpr float shadowBias{ 1e-2f }; // Higher values create artifacts
 
     /* Offset the hitPoint slightly along the normal to avoid self - intersection
      * Another common technique is to check rayPointDist > EPSILON */
-    const FVector3 offsetHitPoint{ data.intersectionPt + ( triN * shadowBias ) };
+    const FVector3 offsetHitPoint{ data.intersectionPt + (surfaceNormal * shadowBias ) };
 
     for ( const PreparedMesh& mesh : data.meshes ) {
         for ( const Triangle& triangle : mesh.m_triangles ) {
@@ -170,14 +180,20 @@ bool Camera::IsInShadow( const FVector3& lightDir, const IntersectionData& data,
             // If rayProj > 0, ray is pointing towards triangle back face.
             // If rayProj < 0, ray is pointing towards triangle front face.
 
-            float rayPlaneDist = (triangle.GetVert( 0 ) - offsetHitPoint).Dot( triangle.GetNormal() );
+            float rayPlaneDist = (triangle.GetVert( 0 ).pos - offsetHitPoint)
+                .Dot( triangle.GetNormal() );
             float rayPointDist = rayPlaneDist / rayProj; // Ray-to-Point scale factor
 
             /* Check if: Ray hits behind the hitPoint(negative rayPointDist)
              *           Ray hits at or very near the hitPoint (self-intersection)
              *           Ray hits beyond the light source */
-            if ( rayPointDist < shadowBias )
+            if ( isLessThan( rayPointDist, shadowBias ) )
                 continue; // This intersection is not valid for shadow casting
+
+            /* Geometry that's on the other side of the
+             * light source shouldn't cast shadows here */
+            if ( rayPointDist > distToLight )
+                continue;
 
             // Ray parametric equation - represent points on a line going through a Ray.
             FVector3 intersectionPt = offsetHitPoint + (lightDir * rayPointDist);
@@ -208,7 +224,7 @@ Color Camera::GetTriangleIntersection(
             if ( isGreaterEqualThan( rayProj, 0.f ) ) // Ignore back-face
                 continue;
 
-            float rayPlaneDist = (triangle.GetVert( 0 ) - m_position)
+            float rayPlaneDist = (triangle.GetVert( 0 ).pos - m_position)
                 .Dot( triangle.GetNormal() );
 
             // Ray is not towards Triangle's plane
@@ -232,11 +248,20 @@ Color Camera::GetTriangleIntersection(
                     pixelColor = triangle.color;
                     continue;
                 }
-                FVector3 v0p = intersectionPt - triangle.GetVert( 0 );
-                FVector3 v0v2 = triangle.GetVert( 2 ) - triangle.GetVert( 0 );
-                FVector3 v0v1 = triangle.GetVert( 1 ) - triangle.GetVert( 0 );
-                float U = (v0p * v0v2).GetLength() / ( triangle.GetArea() * 2 );
-                float V = (v0v1 * v0p).GetLength() / ( triangle.GetArea() * 2 );
+
+                if ( scene.renderMode == RenderMode::ShadedFlat ) {
+                    IntersectionData intersectionData( meshes, mesh, scene, intersectionPt );
+                    pixelColor = shade( intersectionData, triangle, nullptr );
+                }
+
+                const FVector3 v0p = intersectionPt - triangle.GetVert( 0 ).pos;
+                const FVector3 v0v2 = triangle.GetVert( 2 ).pos - triangle.GetVert( 0 ).pos;
+                const FVector3 v0v1 = triangle.GetVert( 1 ).pos - triangle.GetVert( 0 ).pos;
+                const float U = (v0p * v0v2).GetLength() / ( triangle.GetArea() * 2 );
+                const float V = (v0v1 * v0p).GetLength() / ( triangle.GetArea() * 2 );
+                const FVector3 hitNormal = triangle.GetVert( 1 ).normal * U
+                    + triangle.GetVert( 2 ).normal * V 
+                    + triangle.GetVert( 0 ).normal * (1 - U - V);
 
                 if ( scene.renderMode == RenderMode::Barycentric ) {
                     pixelColor = { U, V, 0.f }; // Display Barycentric Coordinates
@@ -245,7 +270,7 @@ Color Camera::GetTriangleIntersection(
 
                 if ( scene.renderMode == RenderMode::ShadedSmooth ) {
                     IntersectionData intersectionData( meshes, mesh, scene, intersectionPt );
-                    pixelColor = shade( intersectionData, triangle );
+                    pixelColor = shade( intersectionData, triangle, &hitNormal );
                 }
             }
         }

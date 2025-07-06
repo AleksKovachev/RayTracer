@@ -8,10 +8,13 @@
 #include "Vectors.h" // FVector3
 
 
-// Collection of vertices and vertex indices representing a 3D object
+/* Collection of vertices and vertex indices representing a 3D object. Use this
+ * class for large scenes with 10s of thousands of polygons as it's more optimized.
+ * Code needs to be reworked to remove all Triangle and Vertex class references.*/
 class Mesh {
 public:
 	Color albedo;
+	int matIdx;
 
 	Mesh( const std::vector<FVector3>& verts, const std::vector<int>& triangles );
 
@@ -27,6 +30,7 @@ private:
 // Collection of built Triangles representing a 3D object
 struct PreparedMesh {
 	Color m_albedo;
+	int m_matIdx;
 	std::vector<Triangle> m_triangles;
 
 	void PrepMesh( const Mesh& mesh, const ColorMode& colorMode );

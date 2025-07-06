@@ -50,11 +50,11 @@ int main() {
     //params.camera.Tilt( 15 );
     //params.camera.RotateAroundPoint( {0, 0, -3}, {0, 45, 0});
 
-    Scene scene( "./rsc/scene0.crtscene" );
+    Scene scene( "./rsc/scene1.crtscene" );
     //Scene scene( "./rsc/OverlappingTriangles.crtscene" );
     //Scene scene( "./rsc/Pyramid.crtscene" );
     scene.ParseSceneFile();
-    scene.renderMode = RenderMode::Barycentric;
+    scene.renderMode = RenderMode::ShadedSmooth;
     render( scene );
     //renderCameraMoveAnimation( scene, { 0.f, 1.f, 5.f }, { 0.2f, 0.f, 0.f }, 10 );
     //renderRotationAroundObject( scene, { 0.f, 2.f, 5.f }, 30 );

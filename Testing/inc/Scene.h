@@ -8,6 +8,7 @@
 
 #include "Camera.h"
 #include "Lights.h" // Light
+#include "Materials.h" // Material
 #include "Mesh.h" // Mesh
 #include "RenderSettings.h" // Settings, RenderMode
 
@@ -27,6 +28,7 @@ public:
 	const Camera& GetCamera() const { return m_camera; }
 	const Settings& GetSettings() const { return m_settings; }
 	const std::vector<Light*>& GetLights() const { return m_lights; }
+	const std::vector<Material>& GetMaterials() const { return m_materials; }
 
 	void SetSaveFileName( const std::string& saveName );
 	void SetColorMode( const ColorMode colorMode );
@@ -38,12 +40,14 @@ private:
 	Camera m_camera; // Main scene Camera
 	Settings m_settings; // Global scene settings
 	std::vector<Light*> m_lights;
+	std::vector<Material> m_materials;
 
 private:
 	void ParseSettingsTag( const rapidjson::Document& );
 	void ParseCameraTag( const rapidjson::Document& );
 	void ParseObjectsTag( const rapidjson::Document& );
 	void ParseLightsTag( const rapidjson::Document& );
+	void ParseMaterialsTag( const rapidjson::Document& );
 };
 
 
