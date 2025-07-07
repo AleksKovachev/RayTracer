@@ -78,7 +78,9 @@ struct Camera : public Obj {
     Color GetTriangleIntersection(
         const FVector3& ray,
         const std::vector<PreparedMesh>& meshes,
-        const Scene& scene
+        const Scene& scene,
+        const unsigned reflectionDepth,
+        const FVector3& rayOrigin
     ) const;
 
 private:

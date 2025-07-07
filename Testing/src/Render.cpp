@@ -58,7 +58,8 @@ void render( const Scene& scene, const Camera* overrideCamera, const std::string
     for ( int y{}; y < height; ++y ) {
         for ( int x{}; x < width; ++x ) {
             FVector3 ray = camera.GenerateRay( x, y );
-            Color pixelColor = camera.GetTriangleIntersection( ray, meshes, scene );
+            Color pixelColor = camera.GetTriangleIntersection(
+                ray, meshes, scene, scene.GetReflectionDepth(), camera.GetLocation() );
             writeColorToFile( ppmFileStream, pixelColor );
         }
         std::cout << "\rLine: " << y + 1 << " / " << height << std::flush;

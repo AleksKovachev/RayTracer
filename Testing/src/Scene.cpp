@@ -16,7 +16,7 @@ std::vector<int> loadMeshTris( const rapidjson::Value::ConstArray& arr );
 
 
 Scene::Scene( const std::string& sceneFileName )
-	: m_fileName{ sceneFileName }, renderMode{ RenderMode::ShadedSmooth } {
+	: m_fileName{ sceneFileName } {
 	std::filesystem::path path( m_fileName );
 	m_settings.saveName = path.stem().string();
 }
@@ -62,6 +62,18 @@ void Scene::SetColorMode( const ColorMode colorMode ) {
 void Scene::SetRenderResolution( const int width, const int height ) {
 	m_settings.renderWidth = width;
 	m_settings.renderHeight = height;
+}
+
+const RenderMode& Scene::GetRenderMode() const {
+	return m_settings.renderMode;
+}
+
+void Scene::SetRenderMode( const RenderMode& renderMode ) {
+	m_settings.renderMode = renderMode;
+}
+
+unsigned Scene::GetReflectionDepth() const {
+	return m_settings.reflectionDepth;
 }
 
 
@@ -174,9 +186,11 @@ void Scene::ParseMaterialsTag( const rapidjson::Document& doc ) {
 			assert( material.HasMember( t_smShading ) && material[t_smShading].IsBool() );
 
 			Material mat;
-			if ( material[t_type].GetString() == "diffuse" )
+			std::string matTypeStr = material[t_type].GetString();
+
+			if ( matTypeStr == "diffuse" )
 				mat.type = MaterialType::Diffuse;
-			else if ( material[t_type].GetString() == "reflective" )
+			else if ( matTypeStr == "reflective" )
 				mat.type = MaterialType::Reflective;
 
 			mat.albedo = loadVector3<Color>( material[t_albedo].GetArray() );

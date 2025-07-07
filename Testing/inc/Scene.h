@@ -15,7 +15,6 @@
 
 class Scene {
 public:
-	RenderMode renderMode;
 
 	Scene( const std::string& sceneFileName );
 
@@ -38,6 +37,12 @@ public:
 
 	// Set render resolutions
 	void SetRenderResolution( const int width, const int height );
+
+	const RenderMode& GetRenderMode() const;
+
+	void SetRenderMode( const RenderMode& renderMode );
+
+	unsigned GetReflectionDepth() const;
 
 private:
 	std::string m_fileName;

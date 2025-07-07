@@ -31,3 +31,17 @@ Color& Color::operator+=( const Color& other ) {
     b += other.b;
     return *this;
 }
+
+Color& Color::operator*=( const Color& other ) {
+    r = static_cast<int>((static_cast<float>(r) / 255 * static_cast<float>(other.r) / 255) * 255);
+    g = static_cast<int>((static_cast<float>(g) / 255 * static_cast<float>(other.g) / 255) * 255);
+    b = static_cast<int>((static_cast<float>(b) / 255 * static_cast<float>(other.b) / 255) * 255);
+    return *this;
+}
+
+Color& Color::operator/=( const int val ) {
+    r /= val;
+    g /= val;
+    b /= val;
+    return *this;
+}
