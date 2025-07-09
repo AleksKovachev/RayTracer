@@ -12,11 +12,16 @@ struct Color {
     Color( int in_r = 0, int in_g = 0, int in_b = 0 );
     Color( float in_r, float in_g, float in_b );
 
+    int GetMaxComponent();
+
     // Copy assignment
     Color& operator=( const Color& other );
 
+    bool operator==( const Color& other );
     Color operator/( const int val );
+    Color operator-( const Color& other );
     Color& operator+=( const Color& other );
+    Color& operator-=( const Color& other );
     Color& operator*=( const Color& other );
     Color& operator/=( const int val );
 };

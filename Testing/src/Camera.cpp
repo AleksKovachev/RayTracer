@@ -120,7 +120,7 @@ Color shade(
             continue;
 
         // Compute sphere area
-        float falloff = 4 * static_cast<float>( std::numbers::pi ) * lightDirLen * lightDirLen;
+        float falloff = 4 * std::numbers::pi_v<float> * lightDirLen * lightDirLen;
 
         // If there's something on the way to the light - leave the color as is and continue
         if ( Camera::IsInShadow(lightDir, intersectionData, surfaceNormal, lightDirLen ) )
@@ -211,6 +211,22 @@ bool Camera::IsInShadow(
     return false;
 }
 
+FVector2 calculateBarycentricCoords(const FVector3& intersectionPt, const Triangle& triangle ) {
+    const FVector3 v0p = intersectionPt - triangle.GetVert( 0 ).pos;
+    const FVector3 v0v2 = triangle.GetVert( 2 ).pos - triangle.GetVert( 0 ).pos;
+    const FVector3 v0v1 = triangle.GetVert( 1 ).pos - triangle.GetVert( 0 ).pos;
+    const float U = (v0p * v0v2).GetLength() / (triangle.GetArea() * 2);
+    const float V = (v0v1 * v0p).GetLength() / (triangle.GetArea() * 2);
+    return { U, V };
+}
+
+FVector3 calculateHitNormal(const FVector3& intersectionPt, const Triangle& triangle ) {
+    const FVector2 UV{ calculateBarycentricCoords( intersectionPt, triangle )};
+    return triangle.GetVert( 1 ).normal * UV.x
+        + triangle.GetVert( 2 ).normal * UV.y
+        + triangle.GetVert( 0 ).normal * (1 - UV.x - UV.y);
+}
+
 
 Color Camera::GetTriangleIntersection(
     const FVector3& ray,
@@ -255,66 +271,81 @@ Color Camera::GetTriangleIntersection(
 
             closestIntersectionP = rayPointDist;
 
-            if ( scene.GetRenderMode() == RenderMode::ObjectColor ) {
-                if ( scene.GetSettings().colorMode == ColorMode::RandomTriangleColor )
-                    pixelColor = triangle.color;
-                else
-                    pixelColor = mesh.m_material.albedo;
-                continue;
-            }
+            switch ( scene.GetRenderMode() ) {
+                case RenderMode::ObjectColor: {
+                    switch ( scene.GetSettings().colorMode ) {
 
-            if ( scene.GetRenderMode() == RenderMode::ShadedFlat ) {
-                IntersectionData intersectionData( meshes, mesh, scene, intersectionPt );
+                        case ColorMode::RandomTriangleColor: {
+                            pixelColor = triangle.color;
+                            break;
+                        }
+                        case ( ColorMode::LoadedMaterial ):
+                        case (ColorMode::RandomMeshColor): {
+                            pixelColor = mesh.m_material.albedo;
+                            break;
+                        }
+                    } // ColorMode
+                    continue; // for loop, exits switch safely.
+                } // RenderMode
+                case RenderMode::ShadedFlat: {
+                    IntersectionData intersectionData( meshes, mesh, scene, intersectionPt );
 
-                if ( mesh.m_material.type == MaterialType::Diffuse ) {
-                    pixelColor = shade( intersectionData, triangle, nullptr );
-                } else if ( mesh.m_material.type == MaterialType::Reflective ) {
-                    if ( reflectionDepth > 0 ) {
-                        // R = 2 * dot(A, N) * N = N * dot(A, N) * 2
-                        FVector3 reflectionDir = triangle.GetNormal() *
-                            ray.Dot( triangle.GetNormal() ) * 2;
-                        pixelColor = GetTriangleIntersection(
-                            reflectionDir, meshes, scene, reflectionDepth - 1, intersectionPt );
-                        pixelColor *= mesh.m_material.albedo;
-                    } else {
-                        pixelColor = Colors::Black;
-                    }
-                }
-            }
+                    switch ( mesh.m_material.type ) {
+                        case MaterialType::Diffuse: {
+                            pixelColor = shade( intersectionData, triangle, nullptr );
+                            break;
+                        }
+                        case MaterialType::Reflective: {
+                            if ( reflectionDepth > 0 ) {
+                                // R = 2 * dot(A, N) * N = N * dot(A, N) * 2
+                                FVector3 reflectionDir = triangle.GetNormal() *
+                                    ray.Dot( triangle.GetNormal() ) * 2;
+                                pixelColor = GetTriangleIntersection(
+                                    reflectionDir, meshes, scene, reflectionDepth - 1, intersectionPt );
+                                pixelColor *= mesh.m_material.albedo;
+                            } else {
+                                pixelColor = Colors::Black;
+                            }
+                            break;
+                        }
+                    } // MaterialType
+                    break;
+                } // RenderMode
+                case RenderMode::Barycentric: {
+                    const FVector2 UV = calculateBarycentricCoords( intersectionPt, triangle );
+                    pixelColor = { UV.x, UV.y, 0.f }; // Display Barycentric Coordinates
+                    break;
+                } // RenderMode
+                case RenderMode::ShadedSmooth: {
+                    FVector3 hitNormal = calculateHitNormal( intersectionPt, triangle );
+                    IntersectionData intersectionData( meshes, mesh, scene, intersectionPt );
 
-            const FVector3 v0p = intersectionPt - triangle.GetVert( 0 ).pos;
-            const FVector3 v0v2 = triangle.GetVert( 2 ).pos - triangle.GetVert( 0 ).pos;
-            const FVector3 v0v1 = triangle.GetVert( 1 ).pos - triangle.GetVert( 0 ).pos;
-            const float U = (v0p * v0v2).GetLength() / ( triangle.GetArea() * 2 );
-            const float V = (v0v1 * v0p).GetLength() / ( triangle.GetArea() * 2 );
-            const FVector3 hitNormal = triangle.GetVert( 1 ).normal * U
-                + triangle.GetVert( 2 ).normal * V 
-                + triangle.GetVert( 0 ).normal * (1 - U - V);
-
-            if ( scene.GetRenderMode() == RenderMode::Barycentric ) {
-                pixelColor = { U, V, 0.f }; // Display Barycentric Coordinates
-                continue;
-            }
-
-            if ( scene.GetRenderMode() == RenderMode::ShadedSmooth ) {
-                IntersectionData intersectionData( meshes, mesh, scene, intersectionPt );
-                if ( mesh.m_material.type == MaterialType::Diffuse ) {
-                    pixelColor = shade( intersectionData, triangle, &hitNormal );
-                }
-                else if ( mesh.m_material.type == MaterialType::Reflective ) {
-                    if ( reflectionDepth > 0 ) {
-                        // R = 2 * dot(A, N) * N = N * dot(A, N) * 2
-                        FVector3 reflectionDir = ray - ( hitNormal * ray.Dot( hitNormal ) * 2 );
-                        pixelColor = GetTriangleIntersection(
-                            reflectionDir, meshes, scene, reflectionDepth - 1, intersectionPt );
-                        pixelColor *= mesh.m_material.albedo;
-                    } else {
-                        pixelColor = Colors::Black;
-                    }
-                    //! Experiments for shadow and reflection at the same time. INCORRECT!
-                    //pixelColor += shade( intersectionData, triangle, &hitNormal );
-                    //pixelColor /= 2;
-                }
+                    switch ( mesh.m_material.type ) {
+                        case MaterialType::Diffuse: {
+                            pixelColor = shade( intersectionData, triangle, &hitNormal );
+                            break;
+                        }
+                        case MaterialType::Reflective: {
+                            if ( reflectionDepth > 0 ) {
+                                // R = 2 * dot(A, N) * N = N * dot(A, N) * 2
+                                FVector3 reflectionDir = ray - (hitNormal * ray.Dot( hitNormal ) * 2);
+                                pixelColor = GetTriangleIntersection(
+                                    reflectionDir, meshes, scene, reflectionDepth - 1, intersectionPt );
+                                pixelColor *= mesh.m_material.albedo;
+                            } else {
+                                pixelColor = Colors::Black;
+                            }
+                            //! Experiments for shadow and reflection at the same time. INCORRECT!
+                            //pixelColor += shade( intersectionData, triangle, &hitNormal );
+                            //pixelColor /= 2;
+                            //Color shadowColor = shade( intersectionData, triangle, &hitNormal );
+                            //Color BGColor = { scene.GetSettings().BGColor.r, scene.GetSettings().BGColor.g, scene.GetSettings().BGColor.b };
+                            //pixelColor -= BGColor - shadowColor;
+                            break;
+                        }
+                    } // MaterialType
+                    break;
+                } // RenderMode
             }
         }
     }

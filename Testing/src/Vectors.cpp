@@ -39,6 +39,10 @@ FVector3& FVector3::operator+=( const FVector3& other ) {
 	return *this;
 }
 
+bool FVector3::operator==( const FVector3& other ) {
+	return x == other.x && y == other.y && z == other.z;
+}
+
 // Cross product
 FVector3 FVector3::operator*( const FVector3& other ) const {
 	return { y * other.z - z * other.y,

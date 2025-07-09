@@ -12,6 +12,15 @@ Color::Color( float in_r, float in_g, float in_b )
     b{ static_cast<int>(round( in_b * 255.f )) } {
 }
 
+int Color::GetMaxComponent() {
+    int maxComp = r;
+    if ( g > r )
+        maxComp = g;
+    if ( b > maxComp )
+        maxComp = b;
+    return maxComp;
+}
+
 Color& Color::operator=( const Color& other ) {
     r = other.r;
     g = other.g;
@@ -19,16 +28,37 @@ Color& Color::operator=( const Color& other ) {
     return *this;
 }
 
+bool Color::operator==( const Color& other ) {
+    return r == other.r && g == other.g && b == other.b;
+}
+
 Color Color::operator/( const int val ) {
-    return { static_cast<int>(roundf( static_cast<float>(r) / val )),
+    return {
+        static_cast<int>(roundf( static_cast<float>(r) / val )),
         static_cast<int>(roundf( static_cast<float>(g) / val )),
-            static_cast<int>(roundf( static_cast<float>(b) / val )) };
+        static_cast<int>(roundf( static_cast<float>(b) / val ))
+    };
+}
+
+Color Color::operator-( const Color& other ) {
+    return {
+        std::clamp( r - other.r, 0, 255 ),
+        std::clamp( g - other.g, 0, 255 ),
+        std::clamp( b - other.b, 0, 255 )
+    };
 }
 
 Color& Color::operator+=( const Color& other ) {
     r += other.r;
     g += other.g;
     b += other.b;
+    return *this;
+}
+
+Color& Color::operator-=( const Color& other ) {
+    r -= other.r;
+    g -= other.g;
+    b -= other.b;
     return *this;
 }
 

@@ -50,10 +50,12 @@ int main() {
     //params.camera.Tilt( 15 );
     //params.camera.RotateAroundPoint( {0, 0, -3}, {0, 45, 0});
 
-    Scene scene( "./rsc/scene5.crtscene" );
+    //Scene scene( "./rsc/scene4.crtscene" );
     //Scene scene( "./rsc/OverlappingTriangles.crtscene" );
     //Scene scene( "./rsc/Pyramid.crtscene" );
-    scene.ParseSceneFile();
+    Scene scene( "./rsc/TestPlane.obj" );
+    scene.ParseObjFile();
+    //scene.ParseSceneFile();
     scene.SetRenderMode( RenderMode::ShadedSmooth );
     scene.SetColorMode( ColorMode::LoadedMaterial );
     render( scene );

@@ -1,7 +1,7 @@
 #ifndef SCENE_H
 #define SCENE_H
 
-#include <string>
+#include <string> // string, getline
 #include <vector>
 
 #include "rapidjson/document.h"
@@ -22,6 +22,9 @@ public:
 
 	// Parse the scene file to get all data
 	void ParseSceneFile();
+
+	// Parse an obj file and load all relevant data
+	void ParseObjFile();
 
 	std::string GetFileName() const { return m_fileName; }
 	const std::vector<Mesh>& GetMeshes() const { return m_meshes; }
@@ -51,12 +54,23 @@ private:
 	Settings m_settings; // Global scene settings
 	std::vector<Light*> m_lights;
 
+// crtscene file parsing (json)
 private:
 	void ParseSettingsTag( const rapidjson::Document& );
 	void ParseCameraTag( const rapidjson::Document& );
 	void ParseObjectsTag( const rapidjson::Document& );
 	void ParseLightsTag( const rapidjson::Document& );
 	void ParseMaterialsTag( const rapidjson::Document& );
+
+// Obj file parsing
+private:
+	FVector3 parseVertexLine( std::istringstream& iss, const std::string& line );
+	void parsePolygonLine( std::istringstream& iss, const std::string& line, std::vector<int>& tris );
+	// Checks if a new object should be created
+	void checkNewObject(
+		const std::string& tag,
+		size_t objCount,
+		std::vector<std::vector<int>>& meshGroup );
 };
 
 

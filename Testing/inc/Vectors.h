@@ -40,6 +40,7 @@ public:
     FVector3 operator-( const FVector3& other ) const;
     FVector3 operator-() const;
     FVector3& operator+=( const FVector3& other );
+    bool operator==( const FVector3& other );
     // Scalar multiplication
     FVector3 operator*( const float& other ) const;
     // Cross product
