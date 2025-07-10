@@ -13,9 +13,8 @@ class FVector3;
 // Enum for choosing render style
 enum class RenderMode {
 	ObjectColor,
-	ShadedFlat,
-	ShadedSmooth,
-	Barycentric
+	Barycentric,
+	Material
 };
 
 // Global scene settings
@@ -28,7 +27,7 @@ struct Settings {
 	std::string saveName;
 	ColorMode colorMode;
 	float shadowBias;
-	unsigned reflectionDepth;
+	int reflectionDepth;
 	RenderMode renderMode;
 
 	Settings( const int colorDepth = 8 );
@@ -39,17 +38,17 @@ struct Settings {
 struct IntersectionData {
 	IntersectionData(
 		const std::vector<PreparedMesh>& meshes,
-		const PreparedMesh& currentMesh,
+		const Material& currMeshMat,
 		const Scene& scene,
 		const FVector3& intersectionPt
 	) : meshes{ meshes },
-		currentMesh{ currentMesh },
+		currMeshMat{ currMeshMat },
 		scene{ scene },
 		intersectionPt{ intersectionPt } {
 	}
 
 	const std::vector<PreparedMesh>& meshes;
-	const PreparedMesh& currentMesh;
+	const Material& currMeshMat;
 	const Scene& scene;
 	const FVector3& intersectionPt;
 };

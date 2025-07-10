@@ -7,20 +7,27 @@ class Mesh;
 class Scene;
 class Triangle;
 
-// Render given scene
-void render( const Scene& scene,
-	const Camera* overrideCamera = nullptr,
-	const std::string* overrideSaveName = nullptr );
 
-/* Render an animation of Camera movement from initial
-position with given distance in certain number of frames */
-void renderCameraMoveAnimation(
-	Scene& scene, const FVector3& initialPos, const FVector3& moveWith, const int frames );
+class Render {
+public:
+	const Scene& m_scene;
+	Camera* m_overrideCamera;
+	const std::string* m_overrideSaveName;
+	int m_frames;
 
-/* Render an animation of Camera orbit around an object in
-Z axis from initial position in certain number of frames */
-void renderRotationAroundObject(
-	const Scene& scene, const FVector3& initialPos, const int frames );
+	Render( const Scene& scene );
+	Render( const Scene& scene, Camera& overrideCamera );
+	Render( const Scene& scene, Camera& overrideCamera, const std::string& overrideSaveName );
+	~Render();
+
+	void RenderImage();
+	void RenderCameraMoveAnimation( const FVector3& initialPos, const FVector3& moveWith );
+	void RenderRotationAroundObject( const FVector3& initialPos );
+
+private:
+	std::ofstream PrepareScene();
+
+};
 
 
 #endif // RENDER_H

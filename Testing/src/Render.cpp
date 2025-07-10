@@ -13,53 +13,45 @@
 #include <fstream>
 #include <string>
 
-// TODO: Convert functions to a Render class. Global access to memebrs...
-std::vector<PreparedMesh> calculateMeshes( const std::vector<Mesh>& meshes, const ColorMode colorMode ) {
-    std::vector<PreparedMesh> outGeometry;
-    unsigned counter{};
 
-    for ( const Mesh& mesh : meshes ) {
-        outGeometry.emplace_back();
-        outGeometry[counter++].PrepMesh( mesh, colorMode );
-    }
-
-    return outGeometry;
+Render::Render( const Scene& scene )
+    : m_scene{ scene },
+    m_overrideCamera{ nullptr },
+    m_overrideSaveName{ nullptr },
+    m_frames { 1 } {
 }
 
-std::ofstream prepareScene( const Scene& scene, const std::string* overrideSaveName ) {
-    const int& width{ scene.GetSettings().renderWidth };
-    const int& height{ scene.GetSettings().renderHeight };
-    const std::string& saveDir{ scene.GetSettings().saveDir };
-    const std::string& saveName{
-        (overrideSaveName == nullptr ? scene.GetSettings().saveName : *overrideSaveName) };
-
-    std::filesystem::create_directories( saveDir );
-    std::ofstream ppmFileStream( saveDir + "/" + saveName + ".ppm", std::ios::binary );
-    ppmFileStream << "P6\n";
-    ppmFileStream << width << " " << height << "\n";
-    ppmFileStream << scene.GetSettings().maxColorComp << "\n";
-
-    return ppmFileStream;
+Render::Render( const Scene& scene, Camera& overrideCamera )
+    : m_scene{ scene },
+    m_overrideCamera{ &overrideCamera },
+    m_overrideSaveName{ nullptr },
+    m_frames{ 1 } {
 }
 
-void render( const Scene& scene, const Camera* overrideCamera, const std::string* overrideSaveName ) {
-    const int& width{ scene.GetSettings().renderWidth };
-    const int& height{ scene.GetSettings().renderHeight };
-    const Camera& camera{ ( overrideCamera == nullptr ? scene.GetCamera() : *overrideCamera ) };
-    std::ofstream ppmFileStream = prepareScene( scene, overrideSaveName );
+Render::Render( const Scene& scene, Camera& overrideCamera, const std::string& overrideSaveName )
+    : m_scene{ scene },
+    m_overrideCamera{ &overrideCamera },
+    m_overrideSaveName{ &overrideSaveName },
+    m_frames{ 1 } {
+}
 
-    std::vector<PreparedMesh> meshes{
-        calculateMeshes( scene.GetMeshes(), scene.GetSettings().colorMode ) };
+Render::~Render() {
+    delete m_overrideCamera;
+    delete m_overrideSaveName;
+}
 
-    //!? Add ground for debugging
-    //std::vector<Triangle> ground{ getGround() };
-    //meshes.begin()->second.insert( meshes.end(), ground.begin(), ground.end() );
+
+void Render::RenderImage() {
+    const int& width{ m_scene.GetSettings().renderWidth };
+    const int& height{ m_scene.GetSettings().renderHeight };
+    const Camera& camera{ (m_overrideCamera == nullptr ? m_scene.GetCamera() : *m_overrideCamera) };
+    std::ofstream ppmFileStream = PrepareScene();
 
     for ( int y{}; y < height; ++y ) {
         for ( int x{}; x < width; ++x ) {
-            FVector3 ray = camera.GenerateRay( x, y );
+            Ray ray = camera.GenerateRay( x, y );
             Color pixelColor = camera.GetTriangleIntersection(
-                ray, meshes, scene, scene.GetReflectionDepth(), camera.GetLocation() );
+                ray, m_scene, m_scene.GetReflectionDepth() );
             writeColorToFile( ppmFileStream, pixelColor );
         }
         std::cout << "\rLine: " << y + 1 << " / " << height << std::flush;
@@ -68,33 +60,51 @@ void render( const Scene& scene, const Camera* overrideCamera, const std::string
     ppmFileStream.close();
 }
 
-void renderCameraMoveAnimation(
-    Scene& scene, const FVector3& initialPos, const FVector3& moveWith, const int frames ) {
+std::ofstream Render::PrepareScene() {
+    const Settings& settings{ m_scene.GetSettings() };
+
+    const int& width{ settings.renderWidth };
+    const int& height{ settings.renderHeight };
+    const std::string& saveDir{ settings.saveDir };
+    const std::string& saveName{
+        (m_overrideSaveName == nullptr ? settings.saveName : *m_overrideSaveName) };
+
+    std::filesystem::create_directories( saveDir );
+    std::ofstream ppmFileStream( saveDir + "/" + saveName + ".ppm", std::ios::binary );
+    ppmFileStream << "P6\n";
+    ppmFileStream << width << " " << height << "\n";
+    ppmFileStream << settings.maxColorComp << "\n";
+
+    return ppmFileStream;
+}
+
+void Render::RenderCameraMoveAnimation(
+   const FVector3& initialPos, const FVector3& moveWith ) {
 
     Camera camera{};
+    m_overrideCamera = &camera;
     camera.Move( initialPos );
     std::string saveName;
 
-    for ( int i{}; i < frames; ++i ) {
+    for ( int frame{}; frame < m_frames; ++frame ) {
         camera.Move( moveWith );
-        saveName = "Move" + std::to_string( i );
-        render( scene, &camera, &saveName );
+        saveName = "Move" + std::to_string( frame );
+        RenderImage();
     }
 }
 
-void renderRotationAroundObject(
-    const Scene& scene, const FVector3& initialPos, const int frames ) {
+void Render::RenderRotationAroundObject( const FVector3& initialPos ) {
 
     Camera camera{};
-    int frame{};
+    m_overrideCamera = &camera;
     std::string saveName;
 
     camera.Move( initialPos );
     float distToObject{ initialPos.z };
 
-    for ( int frame{}; frame < frames; ++frame ) {
+    for ( int frame{}; frame < m_frames; ++frame ) {
         camera.RotateAroundPoint( { 0.f, 0.f, distToObject }, { 0.f, frame * 10.f, 0.f } );
         saveName = "Orbit" + std::to_string( frame + 1 );
-        render( scene, &camera, &saveName );
+        RenderImage();
     }
 }

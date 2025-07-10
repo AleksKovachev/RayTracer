@@ -46,7 +46,11 @@ void Scene::ParseSceneFile() {
 	ParseLightsTag( doc );
 	ParseMaterialsTag( doc );
 
+	unsigned counter{};
 	for ( Mesh& mesh : m_meshes ) {
+		m_rdyMeshes.emplace_back();
+		m_rdyMeshes[counter++].PrepMesh( mesh, m_settings.colorMode );
+
 		Material mat{};
 		mat.albedo = getRandomColor();
 		mesh.SetMaterialOverride( mat );
@@ -77,8 +81,12 @@ void Scene::SetRenderMode( const RenderMode& renderMode ) {
 	m_settings.renderMode = renderMode;
 }
 
-unsigned Scene::GetReflectionDepth() const {
+int Scene::GetReflectionDepth() const {
 	return m_settings.reflectionDepth;
+}
+
+std::vector<PreparedMesh> Scene::GetPreparedMeshes() const {
+	return m_rdyMeshes;
 }
 
 

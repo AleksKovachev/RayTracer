@@ -45,11 +45,14 @@ public:
 
 	void SetRenderMode( const RenderMode& renderMode );
 
-	unsigned GetReflectionDepth() const;
+	int GetReflectionDepth() const;
+
+	std::vector<PreparedMesh> GetPreparedMeshes() const;
 
 private:
 	std::string m_fileName;
 	std::vector<Mesh> m_meshes; // Scene objects
+	std::vector<PreparedMesh> m_rdyMeshes;
 	Camera m_camera; // Main scene Camera
 	Settings m_settings; // Global scene settings
 	std::vector<Light*> m_lights;

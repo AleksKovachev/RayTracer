@@ -6,6 +6,7 @@
 #include "Bases.h" // Obj
 #include "Colors.h" // Color, Colors::Black
 #include "Mesh.h" // PreparedMesh
+#include "Rays.h" // Ray, RayType
 #include "RenderSettings.h" // IntersectionData, RenderMode
 #include "Triangle.h"
 #include "Vectors.h" // FVector3
@@ -43,7 +44,7 @@ struct Camera : public Obj {
     void init();
 
     // Generate a normalized Camera Ray for Image Plane pixel (x, y) with applied orientation
-    FVector3 GenerateRay( const int x, const int y ) const;
+    Ray GenerateRay( const int x, const int y ) const;
 
     // Move Camera forward-backward
     void Dolly( float val );
@@ -76,11 +77,9 @@ struct Camera : public Obj {
 
     // Returns the color of the Triangle closest to the camera ray
     Color GetTriangleIntersection(
-        const FVector3& ray,
-        const std::vector<PreparedMesh>& meshes,
+        const Ray& ray,
         const Scene& scene,
-        const unsigned reflectionDepth,
-        const FVector3& rayOrigin
+        const unsigned reflectionDepth
     ) const;
 
 private:
