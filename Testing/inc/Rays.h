@@ -5,7 +5,7 @@
 
 
 enum class RayType {
-	Invalid,
+	Invalid,    // An invalid ray. Used as sentinel value.
 	Camera,     // Ray shot from the camera
 	Shadow,     // When shading diffuse material
 	Reflective, // When reflective material is hit
@@ -16,7 +16,7 @@ enum class RayType {
 struct Ray {
 	FVector3 origin;
 	FVector3 direction;
-	int pathDepth;
+	int pathDepth; // The maximum recursion depth before returning color data.
 	RayType type;
 };
 

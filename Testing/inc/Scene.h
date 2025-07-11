@@ -1,22 +1,23 @@
 #ifndef SCENE_H
 #define SCENE_H
 
-#include <string> // string, getline
-#include <vector>
+#include <string> // string, getline, npos, stoi
+#include <vector> // vector
 
-#include "rapidjson/document.h"
+#include "rapidjson/document.h" // Document, Value, Value::ConstArray
 
-#include "Camera.h"
-#include "Lights.h" // Light
-#include "Materials.h" // Material
-#include "Mesh.h" // Mesh
+#include "Camera.h" // Camera
+#include "Colors.h" // Color, ColorMode
+#include "Lights.h" // Light, PointLight
+#include "Materials.h" // Material, MaterialType
+#include "Mesh.h" // Mesh, PreparedMesh
 #include "RenderSettings.h" // Settings, RenderMode
 
 
 class Scene {
 public:
-
-	Scene( const std::string& sceneFileName );
+	// @param[in] sceneFilePath: Path to the scene file.
+	Scene( const std::string& );
 
 	~Scene();
 
@@ -26,31 +27,49 @@ public:
 	// Parse an obj file and load all relevant data
 	void ParseObjFile();
 
-	std::string GetFileName() const { return m_fileName; }
-	const std::vector<Mesh>& GetMeshes() const { return m_meshes; }
-	const Camera& GetCamera() const { return m_camera; }
-	const Settings& GetSettings() const { return m_settings; }
-	const std::vector<Light*>& GetLights() const { return m_lights; }
-
-	// Define the name of the saved file
-	void SetSaveFileName( const std::string& saveName );
+	// Override the name of the saved file
+	// @param[in] saveName: The new name for the rendered image.
+	void SetSaveFileName( const std::string& );
 
 	// Set a render color mode
-	void SetColorMode( const ColorMode colorMode );
+	// @param[in] colorMode: The color mode to use for the rendered image.
+	void SetColorMode( const ColorMode );
 
 	// Set render resolutions
-	void SetRenderResolution( const int width, const int height );
+	// @param[in] width: The width of the rendered image in pixels.
+	// @param[in] height: The height of the rendered image in pixels.
+	void SetRenderResolution( const int, const int );
 
+	// Get the render mode from the scene settings.
+	// @return a render mode enum value.
 	const RenderMode& GetRenderMode() const;
 
-	void SetRenderMode( const RenderMode& renderMode );
+	// Sets the render mode for the scene.
+	// @param[in] renderMode: The render mode to use for the final image.
+	void SetRenderMode( const RenderMode& );
 
+	// Gets the reflection depth from the scene settings.
+	// @return The reflection depth as an integer number.
 	int GetReflectionDepth() const;
 
+	// Gets all the prepared meshes in the scene.
+	// @return A collection of prepared meshes, ready to iterate.
 	std::vector<PreparedMesh> GetPreparedMeshes() const;
 
+	// Gets all meshes loaded from the scene file.
+	// @return A collection of mesh objects.
+	const std::vector<Mesh>& GetMeshes() const;
+	// Get the scene camera.
+	// @return A camera object.
+	const Camera& GetCamera() const;
+	// Get the scene settings.
+	// @return A settings object.
+	const Settings& GetSettings() const;
+	// Get the scene lights, no matter the type.
+	// @return A collection of all light objects in the scene.
+	const std::vector<Light*>& GetLights() const;
 private:
-	std::string m_fileName;
+	std::string m_filePath;
 	std::vector<Mesh> m_meshes; // Scene objects
 	std::vector<PreparedMesh> m_rdyMeshes;
 	Camera m_camera; // Main scene Camera
@@ -59,22 +78,40 @@ private:
 
 // crtscene file parsing (json)
 private:
+	// Internal function for parsing the settings tag of a crtscene file.
+	// @param[in] doc: A rapidjson document object with the parsed json file.
 	void ParseSettingsTag( const rapidjson::Document& );
+	// Internal function for parsing the camera tag of a crtscene file.
+	// @param[in] doc: A rapidjson document object with the parsed json file.
 	void ParseCameraTag( const rapidjson::Document& );
+	// Internal function for parsing the objects tag of a crtscene file.
+	// @param[in] doc: A rapidjson document object with the parsed json file.
 	void ParseObjectsTag( const rapidjson::Document& );
+	// Internal function for parsing the lights tag of a crtscene file.
+	// @param[in] doc: A rapidjson document object with the parsed json file.
 	void ParseLightsTag( const rapidjson::Document& );
+	// Internal function for parsing the materials tag of a crtscene file.
+	// @param[in] doc: A rapidjson document object with the parsed json file.
 	void ParseMaterialsTag( const rapidjson::Document& );
 
 // Obj file parsing
 private:
-	FVector3 parseVertexLine( std::istringstream& iss, const std::string& line );
-	void parsePolygonLine( std::istringstream& iss, const std::string& line, std::vector<int>& tris );
-	// Checks if a new object should be created
-	void checkNewObject(
-		const std::string& tag,
-		size_t objCount,
-		std::vector<std::vector<int>>& meshGroup );
+	// Parses a single vertex line of an obj file.
+	// @param[in-out] iss: The input stream containing the information.
+	// @param[in] line: The line that's being parsed.
+	// @return A vector object created from the read vertices.
+	FVector3 ParseVertexLine( std::istringstream&, const std::string& );
+	// Parses a single polygon line of an obj file.
+	// @param[in-out] iss: The input stream containing the information.
+	// @param[in] line: The line that's being parsed.
+	// @param[out] tris: A collection where the parsed vertex indices are stored.
+	void ParsePolygonLine( std::istringstream&, const std::string&, std::vector<int>& );
+	// Checks if a new object should be created.
+	// @param[in] tag: The current tag that's being checked.
+	// @param[out] objCount: An object index indicating which mesh is being processed.
+	// @param[out] meshGroup: A collection of triangle collections
+	// representing meshes and their triangles.
+	void CheckNewObject( const std::string&, size_t, std::vector<std::vector<int>>& );
 };
-
 
 #endif // SCENE_H

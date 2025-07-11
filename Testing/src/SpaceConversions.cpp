@@ -3,7 +3,6 @@
 #include "Vectors.h"
 
 
-
 FVector2 ray2NDC( const int x, const int y, const ImagePlane& imgPlane ) {
     return { (x + 0.5f) / imgPlane.resolution.x, (y + 0.5f) / imgPlane.resolution.y };
 }

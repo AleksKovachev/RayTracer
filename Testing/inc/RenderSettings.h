@@ -1,7 +1,7 @@
 #ifndef RENDER_SETTINGS_H
 #define RENDER_SETTINGS_H
 
-#include <string>
+#include <string> // string
 
 #include "Mesh.h" // PreparedMesh
 
@@ -12,16 +12,16 @@ class FVector3;
 
 // Enum for choosing render style
 enum class RenderMode {
-	ObjectColor,
-	Barycentric,
-	Material
+	ObjectColor, // Render the object with its override material. Either mesh or triangle color.
+	Barycentric, // Render object visualizing the Barycentric coordinates.
+	Material // Render the object with its material.
 };
 
 // Global scene settings
 struct Settings {
 	int renderWidth;
 	int renderHeight;
-	int maxColorComp;
+	int maxColorComp; // The maximum color component for the scene (color-depth).
 	Color BGColor;
 	std::string saveDir;
 	std::string saveName;
@@ -30,6 +30,7 @@ struct Settings {
 	int reflectionDepth;
 	RenderMode renderMode;
 
+	// @param[in] colorDepth: The color's bit depth. Defaults to 8-bit colors.
 	Settings( const int colorDepth = 8 );
 };
 
@@ -52,6 +53,5 @@ struct IntersectionData {
 	const Scene& scene;
 	const FVector3& intersectionPt;
 };
-
 
 #endif // RENDER_SETTINGS_H

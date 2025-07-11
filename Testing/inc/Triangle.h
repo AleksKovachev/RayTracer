@@ -8,39 +8,54 @@ constexpr int vertsInTriangle{ 3 };
 
 struct Vertex {
     FVector3 pos;
-    FVector3 normal;
-    int origIdx;
+    FVector3 normal; // Normal vector of the vertex.
+    int origIdx; // Index of this vertex in the scene file.
 };
 
 
-// Triangle class with position vertices
+// Triangle class with position vertices.
 class Triangle {
 public:
     Color color;
 
-    Triangle() { init( {}, {}, {} ); }
-    Triangle( const FVector3& vert0, const FVector3& vert1, const FVector3& vert2 );
-    Triangle( const Vertex& vert0, const Vertex& vert1, const Vertex& vert2 );
+    Triangle();
+    // @param[in] vert0: The first triplet vertex position.
+    // @param[in] vert1: The next counter-cloackwise vertex position.
+    // @param[in] vet2: The last remaining vertex position.
+    Triangle( const FVector3&, const FVector3&, const FVector3& );
+    // @param[in] vert0: The first triplet vertex.
+    // @param[in] vert1: The next counter-cloackwise vertex.
+    // @param[in] vet2: The last remaining vertex.
+    Triangle( const Vertex&, const Vertex&, const Vertex& );
 
-    // Calculates Edges, Normal Vector and Area
-    void init( const FVector3& v0, const FVector3& v1, const FVector3& v2 );
+    // Calculates Edges, Normal Vector and Area.
+    // @param[in] vert0: The first triplet vertex position.
+    // @param[in] vert1: The next counter-cloackwise vertex position.
+    // @param[in] vet2: The last remaining vertex position.
+    void init( const FVector3&, const FVector3&, const FVector3& );
 
-    // Returns Normal Vector
+    // Gets the Normal Vector.
+    // @return The normal vector of the trianlge.
     FVector3 GetNormal() const;
 
-    // Returns Triangle Area
+    // Gets the Area
+    // @return The area of the triangle.
     float GetArea() const;
 
-    // std::optional<FVector3> GetVert( const int vertIdx ) const;
-
-    // Get vertex at index
-    Vertex GetVert( const int vertIdx ) const;
+    // Get vertex at index.
+    // @param[in] vertIdx: The relative to the triangle index of the vertex to get.
+    // @return The requested vertex.
+    Vertex GetVert( const int ) const;
 
     // Assigns value to the normal vector of the vertex with the provided index
-    void SetVertexNormal( const int vertIdx, const FVector3& val );
+    // @param[in] vertIdx: The relative to the triangle vertex index to set.
+    // @param[in] val: The vertext normal vector value to set.
+    void SetVertexNormal( const int, const FVector3& );
 
     // Checks if a given point is inside the triangle
-    bool IsPointInside( const FVector3& point ) const;
+    // @param[in] point: 3D world space coordinates of the point to check.
+    // @return If the point is inside this triangle.
+    bool IsPointInside( const FVector3& ) const;
 private:
     /* v0, v1, v2 are the indices of this array. The order matters
     for cross product and Triangle normal vector calculation. */
@@ -49,7 +64,9 @@ private:
     FVector3 normal;
     float area;
 
+    // Calculates the normal vector of this triangle.
     void CalculateNormal();
+    // Calculates the area of this triangle.
     void CalculateArea();
 };
 

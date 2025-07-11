@@ -28,6 +28,18 @@
 #include "Vectors.h"
 #include "utils.h"
 
+/*
+The whole Render Engine is built for ease of use, which costs a lot of memory.
+To make it more efficient for larger scenes, the PreparedMesh class must be
+removed entirely. Teh program should only work with the Mesh class, which should
+also store a vector<Material>. Then, the IntersectionData class should store
+material index, object index, and triangle index to work with. In this case,
+each triangle has to be constructed for every iteration inside the
+GetTriangleIntersection function, for every call. This results in a lot of
+repetitive work, but saves resources.
+*/
+
+
 //void interactiveRender(Params& params) {
 //    iniData interactiveData;
 //    Scene scene( "./rsc/Pyramid.crtscene" );

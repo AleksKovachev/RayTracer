@@ -1,8 +1,8 @@
 #include "Mesh.h"
-#include "RenderSettings.h" // ColorMode
 #include "utils.h" // getRandomColor
 
-#include <unordered_map>
+#include <iostream> // cerr
+
 
 void PreparedMesh::PrepMesh( const Mesh& mesh, const ColorMode& colorMode ) {
 
@@ -79,15 +79,15 @@ Mesh::Mesh( const std::vector<FVector3>& verts, const std::vector<int>& triangle
     matIdx{ -1 } {
 }
 
-std::vector<FVector3> Mesh::GetVertices() const {
+const std::vector<FVector3>& Mesh::GetVertices() const {
     return vertices;
 }
 
-std::vector<int> Mesh::GetTriangles() const {
+const std::vector<int>& Mesh::GetTriangles() const {
     return triangles;
 }
 
-Material Mesh::GetMaterial() const {
+const Material& Mesh::GetMaterial() const {
     return material;
 }
 
@@ -102,7 +102,6 @@ Material Mesh::GetMaterialOverride() const {
 void Mesh::SetMaterialOverride( const Material& mat ) {
     m_materialOverride = mat;
 }
-
 
 int Mesh::GetMaterialIdx() const {
     return matIdx;

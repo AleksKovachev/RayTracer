@@ -1,21 +1,14 @@
 #include "Vectors.h"
 
-#include <algorithm>
-#include <cmath>
-#include <iomanip>
-#include <string>
+#include <cmath> // sqrt
 
 
 FVector3::FVector3() : x{ 0.f }, y{ 0.f }, z{ 0.f } {
-	init();
+	CalculateLength();
 };
 
 FVector3::FVector3( const FVector2& vec, float in_z )
 	: x{ vec.x }, y{ vec.y }, z{ in_z } {
-	init();
-}
-
-void FVector3::init() {
 	CalculateLength();
 }
 
@@ -51,10 +44,9 @@ FVector3 FVector3::operator*( const FVector3& other ) const {
 }
 
 // Scalar multiplication
-FVector3 FVector3::operator*( const float& other ) const {
-	return { x * other, y * other, z * other };
+FVector3 FVector3::operator*( const float& val ) const {
+	return { x * val, y * val, z * val };
 }
-
 
 float FVector3::GetLength() {
 	if ( !lengthCalculated ) {
