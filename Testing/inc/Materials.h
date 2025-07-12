@@ -1,8 +1,11 @@
 #ifndef MATERIALS_H
 #define MATERIALS_H
 
+#include <limits> // min
+
 #include "Colors.h" // Color, Colors::Black
 
+constexpr float InvalidIOR = std::numeric_limits<float>::min();
 
 enum class MaterialType {
 	Diffuse,
@@ -15,6 +18,7 @@ struct Material {
 	MaterialType type;
 	Color albedo; // Color for diffuse type, strength for reflection type.
 	bool smoothShading; // If this material should be rendered smooth or flat.
+	float ior; // Index of Refraction for refractive material type.
 
 	Material();
 	// @param[in] matType: The material type.

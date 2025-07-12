@@ -203,6 +203,7 @@ void Scene::ParseMaterialsTag( const rapidjson::Document& doc ) {
 	char t_type[]{ "type" };
 	char t_albedo[]{ "albedo" };
 	char t_smShading[]{ "smooth_shading" };
+	char t_ior[]{ "ior" };
 
 	if ( doc.HasMember( t_materials ) && doc[t_materials].IsArray() ) {
 		const rapidjson::Value::ConstArray& matsArr = doc[t_materials].GetArray();
@@ -211,7 +212,6 @@ void Scene::ParseMaterialsTag( const rapidjson::Document& doc ) {
 			assert( matsArr[i].IsObject() );
 			const rapidjson::Value& material{ matsArr[i] };
 			assert( material.HasMember( t_type ) && material[t_type].IsString() );
-			assert( material.HasMember( t_albedo ) && material[t_albedo].IsArray() );
 			assert( material.HasMember( t_smShading ) && material[t_smShading].IsBool() );
 
 			Material mat;
@@ -221,13 +221,22 @@ void Scene::ParseMaterialsTag( const rapidjson::Document& doc ) {
 				mat.type = MaterialType::Diffuse;
 			else if ( matTypeStr == "reflective" )
 				mat.type = MaterialType::Reflective;
-			else if ( matTypeStr == "refractive" )
+			else if ( matTypeStr == "refractive" ) {
 				mat.type = MaterialType::Refractive;
+			}
 			else if ( matTypeStr == "constant" )
 				mat.type = MaterialType::Constant;
 
-			mat.albedo = loadVector3<Color>( material[t_albedo].GetArray() );
 			mat.smoothShading = material[t_smShading].GetBool();
+
+			// Assign a value for the IOR if there is one.
+			if ( material.HasMember( t_ior ) && material[t_ior].IsDouble() )
+				mat.ior = static_cast<float>(material[t_ior].GetDouble());
+
+			// Assign a value for the albedo if there is one.
+			if ( material.HasMember( t_albedo ) && material[t_albedo].IsArray())
+				mat.albedo = loadVector3<Color>( material[t_albedo].GetArray() );
+
 
 			for ( Mesh& mesh : m_meshes ) {
 				if ( mesh.GetMaterialIdx() == i ) {
