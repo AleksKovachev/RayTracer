@@ -45,12 +45,12 @@ public:
     // Get vertex at index.
     // @param[in] vertIdx: The relative to the triangle index of the vertex to get.
     // @return The requested vertex.
-    Vertex GetVert( const int ) const;
+    Vertex GetVert( const unsigned ) const;
 
     // Assigns value to the normal vector of the vertex with the provided index
     // @param[in] vertIdx: The relative to the triangle vertex index to set.
     // @param[in] val: The vertext normal vector value to set.
-    void SetVertexNormal( const int, const FVector3& );
+    void SetVertexNormal( const unsigned, const FVector3& );
 
     // Checks if a given point is inside the triangle
     // @param[in] point: 3D world space coordinates of the point to check.

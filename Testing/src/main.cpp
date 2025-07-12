@@ -28,6 +28,11 @@
 #include "Vectors.h"
 #include "utils.h"
 
+// TODO: Finish the interactive rendering
+// TODO: Finish the OBJ file parser
+// TODO: Make the Triangle class hold pointers or indices to the vertices, not their copies.
+
+
 /*
 The whole Render Engine is built for ease of use, which costs a lot of memory.
 To make it more efficient for larger scenes, the PreparedMesh class must be
@@ -67,9 +72,9 @@ int main() {
     //Scene scene( "./rsc/Pyramid.crtscene" );
     //Scene scene( "./rsc/TestPlane.obj" );
     //scene.ParseObjFile();
-    scene.ParseSceneFile();
-    scene.SetRenderMode( RenderMode::Material );
     scene.SetColorMode( ColorMode::LoadedMaterial );
+    scene.SetRenderMode( RenderMode::Material );
+    scene.ParseSceneFile();
 
     Render render( scene );
     render.RenderImage();

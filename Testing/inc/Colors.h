@@ -30,7 +30,7 @@ struct Color {
     // Compares two colors.
     // @param[in] other: The color this one is being compared to.
     // @return If the colors are identical.
-    bool operator==( const Color& ) const ;
+    bool operator==( const Color& ) const;
     // Divides each color component by a given value.
     // @param[in] val: The value by which each component is divided.
     // @return The resulting color.
@@ -59,9 +59,9 @@ struct Color {
 
 
 enum class ColorMode {
-    LoadedMaterial, // Use the color from the mesh' material
-    RandomMeshColor, // Use a random color for each mesh
-    RandomTriangleColor // Use a random color for each triangle in the scene
+    LoadedMaterial, // Use the color from the mesh' material.
+    RandomMeshColor, // Use a random color for each mesh.
+    RandomTriangleColor // Use a random color for each triangle in the scene.
 };
 
 

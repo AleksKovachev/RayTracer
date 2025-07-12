@@ -67,7 +67,7 @@ public:
     // Cross product.
     // @param[in] other: The second vector that will be in the cross product calculation.
     // @return The resulting vector.
-    FVector3 operator*( const FVector3& other ) const;
+    FVector3 operator*( const FVector3& ) const;
  
     // ReGets turns vector length/magnitude.
     // @return the length as a float.
@@ -75,7 +75,7 @@ public:
     // Calculates the dot product with given vector.
     // @param[in] other: The other vector that will be used for the calculation.
     // @return The resulting dot product as a float number.
-    float Dot( const FVector3& other ) const;
+    float Dot( const FVector3& ) const;
     // Gets normalized version of this vector.
     // @return An exact copy of this vector, but normalized to a unit length.
     FVector3 Normalize() const;

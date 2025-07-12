@@ -39,14 +39,14 @@ float Triangle::GetArea() const {
     return area;
 }
 
-Vertex Triangle::GetVert( const int vertIdx ) const {
-    if ( !(0 <= vertIdx && vertIdx < vertsInTriangle) )
+Vertex Triangle::GetVert( const unsigned vertIdx ) const {
+    if ( !(vertIdx < vertsInTriangle) )
         std::cerr << "Wrong Vertex Index\n";
     return verts[vertIdx];
 }
 
-void Triangle::SetVertexNormal( const int vertIdx, const FVector3& val ) {
-    if ( 0 <= vertIdx && vertIdx < vertsInTriangle ) {
+void Triangle::SetVertexNormal( const unsigned vertIdx, const FVector3& val ) {
+    if ( vertIdx < vertsInTriangle ) {
         verts[vertIdx].normal = val;
         return;
     }
@@ -54,11 +54,11 @@ void Triangle::SetVertexNormal( const int vertIdx, const FVector3& val ) {
 }
 
 bool Triangle::IsPointInside( const FVector3& point ) const {
-    if ( isLessThan( (edges[0] * (point - verts[0].pos)).Dot( normal ), 0.f ) )
+    if ( isLessEqualThan( (edges[0] * (point - verts[0].pos)).Dot( normal ), 0.f, -1e-9f ) )
         return false;
-    if ( isLessThan( (edges[1] * (point - verts[1].pos)).Dot( normal ), 0.f ) )
+    if ( isLessEqualThan( (edges[1] * (point - verts[1].pos)).Dot( normal ), 0.f, -1e-9f ) )
         return false;
-    if ( isLessThan( (edges[2] * (point - verts[2].pos)).Dot( normal ), 0.f ) )
+    if ( isLessEqualThan( (edges[2] * (point - verts[2].pos)).Dot( normal ), 0.f, -1e-9f ) )
         return false;
 
     return true;

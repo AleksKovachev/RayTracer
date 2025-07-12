@@ -35,37 +35,45 @@ public:
 
     // Traces ShadowRay from hit point to light sources.
     // @param[in] ray: The shadow ray to trace.
-    // @param[in] data: The intersection data to work with.
-    // @param[in] triN: The normal vector of the hit triangle.
     // @param[in] distToLight: The distance to the light source.
     // @return Boolean indicating if the given point is in shadow.
-    static bool IsInShadow(
-        const FVector3&,
-        const IntersectionData&,
-        const FVector3&,
-        const float
-    );
-
-    // Generate a shadow ray and calculate shadowing for a given point.
-    // @param[in] intersectionData: Intersection data needed for the calculations.
-    // @param[in] triangle: The triangle that got hit by the camera ray.
-    // @param[in] hitNormal: An interpolated normal for smooth shading.
-    // @return A color for the shading part of the calculation.
-    static Color Shade(
-        const IntersectionData& intersectionData,
-        const Triangle& triangle,
-        const FVector3* hitNormal = nullptr );
+    bool IsInShadow( const Ray&, const float ) const;
 
     // Returns the color of the Triangle closest to the camera ray.
     // @param[in-out] ray: The ray to be traced.
-    // @param[in] scene: The scene where the tracing happens, used for settings.
-    // @param[in] reflectionDepth: The maximum recursion depth for reflection.
+    // @param[in] data: All intersection data needed for further calculations.
     // @return A color to render for the current pixel after all calculations.
-    Color GetTriangleIntersection(
-        Ray&,
-        const Scene&,
-        const unsigned
-    ) const;
+    Color Shade( const Ray& ray, const IntersectionData& data ) const;
+
+    // Gets the color of the hit mesh or triangle, depending on color mode.
+    // @param[in] data: The intersection data needed for getting the color.
+    // @return The color to render.
+    Color ShadeConstant( const IntersectionData& data ) const;
+    // Gets the color of the hit point as a barycentric coordinates debug color.
+    // @param[in] data: The intersection data needed for getting the color.
+    // @return The color to render.
+    Color ShadeBary( const IntersectionData& data ) const;
+    // Gets the color of a non-reflective, opaque mesh and calculates shadows.
+    // @param[in] data: The intersection data needed for getting the color.
+    // @return The color to render.
+    Color ShadeDiffuse( const IntersectionData& data ) const;
+    // Gets the color of a reflective mesh and calculates multiple ray bounces.
+    // @param[in] ray: The ray to trace, containing direction and depth.
+    // @param[in] data: The intersection data needed for getting the color.
+    // @return The color to render.
+    Color ShadeReflective( const Ray& ray, const IntersectionData& data ) const;
+    // Gets the color of a refractive mesh and calculates multiple ray bounces.
+    // @param[in] ray: The ray to trace, containing direction and depth.
+    // @param[in] data: The intersection data needed for getting the color.
+    // @return The color to render.
+    Color ShadeRefractive( const Ray& ray, const IntersectionData& data ) const;
+    // Traces a ray and checks if it hits any mesh triangle.
+    // @param[in] ray: The ray to trace.
+    // @param[in] maxT: A value beyon which calculations should be cut. Used for shadow rays.
+    // @return Intersection data used for further color calculations.
+    IntersectionData TraceRay(
+        const Ray& ray, const float maxT = std::numeric_limits<float>::max() ) const;
+
 
     // Renders a single image.
     void RenderImage();

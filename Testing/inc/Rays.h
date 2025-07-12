@@ -20,5 +20,4 @@ struct Ray {
 	RayType type;
 };
 
-
 #endif // RAYS_H

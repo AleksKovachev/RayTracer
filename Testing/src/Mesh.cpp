@@ -66,9 +66,9 @@ void PreparedMesh::PrepMesh( const Mesh& mesh, const ColorMode& colorMode ) {
             vertexNormals[i].NormalizeInPlace();
 
     for ( Triangle& tri : m_triangles ) {
-        tri.SetVertexNormal( 0, vertexNormals[tri.GetVert( 0 ).origIdx] );
-        tri.SetVertexNormal( 1, vertexNormals[tri.GetVert( 1 ).origIdx] );
-        tri.SetVertexNormal( 2, vertexNormals[tri.GetVert( 2 ).origIdx] );
+        tri.SetVertexNormal( 0u, vertexNormals[tri.GetVert( 0u ).origIdx] );
+        tri.SetVertexNormal( 1u, vertexNormals[tri.GetVert( 1u ).origIdx] );
+        tri.SetVertexNormal( 2u, vertexNormals[tri.GetVert( 2u ).origIdx] );
     }
 }
 

@@ -54,7 +54,7 @@ public:
 
 	// Gets all the prepared meshes in the scene.
 	// @return A collection of prepared meshes, ready to iterate.
-	std::vector<PreparedMesh> GetPreparedMeshes() const;
+	const std::vector<PreparedMesh>& GetPreparedMeshes() const;
 
 	// Gets all meshes loaded from the scene file.
 	// @return A collection of mesh objects.
