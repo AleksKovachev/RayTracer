@@ -221,11 +221,19 @@ void Scene::ParseMaterialsTag( const rapidjson::Document& doc ) {
 				mat.type = MaterialType::Diffuse;
 			else if ( matTypeStr == "reflective" )
 				mat.type = MaterialType::Reflective;
+			else if ( matTypeStr == "refractive" )
+				mat.type = MaterialType::Refractive;
+			else if ( matTypeStr == "constant" )
+				mat.type = MaterialType::Constant;
 
 			mat.albedo = loadVector3<Color>( material[t_albedo].GetArray() );
 			mat.smoothShading = material[t_smShading].GetBool();
 
-			m_meshes[i].SetMaterial(mat);
+			for ( Mesh& mesh : m_meshes ) {
+				if ( mesh.GetMaterialIdx() == i ) {
+					mesh.SetMaterial( mat );
+				}
+			}
 		}
 	}
 }
