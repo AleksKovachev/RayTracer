@@ -5,8 +5,7 @@ Material::Material()
 	: type{ MaterialType::Diffuse },
 	albedo{ Colors::Black },
 	smoothShading{ false },
-	ior{ InvalidIOR }
-{
+	ior{ InvalidIOR } {
 }
 
 Material::Material( const MaterialType& matType, const Color& albedo, const bool smShading )
