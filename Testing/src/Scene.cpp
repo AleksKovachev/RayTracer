@@ -233,7 +233,6 @@ void Scene::ParseMaterialsTag( const rapidjson::Document& doc ) {
 			if ( material.HasMember( t_albedo ) && material[t_albedo].IsArray())
 				mat.albedo = loadVector3<Color>( material[t_albedo].GetArray() );
 
-
 			for ( Mesh& mesh : m_meshes ) {
 				if ( mesh.GetMaterialIdx() == i ) {
 					mesh.SetMaterial( mat );
