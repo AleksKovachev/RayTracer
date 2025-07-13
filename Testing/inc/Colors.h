@@ -35,10 +35,18 @@ struct Color {
     // @param[in] val: The value by which each component is divided.
     // @return The resulting color.
     Color operator/( const int ) const;
+    // Multiplies each color component by a given value.
+    // @param[in] val: The value by which each component is multiplied.
+    // @return The resulting color.
+    Color operator*( const float ) const;
     // Subtracts a color from this one.
     // @param[in] other: The color that's beeing subtracted.
     // @return The resulting color.
     Color operator-( const Color& ) const;
+    // Adds a color to this one.
+    // @param[in] other: The color that's beeing added.
+    // @return The resulting color.
+    Color operator+( const Color& ) const;
     // In-place addition of two colors.
     // @param[in] other: The color that's beeing added to this one.
     // @return This color, modified to the resulting addition.

@@ -18,6 +18,7 @@ struct Ray {
 	FVector3 direction;
 	int pathDepth; // The maximum recursion depth before returning color data.
 	RayType type;
+	bool ignoreBackface; // Whether the ray should hit or ignore the triangle's backfaces.
 };
 
 #endif // RAYS_H

@@ -10,8 +10,9 @@
 #include "utils.h" // writeColorToFile, areEqual, isGreaterEqualThan, isLessEqualThan
 #include "Vectors.h" // FVector2, FVector3
 
-#include <algorithm> // round, min, max
+#include <algorithm> // round, min, max, swap
 #include <cassert> // assert
+#include <cmath> // sqrtf
 #include <filesystem> // create_directories
 #include <fstream> // ofstream, std::ios::binary
 #include <iostream> // cout, flush
@@ -48,6 +49,11 @@ Render::~Render() {
 
 bool Render::IsInShadow( const Ray& ray, const float distToLight ) const {
     for ( const PreparedMesh& mesh : m_scene.GetPreparedMeshes() ) {
+
+        // Skip shadowing meshes with refractive materials.
+        if ( mesh.m_material.type == MaterialType::Refractive )
+            continue;
+
         for ( const Triangle& triangle : mesh.m_triangles ) {
             // If Ray is parallel - Ignore, it can't be hit.
             float rayProj = ray.direction.Dot( triangle.GetNormal() );
@@ -162,7 +168,7 @@ Color Render::ShadeDiffuse( const IntersectionData& data ) const {
          * Another common technique is to check rayPointDist > EPSILON */
         const FVector3 offsetHitPoint{
             data.hitPoint + (surfaceNormal * m_scene.GetSettings().shadowBias ) };
-        Ray shadowRay{ offsetHitPoint, lightDir, -1, RayType::Shadow };
+        Ray shadowRay{ offsetHitPoint, lightDir, -1, RayType::Shadow, false };
 
         if ( Render::IsInShadow( shadowRay, lightDirLen ) )
             // If there's something on the way to the light - leave the color as is.
@@ -200,14 +206,8 @@ Color Render::ShadeDiffuse( const IntersectionData& data ) const {
 }
 
 Color Render::ShadeReflective( const Ray& ray, const IntersectionData& data ) const {
-    Color pixelColor{ m_scene.GetSettings().BGColor };
-
-    if ( ray.pathDepth >= m_scene.GetReflectionDepth() )
-        return Colors::Black;
-
     FVector3 useNormal{ data.material->smoothShading ?
-        calcHitNormal( data.hitPoint, data.triangle ) :
-        useNormal = data.faceNormal
+        calcHitNormal( data.hitPoint, data.triangle ) : data.faceNormal
     };
 
     // R = 2 * dot(A, N) * N = N * dot(A, N) * 2
@@ -220,27 +220,118 @@ Color Render::ShadeReflective( const Ray& ray, const IntersectionData& data ) co
     Ray reflectionRay{
         data.hitPoint,
         reflectionDir,
-        reflectDepth++,
-        RayType::Reflective
+        reflectDepth + 1,
+        RayType::Reflective,
+        false
     };
 
     IntersectionData intersectData = TraceRay( reflectionRay );
-    pixelColor = Shade( reflectionRay, intersectData );
+    Color pixelColor = Shade( reflectionRay, intersectData );
     pixelColor *= data.material->albedo;
 
     return pixelColor;
 }
 
 Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) const {
-    return {};
+    /* Namings used:
+    * dotIN: dot product of incident ray with surface normal.
+    * cosIN: cosine of the incident ray with the surface normal.
+    * sinRnN: sine between the refraction ray and the negative surface normal.
+    */
+
+    FVector3 useNormal{ data.material->smoothShading ?
+        calcHitNormal( data.hitPoint, data.triangle ) : data.faceNormal
+    };
+
+    float ior1{ 1.f }; // air, hard-coded for now
+    float ior2{ data.material->ior };
+    float dotIN = ray.direction.Dot( useNormal );
+
+    // Check if the incident ray enters or leaves the object.
+    if ( dotIN > 0 ) {
+        // Leaves - swap IOR values and use inverse normal.
+        useNormal = -useNormal;
+        dotIN = -dotIN;
+        std::swap( ior1, ior2 );
+    }
+
+    // If current ray has no support for depth - construct a fresh one.
+    int pathDepth = ray.pathDepth < 0 ? 0 : ray.pathDepth;
+
+    /* Compute the cosine between the incident ray and the normal vector.
+    * cos(I, N) = -dot(I, N) = dot(I, -N). */
+    float cosIN = -dotIN; //!? cos(A)
+
+    float ratioIORs{ ior1 / ior2 };
+
+    Color refractionColor{};
+    // Default to 100% reflection for Total Internal Reflection (TIR)
+    float fresnel = 1.f;
+
+    // Check if TIR occurs and don't calculate refraction if it does.
+    if ( ratioIORs * ratioIORs * (1.f - ( cosIN * cosIN ) ) < 1.f ) {
+        /* Using Snell's Law, find sin(R, -N), R - refraction ray.
+         * sin(R, -N) = (sqrt(1 - cos^2(I, N)) * ior1) / ior2 */
+        float sinRnN{ (sqrtf( 1.f - (cosIN * cosIN) ) * ior1) / ior2 }; //!? sin(B)
+        float cosRnN{ std::sqrtf( 1.0f - (sinRnN * sinRnN) ) }; //!? cos(B)
+
+        // Compute the Refraction Ray direction.
+        FVector3 A = -useNormal * cosRnN;
+        FVector3 C = (ray.direction + (useNormal * cosIN)).Normalize();
+        FVector3 B = C * sinRnN;
+
+        // Generate Refraction Ray.
+        Ray refractionRay{
+            data.hitPoint + (-useNormal * m_scene.GetSettings().refractBias),
+            A + B,
+            //((ray.direction * ratioIORs) + (useNormal * (ratioIORs * cosIN - cosRnN))).Normalize(),
+            pathDepth + 1,
+            RayType::Refractive,
+            false
+        };
+
+        // Trace Refraction Ray.
+        IntersectionData refractData{ TraceRay( refractionRay ) };
+        //refractionColor = Shade( refractionRay, refractData );
+        return Shade( refractionRay, refractData );
+
+        // Calculate Fresnel reflection factor using Schlick's Approximation.
+        //! float R0 = std::pow( (ior1 - ior2) / (ior1 + ior2), 2.0f );
+        // Use the cosine of the angle *inside* the denser material for the Fresnel term.
+        // If ray was entering (original dotIN <= 0), use cosIN.
+        // If ray was exiting (original dotIN > 0), use cosRnN.
+        //! float cosRnN = std::sqrtf( 1.f - ratioIORs * ratioIORs * (1.f - (cosIN * cosIN)) );
+        //! float cosTermForFresnel = (dotIN > 0) ? cosRnN : cosIN;
+        //! reflectionFactor = R0 + (1.0f - R0) * std::pow( (1.0f - cosTermForFresnel), 5.0f );
+
+        fresnel = 0.5f * std::pow( (1.0f + dotIN), 5.f);
+    }
+
+    // Generate Reflection Ray.
+    Ray reflectionRay{
+        data.hitPoint + (useNormal * m_scene.GetSettings().refractBias),
+        ray.direction - (useNormal * ray.direction.Dot( useNormal ) * 2.f),
+        pathDepth + 1,
+        RayType::Reflective,
+        false
+    };
+
+    // Generate Reflection Ray.
+    IntersectionData reflectData{ TraceRay( reflectionRay ) };
+    Color reflectionColor = Shade( reflectionRay, reflectData );
+
+    return reflectionColor * fresnel + refractionColor * (1.f - fresnel);
 }
 
 Color Render::Shade( const Ray& ray, const IntersectionData& data ) const {
     Color pixelColor{ m_scene.GetSettings().BGColor };
 
     if ( data.material == nullptr ) {
-        // Teh camera ray didn't hit any objects - just the background.
+        // The camera ray didn't hit any objects - just the background.
         return pixelColor;
+    }
+    else if ( ray.pathDepth >= m_scene.GetSettings().pathDepth ) {
+        return m_scene.GetSettings().BGColor; // or  Colors::Black
     }
     else if ( m_scene.GetRenderMode() == RenderMode::ObjectColor ) {
         pixelColor = ShadeConstant( data );
@@ -254,11 +345,12 @@ Color Render::Shade( const Ray& ray, const IntersectionData& data ) const {
     }
     else if ( m_scene.GetRenderMode() == RenderMode::Material
         && data.material->type == MaterialType::Reflective ) {
-        pixelColor = ShadeDiffuse( data );
-        //pixelColor = ShadeReflective( ray, data );
+        //pixelColor = ShadeDiffuse( data );
+        pixelColor = ShadeReflective( ray, data );
     }
     else if ( m_scene.GetRenderMode() == RenderMode::Material
         && data.material->type == MaterialType::Refractive ) {
+        //pixelColor = ShadeDiffuse( data );
         pixelColor = ShadeRefractive( ray, data );
     }
     else {
@@ -271,6 +363,11 @@ Color Render::Shade( const Ray& ray, const IntersectionData& data ) const {
 IntersectionData Render::TraceRay( const Ray& ray, const float maxT ) const {
     IntersectionData intersectData{};
     float closestIntersectionP{ std::numeric_limits<float>::max() };
+    float bias{ 0.f }; //! Currently used for reflection!
+    if ( ray.type == RayType::Shadow )
+        bias = m_scene.GetSettings().shadowBias;
+    else if (ray.type == RayType::Refractive )
+        bias = m_scene.GetSettings().refractBias;
 
     for ( const PreparedMesh& mesh : m_scene.GetPreparedMeshes() ) {
         for ( const Triangle& triangle : mesh.m_triangles ) {
@@ -278,29 +375,55 @@ IntersectionData Render::TraceRay( const Ray& ray, const float maxT ) const {
             // rayProj > 0 -> back-face
             // rayProj < 0 -> front-face
             float rayProj = ray.direction.Dot( triangle.GetNormal() );
-            if ( isGreaterEqualThan( rayProj, 0.f ) ) // Ignore back-face
-                continue;
+
+            if ( ray.ignoreBackface ) {
+                if ( isGreaterEqualThan( rayProj, 0.f ) )
+                    continue;
+            }
+            else {
+                if ( areEqual( rayProj, 0.f ) )
+                    continue;
+            }
 
             float rayPlaneDist = (triangle.GetVert( 0u ).pos - ray.origin)
                 .Dot( triangle.GetNormal() );
 
-            if ( isGreaterEqualThan( rayPlaneDist, 0.f ) )
-                // Ray is not towards Triangle's plane.
-                continue;
-
             // Ray-to-Point scale factor for unit vector to reach the Point (t).
             float rayPointDist = rayPlaneDist / rayProj;
+
+            if ( ray.ignoreBackface ) {
+                if ( isGreaterEqualThan( rayPlaneDist, 0.f ) )
+                    // Ray is not towards Triangle's plane.
+                    continue;
+            }
+            else {
+                /* Check if: Ray hits behind the hitPoint(negative rayPointDist)
+                 *           Ray hits at or very near the hitPoint (self-intersection)
+                 *           Ray hits beyond the light source */
+                if ( isLessThan( rayPointDist, bias ) )
+                    continue; // This intersection is not valid for shadow casting.
+            }
+
+            /* With shadow rays, maxT is the distance to the light source.
+             * Geometry on the other side of the light shouldn't cast shadows here.
+             * Currently maxT is only used for light distance. In the future it
+             * will be used for other optimizations as well. */
+            if ( rayPointDist > maxT || isLessEqualThan( rayPointDist, 0.f ) )
+                continue;
 
             // Ray parametric equation - represent points on a line going through a Ray.
             FVector3 intersectionPt = ray.origin + (ray.direction * rayPointDist);
 
             // Ignore intersection if a closer one to the Camera has already been found.
-            if ( rayPointDist > closestIntersectionP || isLessEqualThan( rayPointDist, 0.f ) )
+            if ( rayPointDist > closestIntersectionP )
                 continue;
 
             // If the Plane intersection point is not inside the triangle - don't render it.
             if ( !triangle.IsPointInside( intersectionPt ) )
                 continue;
+
+            if ( ray.type == RayType::Shadow )
+                intersectData; //TODO: Not finished! Make it work in place of IsInShadow()
 
             closestIntersectionP = rayPointDist;
             intersectData.faceNormal = triangle.GetNormal();
@@ -321,7 +444,7 @@ void Render::RenderImage() {
 
     for ( int y{}; y < height; ++y ) {
         for ( int x{}; x < width; ++x ) {
-            Ray ray = camera.GenerateRay( x, y );
+            Ray ray = camera.GenerateRay( x, y, m_scene.GetSettings() );
             IntersectionData intersectData = TraceRay( ray );
             Color pixelColor = Shade( ray, intersectData );
             writeColorToFile( ppmFileStream, pixelColor );

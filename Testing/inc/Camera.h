@@ -8,6 +8,7 @@
 #include "Vectors.h" // FVector3
 
 class Scene;
+struct Settings;
 
 // Camera Image Plane object with a given resolution and position.
 struct ImagePlane {
@@ -56,8 +57,9 @@ struct Camera : public Obj {
     // Generate a normalized Camera Ray for Image Plane pixel (x, y) with applied orientation.
     // @param[in] x: Resolution width.
     // @param[in] y: Resolution height.
+    // @param[in] settings: Scene settings.
     // @return The generated camera ray.
-    Ray GenerateRay( const int, const int ) const;
+    Ray GenerateRay( const int, const int, const Settings& ) const;
 
     // Move Camera forward-backward.
     // @param[in] val: The number of units the Camera will move.

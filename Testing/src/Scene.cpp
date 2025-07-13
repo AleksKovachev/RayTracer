@@ -84,10 +84,6 @@ void Scene::SetRenderMode( const RenderMode& renderMode ) {
 	m_settings.renderMode = renderMode;
 }
 
-int Scene::GetReflectionDepth() const {
-	return m_settings.reflectionDepth;
-}
-
 const std::vector<PreparedMesh>& Scene::GetPreparedMeshes() const {
 	return m_rdyMeshes;
 }

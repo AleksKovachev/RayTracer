@@ -5,7 +5,7 @@
 
 #include "Colors.h" // Color, Colors::Black
 
-constexpr float InvalidIOR = std::numeric_limits<float>::min();
+constexpr float InvalidIOR = std::numeric_limits<float>::quiet_NaN();
 
 enum class MaterialType {
 	Diffuse,

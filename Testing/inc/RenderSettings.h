@@ -15,7 +15,8 @@ constexpr int InvalidIdx = -1;
 
 // Enum for choosing render style
 enum class RenderMode {
-	ObjectColor, // Render the object with its override material. Either mesh or triangle color.
+	// Render the object with its override material. Either mesh or triangle color.
+	ObjectColor,
 	Barycentric, // Render object visualizing the Barycentric coordinates.
 	Material // Render the object with its material.
 };
@@ -36,8 +37,13 @@ struct Settings {
 	// technique is to use dot product of the ray direction and the surface
 	// Normal. If the light ray is nearly parallel - the bias shuold be higher.
 	float shadowBias;
-	int reflectionDepth;
+	// Correction value to compensate floating point errors in refraction calculations.
+	float refractBias;
+	// The maximum number of ray bounces. If exceeded - ray returns BG color.
+	int pathDepth;
 	RenderMode renderMode;
+	// Whether the camera rays should hit or ignore the triangle's backfaces.
+	bool ignoreBackface;
 
 	// @param[in] colorDepth: The color's bit depth. Defaults to 8-bit colors.
 	Settings( const int colorDepth = 8 );
@@ -53,7 +59,8 @@ struct IntersectionData {
 	FVector2 baryCoords; // Where the triangle is hit.
 	const Material* material = nullptr; // The material of the hit object.
 	int objectIdx = InvalidIdx; // Closes object to the ray origin.
-	int triangleIdx = InvalidIdx; // Closes triangle of the closes object to the ray origin.
+	// Closes triangle of the closes object to the ray origin.
+	int triangleIdx = InvalidIdx;
 
 	Triangle triangle; // The hit triangle. Used until rework is done.
 };

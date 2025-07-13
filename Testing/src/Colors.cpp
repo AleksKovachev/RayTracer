@@ -42,11 +42,27 @@ Color Color::operator/( const int val ) const {
     };
 }
 
+Color Color::operator*( const float val ) const {
+    return {
+        static_cast<int>(roundf( static_cast<float>(r) * val )),
+        static_cast<int>(roundf( static_cast<float>(g) * val )),
+        static_cast<int>(roundf( static_cast<float>(b) * val ))
+    };
+}
+
 Color Color::operator-( const Color& other ) const {
     return {
         std::clamp( r - other.r, 0, 255 ),
         std::clamp( g - other.g, 0, 255 ),
         std::clamp( b - other.b, 0, 255 )
+    };
+}
+
+Color Color::operator+( const Color& other ) const {
+    return {
+        std::clamp( r + other.r, 0, 255 ),
+        std::clamp( g + other.g, 0, 255 ),
+        std::clamp( b + other.b, 0, 255 )
     };
 }
 

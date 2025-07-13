@@ -1,5 +1,6 @@
 #include "Camera.h"
 #include "SpaceConversions.h" // ray2NDC, NDC2ScreenSpace, getFixedAspectRatio
+#include "RenderSettings.h" // Settings
 
 #include <numeric> // gcd
 #include <vector> // vector
@@ -47,13 +48,13 @@ void Camera::Move( const FVector3& relPos ) {
         m_children[i]->Move( relPos + childrenRelPos[i] );
 }
 
-Ray Camera::GenerateRay( const int x, const int y ) const {
+Ray Camera::GenerateRay( const int x, const int y, const Settings& settings ) const {
     FVector2 ndcCoords = ray2NDC( x, y, m_imgPlane );
     FVector2 screenCoords = NDC2ScreenSpace( ndcCoords );
     FVector2 fixedAspectRatio = getFixedAspectRatio( screenCoords, m_imgPlane );
     FVector3 rayDirection = FVector3{ fixedAspectRatio, -1.f * m_imgPlane.distanceFromCamera };
     FVector3 finalDirection = ApplyRotation( rayDirection ).Normalize();
-    return Ray( m_position, finalDirection, -1, RayType::Camera );
+    return Ray( m_position, finalDirection, -1, RayType::Camera, settings.ignoreBackface );
 }
 
 void Camera::Dolly( const float val ) {

@@ -48,10 +48,6 @@ public:
 	// @param[in] renderMode: The render mode to use for the final image.
 	void SetRenderMode( const RenderMode& );
 
-	// Gets the reflection depth from the scene settings.
-	// @return The reflection depth as an integer number.
-	int GetReflectionDepth() const;
-
 	// Gets all the prepared meshes in the scene.
 	// @return A collection of prepared meshes, ready to iterate.
 	const std::vector<PreparedMesh>& GetPreparedMeshes() const;
