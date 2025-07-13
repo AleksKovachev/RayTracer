@@ -42,6 +42,9 @@ public:
 	// Sets the material index this object to the one in the scene file properties.
 	// @param[in] idx: An integer index.
 	void SetMaterialIdx( const int );
+	// Assigns UV texture coordinates for this mesh.
+	// @param[in] uvs: The collection of UV coordinaes to assign.
+	void SetTextureUVs( const std::vector<FVector3> );
 private:
 	Material material;
 	Material m_materialOverride;
@@ -50,6 +53,7 @@ private:
 	std::vector<int> triangles; // Each triple of vertices form a triangle
 	std::vector<FVector3> m_faceNormals;
 	std::vector<FVector3> m_vertexNormals;
+	std::vector<FVector3> m_UVs;
 };
 
 // Collection of built Triangles representing a 3D object

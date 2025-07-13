@@ -46,13 +46,13 @@ void PreparedMesh::PrepMesh( const Mesh& mesh, const ColorMode& colorMode ) {
         if ( colorMode == ColorMode::LoadedMaterial ) {
             const Material& mat = mesh.GetMaterial();
             // Backwards Compatible - needs removal
-            m_triangles[lastTriIdx].color = mat.albedo;
+            m_triangles[lastTriIdx].color = mat.texture.albedo;
             m_material = mat;
         }
         else if ( colorMode == ColorMode::RandomMeshColor ) {
             const Material& mat = mesh.GetMaterialOverride();
             // Backwards Compatible - needs removal
-            m_triangles[lastTriIdx].color = mat.albedo;
+            m_triangles[lastTriIdx].color = mat.texture.albedo;
             m_material = mat;
         }
         else if ( colorMode == ColorMode::RandomTriangleColor ) {
@@ -75,7 +75,7 @@ void PreparedMesh::PrepMesh( const Mesh& mesh, const ColorMode& colorMode ) {
 Mesh::Mesh( const std::vector<FVector3>& verts, const std::vector<int>& triangles )
     : vertices{ verts },
     triangles{ triangles },
-    material{ Material( MaterialType::Diffuse, {255, 0, 0 }, false ) },
+    material{ Material( MaterialType::Diffuse, Texture( {255, 0, 0 } ), false ) },
     matIdx{ -1 } {
 }
 
@@ -113,4 +113,8 @@ void Mesh::SetMaterialIdx( const int idx ) {
         return;
     }
     matIdx = idx;
+}
+
+void Mesh::SetTextureUVs( const std::vector<FVector3> uvs ) {
+    m_UVs = uvs;
 }

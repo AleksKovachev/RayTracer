@@ -95,7 +95,7 @@ Color Render::ShadeConstant( const IntersectionData& data ) const {
         }
         case (ColorMode::LoadedMaterial):
         case (ColorMode::RandomMeshColor): {
-            return data.material->albedo;
+            return data.material->texture.albedo;
         }
     }
 
@@ -189,7 +189,7 @@ Color Render::ShadeDiffuse( const IntersectionData& data ) const {
     G = B = R;
 
     renderColor = m_scene.GetSettings().colorMode == ColorMode::RandomTriangleColor
-        ? data.triangle.color : data.material->albedo;
+        ? data.triangle.color : data.material->texture.albedo;
 
     // multiply by normalized albedo
     const int& maxComp = m_scene.GetSettings().maxColorComp;
@@ -227,7 +227,7 @@ Color Render::ShadeReflective( const Ray& ray, const IntersectionData& data ) co
 
     IntersectionData intersectData = TraceRay( reflectionRay );
     Color pixelColor = Shade( reflectionRay, intersectData );
-    pixelColor *= data.material->albedo;
+    pixelColor *= data.material->texture.albedo;
 
     return pixelColor;
 }
@@ -292,7 +292,7 @@ Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) co
 
         // Trace Refraction Ray.
         IntersectionData refractData{ TraceRay( refractionRay ) };
-        //refractionColor = Shade( refractionRay, refractData );
+        refractionColor = Shade( refractionRay, refractData );
         return Shade( refractionRay, refractData );
 
         // Calculate Fresnel reflection factor using Schlick's Approximation.

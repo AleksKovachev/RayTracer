@@ -71,6 +71,7 @@ private:
 	Camera m_camera; // Main scene Camera
 	Settings m_settings; // Global scene settings
 	std::vector<Light*> m_lights;
+	std::vector<Texture> m_textures; // Texture objects
 
 // crtscene file parsing (json)
 private:
@@ -86,6 +87,9 @@ private:
 	// Internal function for parsing the lights tag of a crtscene file.
 	// @param[in] doc: A rapidjson document object with the parsed json file.
 	void ParseLightsTag( const rapidjson::Document& );
+	// Internal function for parsing the textures tag of a crtscene file.
+	// @param[in] doc: A rapidjson document object with the parsed json file.
+	void ParseTexturesTag( const rapidjson::Document& );
 	// Internal function for parsing the materials tag of a crtscene file.
 	// @param[in] doc: A rapidjson document object with the parsed json file.
 	void ParseMaterialsTag( const rapidjson::Document& );

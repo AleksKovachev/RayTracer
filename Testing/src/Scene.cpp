@@ -17,7 +17,7 @@
 template <typename T>
 T loadVector3( const rapidjson::Value::ConstArray& arr );
 Matrix3 loadMatrix3( const rapidjson::Value::ConstArray& arr );
-std::vector<FVector3> loadMeshVerts( const rapidjson::Value::ConstArray& arr );
+std::vector<FVector3> loadTripletValues( const rapidjson::Value::ConstArray& arr );
 std::vector<int> loadMeshTris( const rapidjson::Value::ConstArray& arr );
 
 
@@ -47,12 +47,13 @@ void Scene::ParseSceneFile() {
 	ParseCameraTag( doc );
 	ParseObjectsTag( doc );
 	ParseLightsTag( doc );
+	ParseTexturesTag( doc );
 	ParseMaterialsTag( doc );
 
 	unsigned counter{};
 	for ( Mesh& mesh : m_meshes ) {
 		Material mat{};
-		mat.albedo = getRandomColor();
+		mat.texture.albedo = getRandomColor();
 		mesh.SetMaterialOverride( mat );
 
 		m_rdyMeshes.emplace_back();
@@ -150,6 +151,7 @@ void Scene::ParseObjectsTag( const rapidjson::Document& doc ) {
 	char t_vertices[]{ "vertices" };
 	char t_triangles[]{ "triangles" };
 	char t_matIdx[]{ "material_index" };
+	char t_uvs[]{ "uvs" };
 
 	if ( doc.HasMember( t_objects ) && doc[t_objects].IsArray() ) {
 		const rapidjson::Value::ConstArray& objArr = doc[t_objects].GetArray();
@@ -159,11 +161,14 @@ void Scene::ParseObjectsTag( const rapidjson::Document& doc ) {
 			const rapidjson::Value& mesh{ objArr[i] };
 			assert( mesh.HasMember( t_vertices ) && mesh[t_vertices].IsArray() );
 			assert( mesh.HasMember( t_triangles ) && mesh[t_triangles].IsArray() );
-			m_meshes.emplace_back( loadMeshVerts( mesh[t_vertices].GetArray() ),
+			m_meshes.emplace_back( loadTripletValues( mesh[t_vertices].GetArray() ),
 				loadMeshTris( mesh[t_triangles].GetArray() ) );
 
 			if ( mesh.HasMember( t_matIdx ) && mesh[t_matIdx].IsInt() )
 				m_meshes[i].SetMaterialIdx( mesh[t_matIdx].GetInt() );
+
+			if ( mesh.HasMember( t_uvs ) && mesh[t_uvs].IsArray() )
+				m_meshes[i].SetTextureUVs( loadTripletValues( mesh[t_uvs].GetArray() ) );
 		}
 	}
 }
@@ -189,6 +194,69 @@ void Scene::ParseLightsTag( const rapidjson::Document& doc ) {
 				ligthIntensity = static_cast<float>( light[t_intensity].GetDouble() );
 
 			m_lights.emplace_back( new PointLight( lightPos, ligthIntensity ) );
+		}
+	}
+}
+
+void Scene::ParseTexturesTag( const rapidjson::Document& doc ) {
+	// JSON Tags to look for
+	char t_textures[]{ "textures" };
+	char t_name[]{ "name" };
+	char t_type[]{ "type" };
+	char t_albedo[]{ "albedo" };
+	char t_edgeColor[]{ "edge_color" };
+	char t_innerColor[]{ "inner_color" };
+	char t_edgeWidth[]{ "edge_width" };
+	char t_colorA[]{ "color_A" };
+	char t_colorB[]{ "color_B" };
+	char t_squareSize[]{ "square_size" };
+	char t_filePath[]{ "file_path" };
+
+	if ( doc.HasMember( t_textures ) && doc[t_textures].IsArray() ) {
+		const rapidjson::Value::ConstArray& texArr = doc[t_textures].GetArray();
+
+		for ( unsigned i{}; i < texArr.Size(); ++i ) {
+			assert( texArr[i].IsObject() );
+			const rapidjson::Value& texture{ texArr[i] };
+			assert( texture.HasMember( t_name ) && texture[t_name].IsString() );
+			assert( texture.HasMember( t_type ) && texture[t_type].IsString() );
+
+			Texture tex{};
+			tex.name = texture[t_name].GetString();
+			
+			if ( texture[t_type] == "albedo" ) {
+				tex.type = TextureType::ColorTexture;
+				assert( texture.HasMember( t_albedo ) && texture[t_albedo].IsArray() );
+				tex.albedo = loadVector3<Color>( texture[t_albedo].GetArray() );
+			}
+			else if ( texture[t_type] == "edges" ) {
+				tex.type = TextureType::RedGreenEdgesP;
+				assert( texture.HasMember( t_edgeColor ) && texture[t_edgeColor].IsArray() );
+				assert( texture.HasMember( t_innerColor ) && texture[t_innerColor].IsArray() );
+				assert( texture.HasMember( t_edgeWidth ) && texture[t_edgeWidth].IsDouble() );
+				tex.colorA = loadVector3<Color>( texture[t_edgeColor].GetArray() );
+				tex.colorB = loadVector3<Color>( texture[t_innerColor].GetArray() );
+				tex.scalar = static_cast<float>( texture[t_edgeWidth].GetDouble() );
+			}
+			else if ( texture[t_type] == "checker" ) {
+				tex.type = TextureType::BlackWhiteCheckerP;
+				assert( texture.HasMember( t_colorA ) && texture[t_colorA].IsArray() );
+				assert( texture.HasMember( t_colorB ) && texture[t_colorB].IsArray() );
+				assert( texture.HasMember( t_squareSize ) && texture[t_squareSize].IsDouble() );
+				tex.colorA = loadVector3<Color>( texture[t_colorA].GetArray() );
+				tex.colorB = loadVector3<Color>( texture[t_colorB].GetArray() );
+				tex.scalar = static_cast<float>( texture[t_squareSize].GetDouble() );
+			}
+			else if ( texture[t_type] == "bitmap" ) {
+				tex.type = TextureType::Bitmap;
+				assert( texture.HasMember( t_filePath ) && texture[t_filePath].IsString() );
+				tex.filePath = texture[t_filePath].GetString();
+			}
+			else {
+				assert( false );
+			}
+
+			m_textures.push_back( tex );
 		}
 	}
 }
@@ -230,9 +298,24 @@ void Scene::ParseMaterialsTag( const rapidjson::Document& doc ) {
 				mat.ior = static_cast<float>(material[t_ior].GetDouble());
 
 			// Assign a value for the albedo if there is one.
-			if ( material.HasMember( t_albedo ) && material[t_albedo].IsArray())
-				mat.albedo = loadVector3<Color>( material[t_albedo].GetArray() );
+			if ( material.HasMember( t_albedo ) && material[t_albedo].IsString() ) {
+				mat.texName = material[t_albedo].GetString();
+				if ( mat.texName == "Color texture" ) {
+					mat.texType = TextureType::ColorTexture;
+				}
+				else if ( mat.texName == "Red Green Edges" ) {
+					mat.texType = TextureType::RedGreenEdgesP;
+				}
+				else if ( mat.texName == "Black White Checker" ) {
+					mat.texType = TextureType::BlackWhiteCheckerP;
+				}
+				else {
+					mat.texType = TextureType::Bitmap;
+				}
+			}
 
+			//!? Assuming material objects size matches textures object size in scene file.
+			mat.texture = m_textures[i];
 
 			for ( Mesh& mesh : m_meshes ) {
 				if ( mesh.GetMaterialIdx() == i ) {
@@ -258,15 +341,15 @@ Matrix3 loadMatrix3( const rapidjson::Value::ConstArray& arr ) {
 		FVector3{ arr[6].GetDouble(), arr[7].GetDouble(), arr[8].GetDouble() } };
 }
 
-std::vector<FVector3> loadMeshVerts( const rapidjson::Value::ConstArray& arr ) {
-	std::vector<FVector3> verts{};
+std::vector<FVector3> loadTripletValues( const rapidjson::Value::ConstArray& arr ) {
+	std::vector<FVector3> triplet{};
 
 	for ( unsigned i{}; i + 2 < arr.Size(); i += 3 )
-		verts.emplace_back( static_cast<float>(arr[i].GetDouble()),
+		triplet.emplace_back( static_cast<float>(arr[i].GetDouble()),
 			static_cast<float>(arr[i + 1].GetDouble()),
 			static_cast<float>(arr[i + 2].GetDouble()));
 
-	return verts;
+	return triplet;
 }
 
 std::vector<int> loadMeshTris( const rapidjson::Value::ConstArray& arr ) {
@@ -460,7 +543,7 @@ void Scene::ParseObjFile() {
 		Mesh mesh( vertices, prepMesh );
 		Material mat;
 		mat.type = MaterialType::Diffuse;
-		mat.albedo = getRandomColor();
+		mat.texture.albedo = getRandomColor();
 		mat.smoothShading = false;
 		mesh.SetMaterial( mat );
 		m_meshes.push_back( mesh );
