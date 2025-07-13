@@ -293,7 +293,6 @@ Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) co
         // Trace Refraction Ray.
         IntersectionData refractData{ TraceRay( refractionRay ) };
         refractionColor = Shade( refractionRay, refractData );
-        return Shade( refractionRay, refractData );
 
         // Calculate Fresnel reflection factor using Schlick's Approximation.
         //! float R0 = std::pow( (ior1 - ior2) / (ior1 + ior2), 2.0f );
