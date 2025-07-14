@@ -62,6 +62,11 @@ public:
     // @param[in] data: The intersection data needed for getting the color.
     // @return The color to render.
     Color ShadeReflective( const Ray& ray, const IntersectionData& data ) const;
+    // Calculate Fresnel reflection factor using Schlick's Approximation.
+    // @param[in] ior1: The index of refraction of the current environment.
+    // @param[in] ior2: The index of refraction of the environment the ray hit.
+    // @return The fresnel scalar multiplier.
+    static float CalcFresnelSchlickApprox( const float, const float, const float );
     // Gets the color of a refractive mesh and calculates multiple ray bounces.
     // @param[in] ray: The ray to trace, containing direction and depth.
     // @param[in] data: The intersection data needed for getting the color.

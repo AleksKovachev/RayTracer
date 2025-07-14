@@ -22,9 +22,12 @@ Color getRandomColor( const int colorDepth ) {
 }
 
 void writeColorToFile( std::ofstream& stream, const Color& pixelColor ) {
-    unsigned char r = static_cast<unsigned char>(pixelColor.r);
-    unsigned char g = static_cast<unsigned char>(pixelColor.g);
-    unsigned char b = static_cast<unsigned char>(pixelColor.b);
+    int R{ std::clamp( pixelColor.r, 0, 255 ) };
+    int G{ std::clamp( pixelColor.g, 0, 255 ) };
+    int B{ std::clamp( pixelColor.b, 0, 255 ) };
+    unsigned char r = static_cast<unsigned char>(R);
+    unsigned char g = static_cast<unsigned char>(G);
+    unsigned char b = static_cast<unsigned char>(B);
     stream.write( reinterpret_cast<const char*>(&r), 1 );
     stream.write( reinterpret_cast<const char*>(&g), 1 );
     stream.write( reinterpret_cast<const char*>(&b), 1 );

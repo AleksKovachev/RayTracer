@@ -10,7 +10,7 @@
 #include "utils.h" // writeColorToFile, areEqual, isGreaterEqualThan, isLessEqualThan
 #include "Vectors.h" // FVector2, FVector3
 
-#include "stb_image.h" // stbi_load
+//#include "stb_image.h" // stbi_load
 
 #include <algorithm> // round, min, max, swap
 #include <cassert> // assert
@@ -122,9 +122,9 @@ Color Render::ShadeBary( const IntersectionData& data ) const {
 
 FVector3 calcHitNormal( const FVector3& intersectionPt, const Triangle& triangle ) {
     const FVector2 UV{ calculateBarycentricCoords( intersectionPt, triangle ) };
-    return triangle.GetVert( 1u ).normal * UV.x
+    return (triangle.GetVert( 1u ).normal * UV.x
         + triangle.GetVert( 2u ).normal * UV.y
-        + triangle.GetVert( 0u ).normal * (1 - UV.x - UV.y);
+        + triangle.GetVert( 0u ).normal * (1 - UV.x - UV.y)).Normalize();
 }
 
 Color Render::ShadeDiffuse( const IntersectionData& data ) const {
@@ -165,8 +165,8 @@ Color Render::ShadeDiffuse( const IntersectionData& data ) const {
     }
     else if ( data.material->texType == TextureType::Bitmap ) {
         int width, height, channels;
-        unsigned char* image = stbi_load(
-            data.material->texture.filePath.c_str(), &width, &height, &channels, 0 );
+        //unsigned char* image = stbi_load(
+        //    data.material->texture.filePath.c_str(), &width, &height, &channels, 0 );
     }
 
     for ( const Light* light : m_scene.GetLights() ) {
@@ -229,9 +229,9 @@ Color Render::ShadeDiffuse( const IntersectionData& data ) const {
     B *= static_cast<float>(renderColor.b) / maxComp;
 
     // Clamp here to make everything > 1.0 clip back to 1.0!
-    pixelColor.r = static_cast<int>(round( std::min( 1.f, R + pixelColor.r ) * maxComp ));
-    pixelColor.g = static_cast<int>(round( std::min( 1.f, G + pixelColor.g ) * maxComp ));
-    pixelColor.b = static_cast<int>(round( std::min( 1.f, B + pixelColor.b ) * maxComp ));
+    pixelColor.r = static_cast<int>(round( R + pixelColor.r * maxComp ));
+    pixelColor.g = static_cast<int>(round( G + pixelColor.g * maxComp ));
+    pixelColor.b = static_cast<int>(round( B + pixelColor.b * maxComp ));
 
     return pixelColor;
 }
@@ -250,7 +250,7 @@ Color Render::ShadeReflective( const Ray& ray, const IntersectionData& data ) co
 
     Ray reflectionRay{
         data.hitPoint,
-        reflectionDir,
+        reflectionDir.Normalize(),
         reflectDepth + 1,
         RayType::Reflective,
         false
@@ -261,6 +261,18 @@ Color Render::ShadeReflective( const Ray& ray, const IntersectionData& data ) co
     pixelColor *= data.material->texture.albedo;
 
     return pixelColor;
+}
+
+float Render::CalcFresnelSchlickApprox( const float ior1, const float ior2, const float dotIN ) {
+    float ratioIORs{ ior1 / ior2 };
+    float cosIN = -dotIN; // cos(A)
+    float R0 = std::pow( (ior1 - ior2) / (ior1 + ior2), 2.0f );
+    // Use the cosine of the angle *inside* the denser material for the Fresnel term.
+    // If ray was entering (original dotIN <= 0), use cosIN.
+    // If ray was exiting (original dotIN > 0), use cosRnN.
+    float cosRnN = std::sqrtf( 1.f - ratioIORs * ratioIORs * (1.f - (cosIN * cosIN)) );
+    float cosTermForFresnel = (dotIN > 0) ? cosRnN : cosIN;
+    return R0 + (1.0f - R0) * std::pow( (1.0f - cosTermForFresnel), 5.0f );
 }
 
 Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) const {
@@ -300,7 +312,7 @@ Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) co
     float fresnel = 1.f;
 
     // Check if TIR occurs and don't calculate refraction if it does.
-    if ( ratioIORs * ratioIORs * (1.f - ( cosIN * cosIN ) ) < 1.f ) {
+    if ( std::sqrtf(1.f - cosIN * cosIN ) <= ior2 / ior1 ) {
         /* Using Snell's Law, find sin(R, -N), R - refraction ray.
          * sin(R, -N) = (sqrt(1 - cos^2(I, N)) * ior1) / ior2 */
         float sinRnN{ (sqrtf( 1.f - (cosIN * cosIN) ) * ior1) / ior2 }; //!? sin(B)
@@ -314,7 +326,7 @@ Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) co
         // Generate Refraction Ray.
         Ray refractionRay{
             data.hitPoint + (-useNormal * m_scene.GetSettings().refractBias),
-            A + B,
+            (A + B).Normalize(),
             //((ray.direction * ratioIORs) + (useNormal * (ratioIORs * cosIN - cosRnN))).Normalize(),
             pathDepth + 1,
             RayType::Refractive,
@@ -325,15 +337,7 @@ Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) co
         IntersectionData refractData{ TraceRay( refractionRay ) };
         refractionColor = Shade( refractionRay, refractData );
 
-        // Calculate Fresnel reflection factor using Schlick's Approximation.
-        //! float R0 = std::pow( (ior1 - ior2) / (ior1 + ior2), 2.0f );
-        // Use the cosine of the angle *inside* the denser material for the Fresnel term.
-        // If ray was entering (original dotIN <= 0), use cosIN.
-        // If ray was exiting (original dotIN > 0), use cosRnN.
-        //! float cosRnN = std::sqrtf( 1.f - ratioIORs * ratioIORs * (1.f - (cosIN * cosIN)) );
-        //! float cosTermForFresnel = (dotIN > 0) ? cosRnN : cosIN;
-        //! reflectionFactor = R0 + (1.0f - R0) * std::pow( (1.0f - cosTermForFresnel), 5.0f );
-
+        //fresnel = CalcFresnelSchlickApprox( ior1, ior2, dotIN );
         fresnel = 0.5f * std::pow( (1.0f + dotIN), 5.f);
     }
 
@@ -345,6 +349,7 @@ Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) co
         RayType::Reflective,
         false
     };
+    reflectionRay.direction.NormalizeInPlace();
 
     // Generate Reflection Ray.
     IntersectionData reflectData{ TraceRay( reflectionRay ) };
@@ -393,7 +398,8 @@ Color Render::Shade( const Ray& ray, const IntersectionData& data ) const {
 IntersectionData Render::TraceRay( const Ray& ray, const float maxT ) const {
     IntersectionData intersectData{};
     float closestIntersectionP{ std::numeric_limits<float>::max() };
-    float bias{ 0.f }; //! Currently used for reflection!
+    float bias{ 0.f }; //! Default value currently only used for reflection!
+
     if ( ray.type == RayType::Shadow )
         bias = m_scene.GetSettings().shadowBias;
     else if (ray.type == RayType::Refractive )
