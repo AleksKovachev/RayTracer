@@ -120,9 +120,9 @@ Color Render::ShadeBary( const IntersectionData& data ) const {
 
 FVector3 calcHitNormal( const FVector3& intersectionPt, const Triangle& triangle ) {
     const FVector2 UV{ calculateBarycentricCoords( intersectionPt, triangle ) };
-    return triangle.GetVert( 1u ).normal * UV.x
+    return (triangle.GetVert( 1u ).normal * UV.x
         + triangle.GetVert( 2u ).normal * UV.y
-        + triangle.GetVert( 0u ).normal * (1 - UV.x - UV.y);
+        + triangle.GetVert( 0u ).normal * (1 - UV.x - UV.y)).Normalize();
 }
 
 Color Render::ShadeDiffuse( const IntersectionData& data ) const {
@@ -184,7 +184,7 @@ Color Render::ShadeDiffuse( const IntersectionData& data ) const {
     }
 
     if ( areEqual( R, 0.f ) )
-        return m_scene.GetSettings().BGColor;
+        return Colors::Black;
 
     G = B = R;
 
@@ -198,9 +198,9 @@ Color Render::ShadeDiffuse( const IntersectionData& data ) const {
     B *= static_cast<float>(renderColor.b) / maxComp;
 
     // Clamp here to make everything > 1.0 clip back to 1.0!
-    pixelColor.r = static_cast<int>(round( std::min( 1.f, R ) * maxComp ));
-    pixelColor.g = static_cast<int>(round( std::min( 1.f, G ) * maxComp ));
-    pixelColor.b = static_cast<int>(round( std::min( 1.f, B ) * maxComp ));
+    pixelColor.r = static_cast<int>(round( R * maxComp ));
+    pixelColor.g = static_cast<int>(round( G * maxComp ));
+    pixelColor.b = static_cast<int>(round( B * maxComp ));
 
     return pixelColor;
 }
@@ -209,7 +209,6 @@ Color Render::ShadeReflective( const Ray& ray, const IntersectionData& data ) co
     FVector3 useNormal{ data.material->smoothShading ?
         calcHitNormal( data.hitPoint, data.triangle ) : data.faceNormal
     };
-    useNormal.NormalizeInPlace(); //! ###
 
     // R = 2 * dot(A, N) * N = N * dot(A, N) * 2
     FVector3 reflectionDir = ray.direction - (
@@ -220,12 +219,11 @@ Color Render::ShadeReflective( const Ray& ray, const IntersectionData& data ) co
 
     Ray reflectionRay{
         data.hitPoint,
-        reflectionDir,
+        reflectionDir.Normalize(),
         reflectDepth + 1,
         RayType::Reflective,
         false
     };
-    reflectionRay.direction.NormalizeInPlace(); //! ###
 
     IntersectionData intersectData = TraceRay( reflectionRay );
     Color pixelColor = Shade( reflectionRay, intersectData );
@@ -244,7 +242,6 @@ Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) co
     FVector3 useNormal{ data.material->smoothShading ?
         calcHitNormal( data.hitPoint, data.triangle ) : data.faceNormal
     };
-    useNormal.NormalizeInPlace(); //! ###
 
     float ior1{ 1.f }; // air, hard-coded for now
     float ior2{ data.material->ior };
@@ -277,6 +274,7 @@ Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) co
 
     // Check if TIR occurs and don't calculate refraction if it does.
     //if ( sin2ThetaT < 1.f ) {
+
     if ( std::sqrtf( 1.f - cosIN * cosIN) <= ior2 / ior1 ) {
         /* Using Snell's Law, find sin(R, -N), R - refraction ray.
          * sin(R, -N) = (sqrt(1 - cos^2(I, N)) * ior1) / ior2 */
@@ -291,13 +289,12 @@ Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) co
         // Generate Refraction Ray.
         Ray refractionRay{
             data.hitPoint + (-useNormal * m_scene.GetSettings().refractBias),
-            A + B,
+            (A + B).Normalize(),
             //((ray.direction * eta) + (useNormal * (eta * cosIN - cosRnN))).Normalize(),
             pathDepth + 1,
             RayType::Refractive,
             false
         };
-        refractionRay.direction.NormalizeInPlace(); //! ###
 
         // Trace Refraction Ray.
         IntersectionData refractData{ TraceRay( refractionRay ) };
@@ -324,7 +321,7 @@ Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) co
         RayType::Reflective,
         false
     };
-    reflectionRay.direction.NormalizeInPlace(); //! ###
+    reflectionRay.direction.NormalizeInPlace();
 
     // Generate Reflection Ray.
     IntersectionData reflectData{ TraceRay( reflectionRay ) };
@@ -373,7 +370,8 @@ Color Render::Shade( const Ray& ray, const IntersectionData& data ) const {
 IntersectionData Render::TraceRay( const Ray& ray, const float maxT ) const {
     IntersectionData intersectData{};
     float closestIntersectionP{ std::numeric_limits<float>::max() };
-    float bias{ 0.f }; //! Currently used for reflection!
+    float bias{ 0.f }; //! Default value currently only used for reflection!
+
     if ( ray.type == RayType::Shadow )
         bias = m_scene.GetSettings().shadowBias;
     else if (ray.type == RayType::Refractive )
@@ -457,7 +455,7 @@ void Render::RenderImage() {
             Ray ray = camera.GenerateRay( x, y, m_scene.GetSettings() );
             IntersectionData intersectData = TraceRay( ray );
             Color pixelColor = Shade( ray, intersectData);
-            writeColorToFile( ppmFileStream, pixelColor );
+            writeColorToFile( ppmFileStream, Color(std::clamp(pixelColor.r, 0, 255), std::clamp( pixelColor.g, 0, 255 ), std::clamp( pixelColor.b, 0, 255 ) ));
         }
         std::cout << "\rLine: " << y + 1 << " / " << height << "  |  "
             << (static_cast<float>(y + 1) / height) * 100 << "%          " << std::flush;
