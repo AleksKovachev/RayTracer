@@ -42,6 +42,9 @@ public:
 	// Sets the material index this object to the one in the scene file properties.
 	// @param[in] idx: An integer index.
 	void SetMaterialIdx( const int );
+	// Gets the UV texture coordinates of this mesh.
+	// @return A collection of UV coordinaes.
+	const std::vector<FVector3>& GetTextureUVs() const;
 	// Assigns UV texture coordinates for this mesh.
 	// @param[in] uvs: The collection of UV coordinaes to assign.
 	void SetTextureUVs( const std::vector<FVector3> );

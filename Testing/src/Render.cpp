@@ -138,6 +138,18 @@ Color Render::ShadeDiffuse( const IntersectionData& data ) const {
 
     const FVector3& surfaceNormal = (data.material->smoothShading ? hitNormal : data.faceNormal );
 
+    // Handle Procedural edges texture rendering
+    const FVector2 UV = calculateBarycentricCoords( data.hitPoint, data.triangle );
+    if ( data.material->texType == TextureType::RedGreenEdgesP ) {
+        const float edgeWdith = data.material->texture.scalar;
+        if ( UV.x < edgeWdith || UV.y < edgeWdith || 1 - UV.x - UV.y < edgeWdith ) {
+            pixelColor = data.material->texture.colorA;
+        }
+        else {
+            pixelColor = data.material->texture.colorB;
+        }
+    }
+
     for ( const Light* light : m_scene.GetLights() ) {
         //! If Scene lights get more types, replace static_cast with dynamic to check light type.
         const PointLight* ptLight = static_cast<const PointLight*>(light);
@@ -198,9 +210,9 @@ Color Render::ShadeDiffuse( const IntersectionData& data ) const {
     B *= static_cast<float>(renderColor.b) / maxComp;
 
     // Clamp here to make everything > 1.0 clip back to 1.0!
-    pixelColor.r = static_cast<int>(round( std::min( 1.f, R ) * maxComp ));
-    pixelColor.g = static_cast<int>(round( std::min( 1.f, G ) * maxComp ));
-    pixelColor.b = static_cast<int>(round( std::min( 1.f, B ) * maxComp ));
+    pixelColor.r = static_cast<int>(round( std::min( 1.f, R + pixelColor.r ) * maxComp ));
+    pixelColor.g = static_cast<int>(round( std::min( 1.f, G + pixelColor.g ) * maxComp ));
+    pixelColor.b = static_cast<int>(round( std::min( 1.f, B + pixelColor.b ) * maxComp ));
 
     return pixelColor;
 }

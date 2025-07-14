@@ -7,6 +7,7 @@
 void PreparedMesh::PrepMesh( const Mesh& mesh, const ColorMode& colorMode ) {
 
     const std::vector<FVector3>& vertices = mesh.GetVertices();
+    const std::vector<FVector3>& UVs = mesh.GetTextureUVs();
     size_t vertSize = vertices.size();
     std::vector<FVector3> vertexNormals( vertSize, { 0.f, 0.f, 0.f } );
     std::vector<int> vertexNormalCounts( vertSize, 0 );
@@ -30,6 +31,9 @@ void PreparedMesh::PrepMesh( const Mesh& mesh, const ColorMode& colorMode ) {
         v0.pos = vertices[idx0];
         v1.pos = vertices[idx1];
         v2.pos = vertices[idx2];
+        v0.UVCoords = UVs[idx0];
+        v1.UVCoords = UVs[idx1];
+        v2.UVCoords = UVs[idx2];
         v0.normal = v1.normal = v2.normal = {}; // Init normals to 0
 
         m_triangles.emplace_back( v0, v1, v2 );
@@ -113,6 +117,10 @@ void Mesh::SetMaterialIdx( const int idx ) {
         return;
     }
     matIdx = idx;
+}
+
+const std::vector<FVector3>& Mesh::GetTextureUVs() const {
+    return m_UVs;
 }
 
 void Mesh::SetTextureUVs( const std::vector<FVector3> uvs ) {

@@ -68,7 +68,7 @@ int main() {
     //params.camera.Tilt( 15 );
     //params.camera.RotateAroundPoint( {0, 0, -3}, {0, 45, 0});
 
-    Scene scene( "./rsc/scene0.crtscene" );
+    Scene scene( "./rsc/scene1.crtscene" );
     //Scene scene( "./rsc/OverlappingTriangles.crtscene" );
     //Scene scene( "./rsc/Pyramid.crtscene" );
     //Scene scene( "./rsc/TestPlane.obj" );

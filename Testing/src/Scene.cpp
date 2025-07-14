@@ -314,8 +314,11 @@ void Scene::ParseMaterialsTag( const rapidjson::Document& doc ) {
 				}
 			}
 
-			//!? Assuming material objects size matches textures object size in scene file.
-			mat.texture = m_textures[i];
+			for ( const Texture& tex : m_textures ) {
+				if ( tex.name == mat.texName ) {
+					mat.texture = tex;
+				}
+			}
 
 			for ( Mesh& mesh : m_meshes ) {
 				if ( mesh.GetMaterialIdx() == i ) {
