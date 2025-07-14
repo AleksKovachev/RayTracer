@@ -10,6 +10,8 @@
 #include "utils.h" // writeColorToFile, areEqual, isGreaterEqualThan, isLessEqualThan
 #include "Vectors.h" // FVector2, FVector3
 
+#include "stb_image.h" // stbi_load
+
 #include <algorithm> // round, min, max, swap
 #include <cassert> // assert
 #include <cmath> // sqrtf
@@ -139,8 +141,8 @@ Color Render::ShadeDiffuse( const IntersectionData& data ) const {
     const FVector3& surfaceNormal = (data.material->smoothShading ? hitNormal : data.faceNormal );
 
     // Handle Procedural edges texture rendering
-    const FVector2 UV = calculateBarycentricCoords( data.hitPoint, data.triangle );
     if ( data.material->texType == TextureType::RedGreenEdgesP ) {
+        const FVector2 UV = calculateBarycentricCoords( data.hitPoint, data.triangle );
         const float edgeWdith = data.material->texture.scalar;
         if ( UV.x < edgeWdith || UV.y < edgeWdith || 1 - UV.x - UV.y < edgeWdith ) {
             pixelColor = data.material->texture.colorA;
@@ -148,6 +150,23 @@ Color Render::ShadeDiffuse( const IntersectionData& data ) const {
         else {
             pixelColor = data.material->texture.colorB;
         }
+    }
+    // Handle Procedural checker texture rendering
+    else if ( data.material->texType == TextureType::BlackWhiteCheckerP ) {
+        const FVector2 UV = calculateBarycentricCoords( data.hitPoint, data.triangle );
+        const float squareSize = data.material->texture.scalar;
+        if ( (UV.x < squareSize && UV.y < squareSize)
+            || (UV.x > squareSize && UV.y > squareSize) ) {
+            pixelColor = data.material->texture.colorA;
+        }
+        else {
+            pixelColor = data.material->texture.colorB;
+        }
+    }
+    else if ( data.material->texType == TextureType::Bitmap ) {
+        int width, height, channels;
+        unsigned char* image = stbi_load(
+            data.material->texture.filePath.c_str(), &width, &height, &channels, 0 );
     }
 
     for ( const Light* light : m_scene.GetLights() ) {

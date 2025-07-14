@@ -250,7 +250,7 @@ void Scene::ParseTexturesTag( const rapidjson::Document& doc ) {
 			else if ( texture[t_type] == "bitmap" ) {
 				tex.type = TextureType::Bitmap;
 				assert( texture.HasMember( t_filePath ) && texture[t_filePath].IsString() );
-				tex.filePath = texture[t_filePath].GetString();
+				tex.filePath = std::string( "rsc/" ) + texture[t_filePath].GetString();
 			}
 			else {
 				assert( false );
