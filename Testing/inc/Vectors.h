@@ -45,25 +45,31 @@ public:
     // @param[in] other: The vector that's beeing added.
     // @return The resulting vector.
     FVector3 operator+( const FVector3& ) const;
+
     // Subtracts a vector from this one.
     // @param[in] other: The vector that's beeing subtracted.
     // @return The resulting vector.
     FVector3 operator-( const FVector3& ) const;
+
     // Inverses this vector.
     // @return The inverse vector.
     FVector3 operator-() const;
+
     // In-place addition of two vectors.
     // @param[in] other: The vector that's beeing added to this one.
     // @return This vector, modified to the resulting addition.
     FVector3& operator+=( const FVector3& );
+
     // Compares two vectors.
     // @param[in] other: The vectors this one is being compared to.
     // @return If the vectors are identical.
     bool operator==( const FVector3& );
+
     // Scalar multiplication. Multiplies each vector component by the given scalar.
     // @param[in] val: The value each component of this vector is being multiplied by.
     // @return The resulting vector.
     FVector3 operator*( const float& ) const;
+
     // Cross product.
     // @param[in] other: The second vector that will be in the cross product calculation.
     // @return The resulting vector.
@@ -72,13 +78,16 @@ public:
     // ReGets turns vector length/magnitude.
     // @return the length as a float.
     float GetLength();
+
     // Calculates the dot product with given vector.
     // @param[in] other: The other vector that will be used for the calculation.
     // @return The resulting dot product as a float number.
     float Dot( const FVector3& ) const;
+
     // Gets normalized version of this vector.
     // @return An exact copy of this vector, but normalized to a unit length.
     FVector3 Normalize() const;
+
     // In-place normalizes this vector to a unit length.
     void NormalizeInPlace();
 private:

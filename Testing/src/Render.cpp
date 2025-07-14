@@ -10,7 +10,8 @@
 #include "utils.h" // writeColorToFile, areEqual, isGreaterEqualThan, isLessEqualThan
 #include "Vectors.h" // FVector2, FVector3
 
-//#include "stb_image.h" // stbi_load
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h" // stbi_load
 
 #include <algorithm> // round, min, max, swap
 #include <cassert> // assert
@@ -105,7 +106,7 @@ Color Render::ShadeConstant( const IntersectionData& data ) const {
     return Colors::Black;
 }
 
-FVector2 calculateBarycentricCoords( const FVector3& intersectionPt, const Triangle& triangle ) {
+FVector2 Render::CalcBaryCoords( const FVector3& intersectionPt, const Triangle& triangle ) {
     const FVector3 v0p = intersectionPt - triangle.GetVert( 0u ).pos;
     const FVector3 v0v2 = triangle.GetVert( 2u ).pos - triangle.GetVert( 0u ).pos;
     const FVector3 v0v1 = triangle.GetVert( 1u ).pos - triangle.GetVert( 0u ).pos;
@@ -115,58 +116,79 @@ FVector2 calculateBarycentricCoords( const FVector3& intersectionPt, const Trian
 }
 
 Color Render::ShadeBary( const IntersectionData& data ) const {
-    const FVector2 UV = calculateBarycentricCoords( data.hitPoint, data.triangle );
+    const FVector2 UV = CalcBaryCoords( data.hitPoint, data.triangle );
     return { UV.x, UV.y, 0.f }; // Display Barycentric Coordinates.
 }
 
 
-FVector3 calcHitNormal( const FVector3& intersectionPt, const Triangle& triangle ) {
-    const FVector2 UV{ calculateBarycentricCoords( intersectionPt, triangle ) };
+FVector3 Render::CalcHitNormal( const FVector3& intersectionPt, const Triangle& triangle ) {
+    const FVector2 UV{ CalcBaryCoords( intersectionPt, triangle ) };
     return (triangle.GetVert( 1u ).normal * UV.x
         + triangle.GetVert( 2u ).normal * UV.y
         + triangle.GetVert( 0u ).normal * (1 - UV.x - UV.y)).Normalize();
 }
 
+Color Render::GetEdgesColor(const IntersectionData& data) {
+    const FVector2 UV = CalcBaryCoords( data.hitPoint, data.triangle );
+    const float edgeWdith = data.material->texture.scalar;
+    if ( UV.x < edgeWdith || UV.y < edgeWdith || 1 - UV.x - UV.y < edgeWdith ) {
+        return data.material->texture.colorA;
+    } else {
+        return data.material->texture.colorB;
+    }
+}
+
+Color Render::GetCheckerColor( const IntersectionData& data ) {
+    const FVector2 bary = CalcBaryCoords( data.hitPoint, data.triangle );
+
+    FVector3 UVW{ data.triangle.GetVert( 1 ).UVCoords * bary.x
+        + data.triangle.GetVert( 2 ).UVCoords * bary.y
+        + data.triangle.GetVert( 0 ).UVCoords * (1.f - bary.x - bary.y) };
+
+    const float squareSize = data.material->texture.scalar;
+    int checkU = static_cast<int>(std::floor( UVW.x / squareSize ));
+    int checkV = static_cast<int>(std::floor( UVW.y / squareSize ));
+
+    if ( (checkU + checkV) % 2 == 0 ) {
+        return data.material->texture.colorA;
+    } else {
+        return data.material->texture.colorB;
+    }
+}
+
 Color Render::ShadeDiffuse( const IntersectionData& data ) const {
     FVector3 hitNormal{};
-    float R{};
-    float G{};
-    float B{};
     Color pixelColor{};
     Color renderColor{};
 
     if ( data.material->smoothShading )
-        hitNormal = calcHitNormal( data.hitPoint, data.triangle );
+        hitNormal = CalcHitNormal( data.hitPoint, data.triangle );
 
     const FVector3& surfaceNormal = (data.material->smoothShading ? hitNormal : data.faceNormal );
 
-    // Handle Procedural edges texture rendering
-    if ( data.material->texType == TextureType::RedGreenEdgesP ) {
-        const FVector2 UV = calculateBarycentricCoords( data.hitPoint, data.triangle );
-        const float edgeWdith = data.material->texture.scalar;
-        if ( UV.x < edgeWdith || UV.y < edgeWdith || 1 - UV.x - UV.y < edgeWdith ) {
-            pixelColor = data.material->texture.colorA;
+    switch ( data.material->texType ) {
+        case TextureType::RedGreenEdgesP: {
+            renderColor = GetEdgesColor( data );
+            break;
         }
-        else {
-            pixelColor = data.material->texture.colorB;
+        case TextureType::BlackWhiteCheckerP: {
+            renderColor = GetCheckerColor( data );
+            break;
         }
-    }
-    // Handle Procedural checker texture rendering
-    else if ( data.material->texType == TextureType::BlackWhiteCheckerP ) {
-        const FVector2 UV = calculateBarycentricCoords( data.hitPoint, data.triangle );
-        const float squareSize = data.material->texture.scalar;
-        if ( (UV.x < squareSize && UV.y < squareSize)
-            || (UV.x > squareSize && UV.y > squareSize) ) {
-            pixelColor = data.material->texture.colorA;
+        case TextureType::Bitmap: {
+            int width, height, channels;
+            unsigned char* image = stbi_load(
+                data.material->texture.filePath.c_str(), &width, &height, &channels, 0 );
+            break;
         }
-        else {
-            pixelColor = data.material->texture.colorB;
+        case TextureType::ColorTexture: {
+            renderColor = m_scene.GetSettings().colorMode == ColorMode::RandomTriangleColor
+                ? data.triangle.color : data.material->texture.albedo;
+            break;
         }
-    }
-    else if ( data.material->texType == TextureType::Bitmap ) {
-        int width, height, channels;
-        //unsigned char* image = stbi_load(
-        //    data.material->texture.filePath.c_str(), &width, &height, &channels, 0 );
+        default: {
+            assert( false );
+        }
     }
 
     for ( const Light* light : m_scene.GetLights() ) {
@@ -211,34 +233,25 @@ Color Render::ShadeDiffuse( const IntersectionData& data ) const {
         //! Clamp here to make 1.0 the max intensity!
         // cosLaw = std::min( 1.f, cosLaw );
 
-        R += cosLaw;
+        pixelColor.r += cosLaw;
     }
 
-    if ( areEqual( R, 0.f ) )
+    if ( areEqual( pixelColor.r, 0.f ) )
         return Colors::Black;
 
-    G = B = R;
+    pixelColor.g = pixelColor.b = pixelColor.r;
 
-    renderColor = m_scene.GetSettings().colorMode == ColorMode::RandomTriangleColor
-        ? data.triangle.color : data.material->texture.albedo;
-
-    // multiply by normalized albedo
-    const int& maxComp = m_scene.GetSettings().maxColorComp;
-    R *= static_cast<float>(renderColor.r) / maxComp;
-    G *= static_cast<float>(renderColor.g) / maxComp;
-    B *= static_cast<float>(renderColor.b) / maxComp;
-
-    // Clamp here to make everything > 1.0 clip back to 1.0!
-    pixelColor.r = static_cast<int>(round( R + pixelColor.r * maxComp ));
-    pixelColor.g = static_cast<int>(round( G + pixelColor.g * maxComp ));
-    pixelColor.b = static_cast<int>(round( B + pixelColor.b * maxComp ));
+    // Multiply by albedo or procedural texture.
+    pixelColor.r *= renderColor.r;
+    pixelColor.g *= renderColor.g;
+    pixelColor.b *= renderColor.b;
 
     return pixelColor;
 }
 
 Color Render::ShadeReflective( const Ray& ray, const IntersectionData& data ) const {
     FVector3 useNormal{ data.material->smoothShading ?
-        calcHitNormal( data.hitPoint, data.triangle ) : data.faceNormal
+        CalcHitNormal( data.hitPoint, data.triangle ) : data.faceNormal
     };
 
     // R = 2 * dot(A, N) * N = N * dot(A, N) * 2
@@ -283,7 +296,7 @@ Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) co
     */
 
     FVector3 useNormal{ data.material->smoothShading ?
-        calcHitNormal( data.hitPoint, data.triangle ) : data.faceNormal
+        CalcHitNormal( data.hitPoint, data.triangle ) : data.faceNormal
     };
 
     float ior1{ 1.f }; // air, hard-coded for now
@@ -305,14 +318,16 @@ Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) co
     * cos(I, N) = -dot(I, N) = dot(I, -N). */
     float cosIN = -dotIN; //!? cos(A)
 
-    float ratioIORs{ ior1 / ior2 };
+    float eta{ ior1 / ior2 };
+    float sin2ThetaT = eta * eta * (1.f - (cosIN * cosIN));
 
     Color refractionColor{};
     // Default to 100% reflection for Total Internal Reflection (TIR)
     float fresnel = 1.f;
 
     // Check if TIR occurs and don't calculate refraction if it does.
-    if ( std::sqrtf(1.f - cosIN * cosIN ) <= ior2 / ior1 ) {
+    //if ( std::sqrtf( 1.f - cosIN * cosIN ) <= ior2 / ior1 ) {
+    if ( sin2ThetaT < 1.f ) {
         /* Using Snell's Law, find sin(R, -N), R - refraction ray.
          * sin(R, -N) = (sqrt(1 - cos^2(I, N)) * ior1) / ior2 */
         float sinRnN{ (sqrtf( 1.f - (cosIN * cosIN) ) * ior1) / ior2 }; //!? sin(B)
@@ -327,7 +342,7 @@ Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) co
         Ray refractionRay{
             data.hitPoint + (-useNormal * m_scene.GetSettings().refractBias),
             (A + B).Normalize(),
-            //((ray.direction * ratioIORs) + (useNormal * (ratioIORs * cosIN - cosRnN))).Normalize(),
+            //((ray.direction * eta) + (useNormal * (eta * cosIN - cosRnN))).Normalize(),
             pathDepth + 1,
             RayType::Refractive,
             false
@@ -338,7 +353,7 @@ Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) co
         refractionColor = Shade( refractionRay, refractData );
 
         //fresnel = CalcFresnelSchlickApprox( ior1, ior2, dotIN );
-        fresnel = 0.5f * std::pow( (1.0f + dotIN), 5.f);
+        fresnel = 0.5f * std::pow( (1.0f + dotIN), 5.f );
     }
 
     // Generate Reflection Ray.
@@ -366,7 +381,7 @@ Color Render::Shade( const Ray& ray, const IntersectionData& data ) const {
         return pixelColor;
     }
     else if ( ray.pathDepth >= m_scene.GetSettings().pathDepth ) {
-        return m_scene.GetSettings().BGColor; // or  Colors::Black
+        return pixelColor; // or  Colors::Black
     }
     else if ( m_scene.GetRenderMode() == RenderMode::ObjectColor ) {
         pixelColor = ShadeConstant( data );
@@ -483,9 +498,10 @@ void Render::RenderImage() {
             Ray ray = camera.GenerateRay( x, y, m_scene.GetSettings() );
             IntersectionData intersectData = TraceRay( ray );
             Color pixelColor = Shade( ray, intersectData );
-            writeColorToFile( ppmFileStream, pixelColor );
+            writeColorToFile( ppmFileStream, pixelColor, m_scene.GetSettings().maxColorComp );
         }
-        std::cout << "\rLine: " << y + 1 << " / " << height << std::flush;
+        std::cout << "\rLine: " << y + 1 << " / " << height << "  |  "
+            << (static_cast<float>(y + 1) / height) * 100 << "%          " << std::flush;
     }
 
     ppmFileStream.close();
