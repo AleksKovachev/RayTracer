@@ -32,7 +32,6 @@
 // TODO: Finish the OBJ file parser
 // TODO: Make the Triangle class hold pointers or indices to the vertices, not their copies.
 // TODO: Make the PreparedMesh material property a pointer so materials can be reused.
-// TODO: Move parsing of ior from material to texture.
 // TODO: Implement reading and applying Normal maps.
 
 
