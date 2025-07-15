@@ -1,6 +1,7 @@
+#include "Colors.h" // Colors::Black, Colors::Red
 #include "Materials.h"
 
-#include "stb_image.h" // stbi_load
+#include "stb_image.h" // stbi_image_free
 
 #include <iostream> // cerr, endl
 
@@ -8,8 +9,10 @@ constexpr const char* INVALID = "<INVALID>";
 
 Bitmap::Bitmap() : width{ 0 }, height{ 0 }, channels{ 0 }, buffer { nullptr } {}
 
+size_t Texture::counter = 0;
+
 Texture::Texture()
-	: name{ Material::GenerateDefaultName() },
+	: name{ GenerateDefaultName( NameType::Material ) },
 	type{ TextureType::Invalid },
 	albedo{ Colors::Black },
 	colorA{ Colors::Red }, // using red as a warning color
@@ -18,8 +21,9 @@ Texture::Texture()
 	filePath{ INVALID },
 	bitmap{} {
 }
+
 Texture::Texture( const Color& albedo )
-	: name{ Material::GenerateDefaultName() },
+	: name{ GenerateDefaultName( NameType::Texture ) },
 	type{ TextureType::Invalid },
 	albedo{ albedo },
 	colorA{ Colors::Red }, // using red as a warning color
@@ -33,7 +37,7 @@ size_t Material::counter = 0;
 
 Material::Material()
 	: type{ MaterialType::Diffuse },
-	texName{ GenerateDefaultName() },
+	texName{ GenerateDefaultName( NameType::Material ) },
 	texture{},
 	smoothShading{ false },
 	ior{ InvalidIOR } {
@@ -41,23 +45,25 @@ Material::Material()
 
 Material::Material( const MaterialType& matType, const Texture& texture, const bool smShading )
 	: type{ matType },
-	texName{ GenerateDefaultName() },
+	texName{ GenerateDefaultName( NameType::Texture ) },
 	texture{ texture },
 	smoothShading{ smShading },
 	ior{ InvalidIOR } {
 }
 
-std::string Material::GenerateDefaultName() {
+std::string GenerateDefaultName( NameType type ) {
 	// Large enough for longest name "Color texture "
 	// + largest_long_long_digits + null terminator.
 	char buffer[64];
 
-	if ( Material::counter < 10 )
-		snprintf( buffer, sizeof( buffer ), "Color texture 00%lld", Material::counter++ );
+	size_t& counter{ type == NameType::Material ? Material::counter : Texture::counter };
+
+	if ( counter < 10 )
+		snprintf( buffer, sizeof( buffer ), "Color texture 00%lld", counter++ );
 	else if ( Material::counter < 100 )
-		snprintf( buffer, sizeof( buffer ), "Color texture 0%lld", Material::counter++ );
+		snprintf( buffer, sizeof( buffer ), "Color texture 0%lld", counter++ );
 	else
-		snprintf( buffer, sizeof( buffer ), "Color texture 0%lld", Material::counter++ );
+		snprintf( buffer, sizeof( buffer ), "Color texture 0%lld", counter++ );
 	return buffer;
 }
 
@@ -71,20 +77,15 @@ Bitmap::Bitmap( const Bitmap& other )
 	: width( other.width ),
 	height( other.height ),
 	channels( other.channels ),
-	buffer( nullptr ) // Initialize to nullptr
+	buffer( nullptr )
 {
 	if ( other.buffer != nullptr ) {
 		size_t bufferSize = static_cast<size_t>(width) * height * channels;
 
-		// Use new for C++ style allocation for the copy
-		buffer = new (std::nothrow) unsigned char[bufferSize]; // Using nothrow for allocation check
+		buffer = new unsigned char[bufferSize];
 
 		if ( buffer ) { // Check for successful allocation
 			std::memcpy( buffer, other.buffer, bufferSize );
-		} else {
-			// Handle allocation failure, e.g., throw std::bad_alloc
-			std::cerr << "ERROR: Failed to allocate memory for Bitmap copy using new." << std::endl;
-			throw std::bad_alloc(); // Or assert, depending on your error handling policy
 		}
 	}
 }

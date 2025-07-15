@@ -3,13 +3,16 @@
 
 #include <string> // string
 
+#include "Colors.h" // Color, ColorMode
 #include "Mesh.h" // PreparedMesh
 #include "Vectors.h" // FVector2, FVector3
 
 enum class ColorMode;
 struct Color;
-class Scene;
 class FVector3;
+struct Material;
+class Scene;
+class Triangle;
 
 constexpr int InvalidIdx = -1;
 

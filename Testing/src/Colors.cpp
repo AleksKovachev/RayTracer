@@ -39,12 +39,33 @@ Color Color::operator/( const float val ) const {
     return { r / val, g / val, b / val };
 }
 
+Color& Color::operator/=( const float val ) {
+    r /= val;
+    g /= val;
+    b /= val;
+    return *this;
+}
+
 Color Color::operator*( const float val ) const {
     return { r * val, g * val, b * val };
 }
 
+Color& Color::operator*=( const Color& other ) {
+    r *= other.r;
+    g *= other.g;
+    b *= other.b;
+    return *this;
+}
+
 Color Color::operator-( const Color& other ) const {
     return { r - other.r, g - other.g, b - other.b };
+}
+
+Color& Color::operator-=( const Color& other ) {
+    r -= other.r;
+    g -= other.g;
+    b -= other.b;
+    return *this;
 }
 
 Color Color::operator+( const Color& other ) const {
@@ -55,26 +76,5 @@ Color& Color::operator+=( const Color& other ) {
     r += other.r;
     g += other.g;
     b += other.b;
-    return *this;
-}
-
-Color& Color::operator-=( const Color& other ) {
-    r -= other.r;
-    g -= other.g;
-    b -= other.b;
-    return *this;
-}
-
-Color& Color::operator*=( const Color& other ) {
-    r *= other.r;
-    g *= other.g;
-    b *= other.b;
-    return *this;
-}
-
-Color& Color::operator/=( const int val ) {
-    r /= val;
-    g /= val;
-    b /= val;
     return *this;
 }

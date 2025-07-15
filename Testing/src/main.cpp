@@ -33,6 +33,7 @@
 // TODO: Make the Triangle class hold pointers or indices to the vertices, not their copies.
 // TODO: Make the PreparedMesh material property a pointer so materials can be reused.
 // TODO: Implement reading and applying Normal maps.
+// TODO: Replace IsInShadow() with TraceRay.
 
 
 /*

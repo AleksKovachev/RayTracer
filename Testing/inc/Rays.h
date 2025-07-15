@@ -1,7 +1,7 @@
 #ifndef RAYS_H
 #define RAYS_H
 
-#include "Vectors.h"
+#include "Vectors.h" // FVector3
 
 
 enum class RayType {

@@ -1,22 +1,20 @@
 #include "Camera.h" // Camera
-#include "Colors.h" // Color, ColorMode, Colors::Black
+#include "Colors.h" // Color, ColorMode, Colors::Black, Colors::Red
 #include "Lights.h" // Light, PointLight
+#include "Materials.h" // MaterialType, Bitmap, TextureType
 #include "Mesh.h" // PreparedMesh
 #include "Rays.h" // Ray, RayType
 #include "Render.h"
 #include "RenderSettings.h" // RenderMode, IntersectionData, Settings
 #include "Scene.h" // Scene, Mesh
 #include "Triangle.h" // Triangle
-#include "utils.h" // writeColorToFile, areEqual, isGreaterEqualThan, isLessEqualThan
-#include "Vectors.h" // FVector2, FVector3
+#include "utils.h" // writeColorToFile, areEqual, isGreaterEqualThan, isLessEqualThan, isLessThan
 
 #include <algorithm> // round, min, max, swap
 #include <cassert> // assert
 #include <cmath> // sqrtf
 #include <filesystem> // create_directories
-#include <fstream> // ofstream, std::ios::binary
 #include <iostream> // cout, flush
-#include <limits> // std::numeric_limits<float>::max
 #include <numbers> // pi_v
 #include <string> // string, to_string
 
@@ -184,16 +182,16 @@ Color Render::GetRenderColor( const IntersectionData& data ) const {
     }
 
     switch ( data.material->texture.type ) {
-        case TextureType::RedGreenEdgesP: {
+        case TextureType::EdgesP: {
             return GetEdgesColor( data );
         }
-        case TextureType::BlackWhiteCheckerP: {
+        case TextureType::CheckerP: {
             return GetCheckerColor( data );
         }
         case TextureType::Bitmap: {
             return GetBitmapColor( data );
         }
-        case TextureType::ColorTexture: {
+        case TextureType::SolidColor: {
             return m_scene.GetSettings().colorMode == ColorMode::RandomTriangleColor
                 ? data.triangle.color : data.material->texture.albedo;
         }
@@ -353,7 +351,7 @@ Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) co
     if ( sin2ThetaT < 1.f ) {
         /* Using Snell's Law, find sin(R, -N), R - refraction ray.
          * sin(R, -N) = (sqrt(1 - cos^2(I, N)) * ior1) / ior2 */
-        float sinRnN{ (sqrtf( 1.f - (cosIN * cosIN) ) * ior1) / ior2 }; //!? sin(B)
+        float sinRnN{ (std::sqrtf( 1.f - (cosIN * cosIN) ) * ior1) / ior2 }; //!? sin(B)
         float cosRnN{ std::sqrtf( 1.0f - (sinRnN * sinRnN) ) }; //!? cos(B)
 
         // Compute the Refraction Ray direction.

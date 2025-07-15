@@ -8,6 +8,7 @@
 
 constexpr float InvalidIOR = std::numeric_limits<float>::quiet_NaN();
 
+
 enum class MaterialType {
 	Diffuse,
 	Reflective,
@@ -15,13 +16,21 @@ enum class MaterialType {
 	Constant
 };
 
+
 enum class TextureType {
 	Invalid, // Hasn't been set.
-	ColorTexture, // Uses color settings: albedo, ior, etc.
-	RedGreenEdgesP, // Procedural texture to color triangle edges.
-	BlackWhiteCheckerP, // Procedural checker texture.
+	SolidColor, // Uses color settings: albedo, ior, etc.
+	EdgesP, // Procedural texture to color triangle edges.
+	CheckerP, // Procedural checker texture.
 	Bitmap // Loading a bitmap image to use.
 };
+
+
+enum class NameType {
+	Material,
+	Texture
+};
+
 
 class Bitmap {
 public:
@@ -43,6 +52,7 @@ public:
 	~Bitmap();
 };
 
+
 // A general Texture type incorporating all texture sub-types. Avoids polymorphism.
 struct Texture {
 	Texture();
@@ -57,7 +67,9 @@ struct Texture {
 	// File path leading to the texture location relative to the rsc directory.
 	std::string filePath;
 	Bitmap bitmap;
+	static size_t counter; // A counter to add to default-created textures.
 };
+
 
 struct Material {
 	MaterialType type;
@@ -67,14 +79,19 @@ struct Material {
 	float ior; // Index of Refraction for refractive material type.
 	static size_t counter; // A counter to add to default-created materials.
 
+	// Default constructor initializes to a Diffuse type with an auto-generated name.
 	Material();
+
 	// @param[in] matType: The material type.
 	// @param[in] texture: The texture object to go along with this material.
 	// Reflection multiplier for reflective materials.
 	// @param[in] smShading: Whether the material should be rendered smooth or flat.
 	Material( const MaterialType&, const Texture&, const bool );
-
-	static std::string GenerateDefaultName();
 };
+
+// Generates a default name.
+// @param[in] type: The type of name to be generated.
+// @return A string containing the name.
+std::string GenerateDefaultName( NameType );
 
 #endif // MATERIALS_H

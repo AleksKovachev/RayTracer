@@ -4,6 +4,57 @@
 #include <iostream> // cerr
 
 
+Mesh::Mesh( const std::vector<FVector3>& verts, const std::vector<int>& triangles )
+    : vertices{ verts },
+    triangles{ triangles },
+    material{ Material( MaterialType::Diffuse, Texture( {255, 0, 0 } ), false ) },
+    matIdx{ -1 } {
+}
+
+const std::vector<FVector3>& Mesh::GetVertices() const {
+    return vertices;
+}
+
+const std::vector<int>& Mesh::GetTriangles() const {
+    return triangles;
+}
+
+const Material& Mesh::GetMaterial() const {
+    return material;
+}
+
+void Mesh::SetMaterial( const Material& mat ) {
+    material = mat;
+}
+
+Material Mesh::GetMaterialOverride() const {
+    return m_materialOverride;
+}
+
+void Mesh::SetMaterialOverride( const Material& mat ) {
+    m_materialOverride = mat;
+}
+
+int Mesh::GetMaterialIdx() const {
+    return matIdx;
+}
+
+void Mesh::SetMaterialIdx( const int idx ) {
+    if ( idx < 0 ) {
+        std::cerr << "Invalid material index! Not assigning: " << idx << "\n";
+        return;
+    }
+    matIdx = idx;
+}
+
+const std::vector<FVector3>& Mesh::GetTextureUVs() const {
+    return m_UVs;
+}
+
+void Mesh::SetTextureUVs( const std::vector<FVector3> uvs ) {
+    m_UVs = uvs;
+}
+
 void PreparedMesh::PrepMesh( const Mesh& mesh, const ColorMode& colorMode ) {
 
     const std::vector<FVector3>& vertices = mesh.GetVertices();
@@ -54,14 +105,12 @@ void PreparedMesh::PrepMesh( const Mesh& mesh, const ColorMode& colorMode ) {
             // Backwards Compatible - needs removal
             m_triangles[lastTriIdx].color = mat.texture.albedo;
             m_material = mat;
-        }
-        else if ( colorMode == ColorMode::RandomMeshColor ) {
+        } else if ( colorMode == ColorMode::RandomMeshColor ) {
             const Material& mat = mesh.GetMaterialOverride();
             // Backwards Compatible - needs removal
             m_triangles[lastTriIdx].color = mat.texture.albedo;
             m_material = mat;
-        }
-        else if ( colorMode == ColorMode::RandomTriangleColor ) {
+        } else if ( colorMode == ColorMode::RandomTriangleColor ) {
             m_triangles[lastTriIdx].color = getRandomColor();
         }
     }
@@ -76,55 +125,4 @@ void PreparedMesh::PrepMesh( const Mesh& mesh, const ColorMode& colorMode ) {
         tri.SetVertexNormal( 1u, vertexNormals[tri.GetVert( 1u ).origIdx] );
         tri.SetVertexNormal( 2u, vertexNormals[tri.GetVert( 2u ).origIdx] );
     }
-}
-
-Mesh::Mesh( const std::vector<FVector3>& verts, const std::vector<int>& triangles )
-    : vertices{ verts },
-    triangles{ triangles },
-    material{ Material( MaterialType::Diffuse, Texture( {255, 0, 0 } ), false ) },
-    matIdx{ -1 } {
-}
-
-const std::vector<FVector3>& Mesh::GetVertices() const {
-    return vertices;
-}
-
-const std::vector<int>& Mesh::GetTriangles() const {
-    return triangles;
-}
-
-const Material& Mesh::GetMaterial() const {
-    return material;
-}
-
-void Mesh::SetMaterial( const Material& mat ) {
-    material = mat;
-}
-
-Material Mesh::GetMaterialOverride() const {
-    return m_materialOverride;
-}
-
-void Mesh::SetMaterialOverride( const Material& mat ) {
-    m_materialOverride = mat;
-}
-
-int Mesh::GetMaterialIdx() const {
-    return matIdx;
-}
-
-void Mesh::SetMaterialIdx( const int idx ) {
-    if ( idx < 0 ) {
-        std::cerr << "Invalid material index! Not assigning: " << idx << "\n";
-        return;
-    }
-    matIdx = idx;
-}
-
-const std::vector<FVector3>& Mesh::GetTextureUVs() const {
-    return m_UVs;
-}
-
-void Mesh::SetTextureUVs( const std::vector<FVector3> uvs ) {
-    m_UVs = uvs;
 }

@@ -13,7 +13,6 @@
 #include <fstream> // ifstream
 #include <filesystem> // path
 #include <iostream> // cerr
-#include <sstream> // istringstream
 
 
 template <typename T>
@@ -227,12 +226,12 @@ void Scene::ParseTexturesTag( const rapidjson::Document& doc ) {
 			tex.name = texture[t_name].GetString();
 			
 			if ( texture[t_type] == "albedo" ) {
-				tex.type = TextureType::ColorTexture;
+				tex.type = TextureType::SolidColor;
 				assert( texture.HasMember( t_albedo ) && texture[t_albedo].IsArray() );
 				tex.albedo = loadVector3<Color>( texture[t_albedo].GetArray() );
 			}
 			else if ( texture[t_type] == "edges" ) {
-				tex.type = TextureType::RedGreenEdgesP;
+				tex.type = TextureType::EdgesP;
 				assert( texture.HasMember( t_edgeColor ) && texture[t_edgeColor].IsArray() );
 				assert( texture.HasMember( t_innerColor ) && texture[t_innerColor].IsArray() );
 				assert( texture.HasMember( t_edgeWidth ) && texture[t_edgeWidth].IsDouble() );
@@ -241,7 +240,7 @@ void Scene::ParseTexturesTag( const rapidjson::Document& doc ) {
 				tex.scalar = static_cast<float>( texture[t_edgeWidth].GetDouble() );
 			}
 			else if ( texture[t_type] == "checker" ) {
-				tex.type = TextureType::BlackWhiteCheckerP;
+				tex.type = TextureType::CheckerP;
 				assert( texture.HasMember( t_colorA ) && texture[t_colorA].IsArray() );
 				assert( texture.HasMember( t_colorB ) && texture[t_colorB].IsArray() );
 				assert( texture.HasMember( t_squareSize ) && texture[t_squareSize].IsDouble() );

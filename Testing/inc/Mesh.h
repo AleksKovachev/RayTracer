@@ -4,7 +4,7 @@
 #include <vector> // vector
 
 #include "Colors.h" // ColorMode
-#include "Materials.h" // Material, MaterialType
+#include "Materials.h" // Material, MaterialType, Texture
 #include "Triangle.h" // Triangle, Vertex
 #include "Vectors.h" // FVector3
 
@@ -21,30 +21,39 @@ public:
 	// Gets the vertices of this mesh.
 	// @return A collection of indices.
 	const std::vector<FVector3>& GetVertices() const;
+
 	// Gets the triangles of this mesh.
 	// @return A collection vertex index tripplets representing this mesh' triangles.
 	const std::vector<int>& GetTriangles() const;
+
 	// Gets the material of this mesh.
 	// @return A material object.
 	const Material& GetMaterial() const;
+
 	// Sets the material of this mesh.
 	// @param[in] mat: A material object to assign this mesh' material to.
 	void SetMaterial( const Material& );
+
 	// Gets the material this mesh' material will be overridden with.
 	// @return A material object.
 	Material GetMaterialOverride() const;
+
 	// Assigns a material this mesh' material will be overridden with.
 	// @param[in] The material object to assign.
 	void SetMaterialOverride( const Material& );
+
 	// Returns the material index this object has in the scene file properties.
 	// @return An integer index.
 	int GetMaterialIdx() const;
+
 	// Sets the material index this object to the one in the scene file properties.
 	// @param[in] idx: An integer index.
 	void SetMaterialIdx( const int );
+
 	// Gets the UV texture coordinates of this mesh.
 	// @return A collection of UV coordinaes.
 	const std::vector<FVector3>& GetTextureUVs() const;
+
 	// Assigns UV texture coordinates for this mesh.
 	// @param[in] uvs: The collection of UV coordinaes to assign.
 	void SetTextureUVs( const std::vector<FVector3> );

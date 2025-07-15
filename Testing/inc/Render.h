@@ -1,10 +1,12 @@
 #ifndef RENDER_H
 #define RENDER_H
 
-#include <fstream> // ofstream, std::ios::binary
-#include <string> // string
+#include <fstream> // ofstream, ios::binary
+#include <limits> // numeric_limits<float>::max
+#include <string> // string, to_string
 
 #include "RenderSettings.h" // IntersectionData
+#include "Vectors.h" // FVector2, FVector3
 
 struct Camera;
 class Mesh;
@@ -15,9 +17,9 @@ class Triangle;
 
 class Render {
 public:
-	const Scene& m_scene;
-	Camera* m_overrideCamera;
-	const std::string* m_overrideSaveName;
+	const Scene& m_scene; // Reference to the scene object and properties.
+	Camera* m_overrideCamera; // Pointer to a camera to use instead of the scene camera.
+	const std::string* m_overrideSaveName; // Pointer to a name to override the save file.
 	int m_frames; // Number of frames to render for the animation renders.
 
     // @param[in] scene: The scene object to render.
@@ -41,16 +43,16 @@ public:
     // @return Boolean indicating if the given point is in shadow.
     bool IsInShadow( const Ray&, const float ) const;
 
-    // Returns the color of the Triangle closest to the camera ray.
-    // @param[in-out] ray: The ray to be traced.
-    // @param[in] data: All intersection data needed for further calculations.
-    // @return A color to render for the current pixel after all calculations.
-    Color Shade( const Ray&, const IntersectionData& ) const;
-
     // Gets the color of the hit mesh or triangle, depending on color mode.
     // @param[in] data: The intersection data needed for getting the color.
     // @return The color to render.
     Color ShadeConstant( const IntersectionData& ) const;
+
+    // Calculates the Barycentric coordinates of a triangle.
+    // @param[in] intersectionPt: The intersection point on the triangle to calculate.
+    // @param[in] triangle: The triangle for which the coordinates will be calculated.
+    // @return An FVector2 with the Barycentric's U and V coordinates. W = 1 - U - V.
+    static FVector2 CalcBaryCoords( const FVector3&, const Triangle& );
 
     // Gets the color of the hit point as a barycentric coordinates debug color.
     // @param[in] data: The intersection data needed for getting the color.
@@ -61,12 +63,6 @@ public:
     // @param[in] data: The intersection data needed for getting the color.
     // @return The color to render.
     Color ShadeNormals( const IntersectionData& ) const;
-
-    // Calculates the Barycentric coordinates of a triangle.
-    // @param[in] intersectionPt: The intersection point on the triangle to calculate.
-    // @param[in] triangle: The triangle for which the coordinates will be calculated.
-    // @return An FVector2 with the Barycentric's U and V coordinates. W = 1 - U - V.
-    static FVector2 CalcBaryCoords( const FVector3&, const Triangle& );
 
     // Calculates an interpolated normal for a triangle based on its Barycentric coordinates.
     // @param[in] intersectionPt: The intersection point on the triangle to calculate.
@@ -116,6 +112,12 @@ public:
     // @param[in] data: The intersection data needed for getting the color.
     // @return The color to render.
     Color ShadeRefractive( const Ray&, const IntersectionData& ) const;
+
+    // Returns the color of the Triangle closest to the camera ray.
+    // @param[in-out] ray: The ray to be traced.
+    // @param[in] data: All intersection data needed for further calculations.
+    // @return A color to render for the current pixel after all calculations.
+    Color Shade( const Ray&, const IntersectionData& ) const;
 
     // Traces a ray and checks if it hits any mesh triangle.
     // @param[in] ray: The ray to trace.
