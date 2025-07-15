@@ -33,6 +33,9 @@
 // TODO: Make the Triangle class hold pointers or indices to the vertices, not their copies.
 // TODO: Make the PreparedMesh material property a pointer so materials can be reused.
 // TODO: Move parsing of ior from material to texture.
+// TODO: Implement reading and applying Normal maps.
+// TODO: Find a better solution for parsing the Materials and Texture tags that
+//       doesn't rely on the texture name alone.
 
 
 /*
@@ -69,12 +72,12 @@ int main() {
     //params.camera.Tilt( 15 );
     //params.camera.RotateAroundPoint( {0, 0, -3}, {0, 45, 0});
 
-    Scene scene( "./rsc/scene4.crtscene" );
+    Scene scene( "./rsc/RefractionBall.crtscene" );
     //Scene scene( "./rsc/OverlappingTriangles.crtscene" );
     //Scene scene( "./rsc/Pyramid.crtscene" );
     //Scene scene( "./rsc/TestPlane.obj" );
     scene.SetColorMode( ColorMode::LoadedMaterial );
-    scene.SetRenderMode( RenderMode::Material );
+    scene.SetRenderMode( RenderMode::ShadedNormals );
     scene.ParseSceneFile();
     //scene.ParseObjFile();
 

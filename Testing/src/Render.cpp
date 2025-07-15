@@ -117,6 +117,15 @@ Color Render::ShadeBary( const IntersectionData& data ) const {
     return { UV.x, UV.y, 0.f }; // Display Barycentric Coordinates.
 }
 
+Color Render::ShadeNormals( const IntersectionData& data ) const {
+    FVector3 hitNormal{};
+    if ( data.material->smoothShading )
+        hitNormal = CalcHitNormal( data.hitPoint, data.triangle );
+
+    const FVector3& surfaceNormal = data.material->smoothShading ? hitNormal : data.faceNormal;
+
+    return Color( surfaceNormal.x, surfaceNormal.y, surfaceNormal.z );
+}
 
 FVector3 Render::CalcHitNormal( const FVector3& intersectionPt, const Triangle& triangle ) {
     const FVector2 UV{ CalcBaryCoords( intersectionPt, triangle ) };
@@ -168,8 +177,12 @@ Color Render::GetBitmapColor( const IntersectionData& data ) {
     return { bitmap.buffer[pixelIdx], bitmap.buffer[pixelIdx + 1], bitmap.buffer[pixelIdx + 2] };
 }
 
-
 Color Render::GetRenderColor( const IntersectionData& data ) const {
+    // Override if rendering geometry normals.
+    if ( m_scene.GetRenderMode() == RenderMode::ShadedNormals ) {
+        return ShadeNormals( data );
+    }
+
     switch ( data.material->texType ) {
         case TextureType::RedGreenEdgesP: {
             return GetEdgesColor( data );
@@ -393,11 +406,17 @@ Color Render::Shade( const Ray& ray, const IntersectionData& data ) const {
     else if ( ray.pathDepth >= m_scene.GetSettings().pathDepth ) {
         return pixelColor; // or  Colors::Black
     }
-    else if ( m_scene.GetRenderMode() == RenderMode::ObjectColor ) {
-        pixelColor = ShadeConstant( data );
-    }
     else if ( m_scene.GetRenderMode() == RenderMode::Barycentric ) {
         pixelColor = ShadeBary( data );
+    }
+    else if ( m_scene.GetRenderMode() == RenderMode::Normals ) {
+        pixelColor = ShadeNormals( data );
+    }
+    else if ( m_scene.GetRenderMode() == RenderMode::ShadedNormals ) {
+        pixelColor = ShadeDiffuse( data );
+    }
+    else if ( m_scene.GetRenderMode() == RenderMode::ObjectColor ) {
+        pixelColor = ShadeConstant( data );
     }
     else if ( m_scene.GetRenderMode() == RenderMode::Material
         && data.material->type == MaterialType::Diffuse ) {

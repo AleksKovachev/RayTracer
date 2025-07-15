@@ -31,9 +31,11 @@ void PreparedMesh::PrepMesh( const Mesh& mesh, const ColorMode& colorMode ) {
         v0.pos = vertices[idx0];
         v1.pos = vertices[idx1];
         v2.pos = vertices[idx2];
-        v0.UVCoords = UVs[idx0];
-        v1.UVCoords = UVs[idx1];
-        v2.UVCoords = UVs[idx2];
+        if ( !UVs.empty() ) {
+            v0.UVCoords = UVs[idx0];
+            v1.UVCoords = UVs[idx1];
+            v2.UVCoords = UVs[idx2];
+        }
         v0.normal = v1.normal = v2.normal = {}; // Init normals to 0
 
         m_triangles.emplace_back( v0, v1, v2 );

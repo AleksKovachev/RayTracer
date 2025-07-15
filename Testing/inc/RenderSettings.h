@@ -18,6 +18,8 @@ enum class RenderMode {
 	// Render the object with its override material. Either mesh or triangle color.
 	ObjectColor,
 	Barycentric, // Render object visualizing the Barycentric coordinates.
+	Normals, // Render object using normal vectors as colors.
+	ShadedNormals, // Render object using normal vectors as colors (with shading).
 	Material // Render the object with its material.
 };
 

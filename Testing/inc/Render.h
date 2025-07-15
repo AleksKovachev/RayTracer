@@ -57,6 +57,11 @@ public:
     // @return The color to render.
     Color ShadeBary( const IntersectionData& ) const;
 
+    // Outputs pixel colors based on the normal vector hit.
+    // @param[in] data: The intersection data needed for getting the color.
+    // @return The color to render.
+    Color ShadeNormals( const IntersectionData& ) const;
+
     // Calculates the Barycentric coordinates of a triangle.
     // @param[in] intersectionPt: The intersection point on the triangle to calculate.
     // @param[in] triangle: The triangle for which the coordinates will be calculated.
