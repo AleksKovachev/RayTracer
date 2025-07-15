@@ -34,8 +34,6 @@
 // TODO: Make the PreparedMesh material property a pointer so materials can be reused.
 // TODO: Move parsing of ior from material to texture.
 // TODO: Implement reading and applying Normal maps.
-// TODO: Find a better solution for parsing the Materials and Texture tags that
-//       doesn't rely on the texture name alone.
 
 
 /*

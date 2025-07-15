@@ -61,7 +61,6 @@ struct Texture {
 
 struct Material {
 	MaterialType type;
-	TextureType texType; // Texture type.
 	std::string texName; // Texture name.
 	Texture texture; // Texture settings for this material.
 	bool smoothShading; // If this material should be rendered smooth or flat.

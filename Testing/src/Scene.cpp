@@ -297,9 +297,8 @@ void Scene::ParseMaterialsTag( const rapidjson::Document& doc ) {
 				mat.type = MaterialType::Diffuse;
 			else if ( matTypeStr == "reflective" )
 				mat.type = MaterialType::Reflective;
-			else if ( matTypeStr == "refractive" ) {
+			else if ( matTypeStr == "refractive" )
 				mat.type = MaterialType::Refractive;
-			}
 			else if ( matTypeStr == "constant" )
 				mat.type = MaterialType::Constant;
 
@@ -312,18 +311,6 @@ void Scene::ParseMaterialsTag( const rapidjson::Document& doc ) {
 			// Assign a value for the albedo if there is one.
 			if ( material.HasMember( t_albedo ) && material[t_albedo].IsString() ) {
 				mat.texName = material[t_albedo].GetString();
-				if ( mat.texName == "Red Green Edges" ) {
-					mat.texType = TextureType::RedGreenEdgesP;
-				}
-				else if ( mat.texName == "Black White Checker" ) {
-					mat.texType = TextureType::BlackWhiteCheckerP;
-				}
-				else if ( mat.texName.starts_with( "Color texture" ) ) {
-					mat.texType = TextureType::ColorTexture;
-				}
-				else {
-					mat.texType = TextureType::Bitmap;
-				}
 			}
 
 			for ( const Texture& tex : m_textures ) {

@@ -33,7 +33,6 @@ size_t Material::counter = 0;
 
 Material::Material()
 	: type{ MaterialType::Diffuse },
-	texType{ TextureType::ColorTexture },
 	texName{ GenerateDefaultName() },
 	texture{},
 	smoothShading{ false },
@@ -42,7 +41,6 @@ Material::Material()
 
 Material::Material( const MaterialType& matType, const Texture& texture, const bool smShading )
 	: type{ matType },
-	texType{ TextureType::ColorTexture },
 	texName{ GenerateDefaultName() },
 	texture{ texture },
 	smoothShading{ smShading },

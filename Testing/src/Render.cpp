@@ -183,7 +183,7 @@ Color Render::GetRenderColor( const IntersectionData& data ) const {
         return ShadeNormals( data );
     }
 
-    switch ( data.material->texType ) {
+    switch ( data.material->texture.type ) {
         case TextureType::RedGreenEdgesP: {
             return GetEdgesColor( data );
         }
