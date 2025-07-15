@@ -10,9 +10,6 @@
 #include "utils.h" // writeColorToFile, areEqual, isGreaterEqualThan, isLessEqualThan
 #include "Vectors.h" // FVector2, FVector3
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h" // stbi_load
-
 #include <algorithm> // round, min, max, swap
 #include <cassert> // assert
 #include <cmath> // sqrtf
@@ -156,40 +153,53 @@ Color Render::GetCheckerColor( const IntersectionData& data ) {
     }
 }
 
-Color Render::ShadeDiffuse( const IntersectionData& data ) const {
-    FVector3 hitNormal{};
-    Color pixelColor{};
-    Color renderColor{};
+Color Render::GetBitmapColor( const IntersectionData& data ) {
+    const FVector2 bary = CalcBaryCoords( data.hitPoint, data.triangle );
 
-    if ( data.material->smoothShading )
-        hitNormal = CalcHitNormal( data.hitPoint, data.triangle );
+    FVector3 UVW{ data.triangle.GetVert( 1 ).UVCoords * bary.x
+        + data.triangle.GetVert( 2 ).UVCoords * bary.y
+        + data.triangle.GetVert( 0 ).UVCoords * (1.f - bary.x - bary.y) };
 
-    const FVector3& surfaceNormal = (data.material->smoothShading ? hitNormal : data.faceNormal );
+    const Bitmap& bitmap{ data.material->texture.bitmap };
+    int rowIdx{ static_cast<int>((1 - UVW.y) * (bitmap.height - 1)) };
+    int colIdx{ static_cast<int>(UVW.x * (bitmap.width - 1)) };
+    int pixelIdx{ (rowIdx * bitmap.width + colIdx) * bitmap.channels };
 
+    return { bitmap.buffer[pixelIdx], bitmap.buffer[pixelIdx + 1], bitmap.buffer[pixelIdx + 2] };
+}
+
+
+Color Render::GetRenderColor( const IntersectionData& data ) const {
     switch ( data.material->texType ) {
         case TextureType::RedGreenEdgesP: {
-            renderColor = GetEdgesColor( data );
-            break;
+            return GetEdgesColor( data );
         }
         case TextureType::BlackWhiteCheckerP: {
-            renderColor = GetCheckerColor( data );
-            break;
+            return GetCheckerColor( data );
         }
         case TextureType::Bitmap: {
-            int width, height, channels;
-            unsigned char* image = stbi_load(
-                data.material->texture.filePath.c_str(), &width, &height, &channels, 0 );
-            break;
+            return GetBitmapColor( data );
         }
         case TextureType::ColorTexture: {
-            renderColor = m_scene.GetSettings().colorMode == ColorMode::RandomTriangleColor
+            return m_scene.GetSettings().colorMode == ColorMode::RandomTriangleColor
                 ? data.triangle.color : data.material->texture.albedo;
-            break;
         }
         default: {
             assert( false );
         }
     }
+    return Colors::Red; // Should never get here. Placed to silence compiler.
+}
+
+Color Render::ShadeDiffuse( const IntersectionData& data ) const {
+    FVector3 hitNormal{};
+    Color pixelColor{};
+    Color renderColor{ GetRenderColor( data ) };
+
+    if ( data.material->smoothShading )
+        hitNormal = CalcHitNormal( data.hitPoint, data.triangle );
+
+    const FVector3& surfaceNormal = data.material->smoothShading ? hitNormal : data.faceNormal;
 
     for ( const Light* light : m_scene.GetLights() ) {
         //! If Scene lights get more types, replace static_cast with dynamic to check light type.

@@ -16,10 +16,31 @@ enum class MaterialType {
 };
 
 enum class TextureType {
+	Invalid, // Hasn't been set.
 	ColorTexture, // Uses color settings: albedo, ior, etc.
 	RedGreenEdgesP, // Procedural texture to color triangle edges.
 	BlackWhiteCheckerP, // Procedural checker texture.
 	Bitmap // Loading a bitmap image to use.
+};
+
+class Bitmap {
+public:
+	int width;
+	int height;
+	int channels;
+	unsigned char* buffer = nullptr;
+
+	Bitmap();
+	// Copy constructor
+	Bitmap( const Bitmap& other );
+	// Move constructor
+	Bitmap( Bitmap&& other ) noexcept;
+	// Copy assignment
+	Bitmap& operator=( const Bitmap& other );
+	// Move assignment
+	Bitmap& operator=( Bitmap&& other ) noexcept;
+
+	~Bitmap();
 };
 
 // A general Texture type incorporating all texture sub-types. Avoids polymorphism.
@@ -35,6 +56,7 @@ struct Texture {
 	float scalar; // A scalar multiplier used for edge width, square size, etc.
 	// File path leading to the texture location relative to the rsc directory.
 	std::string filePath;
+	Bitmap bitmap;
 };
 
 struct Material {

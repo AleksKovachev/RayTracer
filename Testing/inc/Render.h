@@ -77,7 +77,17 @@ public:
     // Calculates the procedural Checker texture color for a given point.
     // @param[in] data: The intersection data.
     // @return The color based on the calculations.
-    static Color GetCheckerColor( const IntersectionData& data );
+    static Color GetCheckerColor( const IntersectionData& );
+
+    // Calculates the bitmap texture color for a given point.
+    // @param[in] data: The intersection data.
+    // @return The color based on the calculations.
+    static Color GetBitmapColor( const IntersectionData& );
+
+    // Checks the texture type of the current'triangle's material and calculates a color.
+    // @param[in] data: The intersection data.
+    // @return The calculated/loaded color.
+    Color GetRenderColor( const IntersectionData& ) const;
 
     // Gets the color of a non-reflective, opaque mesh and calculates shadows.
     // @param[in] data: The intersection data needed for getting the color.

@@ -4,6 +4,8 @@
 #include "utils.h" // getRandomColor, areCharsInString
 #include "Vectors.h" // FVector3
 
+#define STB_IMAGE_IMPLEMENTATION // Only needed in a single .cpp file.
+#include "stb_image.h" // stbi_load
 #include "rapidjson/istreamwrapper.h" // IStreamWrapper
 
 #include <algorithm> // find
@@ -250,7 +252,17 @@ void Scene::ParseTexturesTag( const rapidjson::Document& doc ) {
 			else if ( texture[t_type] == "bitmap" ) {
 				tex.type = TextureType::Bitmap;
 				assert( texture.HasMember( t_filePath ) && texture[t_filePath].IsString() );
-				tex.filePath = std::string( "rsc/" ) + texture[t_filePath].GetString();
+				tex.filePath = std::string( "./rsc" ) + texture[t_filePath].GetString();
+
+				int width, height, channels;
+				//! stbi_set_flip_vertically_on_load( true ); // Optional: flip vertically
+				unsigned char* image = stbi_load(
+					tex.filePath.c_str(), &width, &height, &channels, 0 );
+				assert( image != nullptr );
+				tex.bitmap.width = width;
+				tex.bitmap.height = height;
+				tex.bitmap.channels = channels;
+				tex.bitmap.buffer = image;
 			}
 			else {
 				assert( false );
