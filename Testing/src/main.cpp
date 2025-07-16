@@ -79,7 +79,6 @@ int main() {
     //scene.ParseObjFile();
 
     Render render( scene );
-
     std::chrono::high_resolution_clock::time_point start{
         std::chrono::high_resolution_clock::now() };
 

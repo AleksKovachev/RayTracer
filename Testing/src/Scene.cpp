@@ -10,6 +10,7 @@
 
 #include <algorithm> // find
 #include <cassert> // assert
+#include <limits> // <float>::min, <float>::max
 #include <fstream> // ifstream
 #include <filesystem> // path
 #include <iostream> // cerr
@@ -18,12 +19,18 @@
 template <typename T>
 T loadVector3( const rapidjson::Value::ConstArray& arr );
 Matrix3 loadMatrix3( const rapidjson::Value::ConstArray& arr );
-std::vector<FVector3> loadTripletValues( const rapidjson::Value::ConstArray& arr );
+std::vector<FVector3> loadUVs( const rapidjson::Value::ConstArray& arr );
 std::vector<int> loadMeshTris( const rapidjson::Value::ConstArray& arr );
 
 
 Scene::Scene( const std::string& sceneFilePath )
-	: m_filePath{ sceneFilePath } {
+	: m_filePath{ sceneFilePath },
+	m_AABBmin{ std::numeric_limits<float>::max(),
+		std::numeric_limits<float>::max(),
+		std::numeric_limits<float>::max() },
+	m_AABBmax{ std::numeric_limits<float>::min(),
+		std::numeric_limits<float>::min(),
+		std::numeric_limits<float>::min() } {
 	// Create a path of the save file name string
 	std::filesystem::path path( m_filePath );
 	// Get a string representation of absolute path to save file name
@@ -106,6 +113,14 @@ const std::vector<Light*>& Scene::GetLights() const {
 	return m_lights;
 }
 
+const FVector3& Scene::GetAABBmin() const {
+	return m_AABBmin;
+}
+
+const FVector3& Scene::GetAABBmax() const {
+	return m_AABBmax;
+}
+
 void Scene::ParseSettingsTag(const rapidjson::Document& doc) {
 	// JSON Tags to look for
 	char t_settings[]{ "settings" };
@@ -167,14 +182,14 @@ void Scene::ParseObjectsTag( const rapidjson::Document& doc ) {
 			const rapidjson::Value& mesh{ objArr[i] };
 			assert( mesh.HasMember( t_vertices ) && mesh[t_vertices].IsArray() );
 			assert( mesh.HasMember( t_triangles ) && mesh[t_triangles].IsArray() );
-			m_meshes.emplace_back( loadTripletValues( mesh[t_vertices].GetArray() ),
+			m_meshes.emplace_back( LoadVertices( mesh[t_vertices].GetArray() ),
 				loadMeshTris( mesh[t_triangles].GetArray() ) );
 
 			if ( mesh.HasMember( t_matIdx ) && mesh[t_matIdx].IsInt() )
 				m_meshes[i].SetMaterialIdx( mesh[t_matIdx].GetInt() );
 
 			if ( mesh.HasMember( t_uvs ) && mesh[t_uvs].IsArray() )
-				m_meshes[i].SetTextureUVs( loadTripletValues( mesh[t_uvs].GetArray() ) );
+				m_meshes[i].SetTextureUVs( loadUVs( mesh[t_uvs].GetArray() ) );
 		}
 	}
 }
@@ -347,15 +362,39 @@ Matrix3 loadMatrix3( const rapidjson::Value::ConstArray& arr ) {
 		FVector3{ arr[6].GetDouble(), arr[7].GetDouble(), arr[8].GetDouble() } };
 }
 
-std::vector<FVector3> loadTripletValues( const rapidjson::Value::ConstArray& arr ) {
-	std::vector<FVector3> triplet{};
+std::vector<FVector3> Scene::LoadVertices( const rapidjson::Value::ConstArray& arr ) {
+	std::vector<FVector3> verts{};
+
+	for ( unsigned i{}; i + 2 < arr.Size(); i += 3 ) {
+		FVector3 vertex = {
+			static_cast<float>(arr[i].GetDouble()),
+			static_cast<float>(arr[i + 1].GetDouble()),
+			static_cast<float>(arr[i + 2].GetDouble())
+		};
+
+		m_AABBmin.x = std::min( m_AABBmin.x, vertex.x );
+		m_AABBmin.y = std::min( m_AABBmin.y, vertex.y );
+		m_AABBmin.z = std::min( m_AABBmin.z, vertex.z );
+
+		m_AABBmax.x = std::max( m_AABBmax.x, vertex.x );
+		m_AABBmax.y = std::max( m_AABBmax.y, vertex.y );
+		m_AABBmax.z = std::max( m_AABBmax.z, vertex.z );
+
+		verts.push_back( std::move( vertex ) );
+	}
+
+	return verts;
+}
+
+std::vector<FVector3> loadUVs( const rapidjson::Value::ConstArray& arr ) {
+	std::vector<FVector3> uvs{};
 
 	for ( unsigned i{}; i + 2 < arr.Size(); i += 3 )
-		triplet.emplace_back( static_cast<float>(arr[i].GetDouble()),
+		uvs.emplace_back( static_cast<float>(arr[i].GetDouble()),
 			static_cast<float>(arr[i + 1].GetDouble()),
 			static_cast<float>(arr[i + 2].GetDouble()));
 
-	return triplet;
+	return uvs;
 }
 
 std::vector<int> loadMeshTris( const rapidjson::Value::ConstArray& arr ) {
