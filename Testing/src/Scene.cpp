@@ -123,10 +123,10 @@ void Scene::ParseSettingsTag(const rapidjson::Document& doc) {
 		const rapidjson::Value& imgSettings{settings[t_imgSettings]};
 
 		assert( imgSettings.HasMember( t_width ) && imgSettings[t_width].IsInt() );
-		m_settings.renderWidth = imgSettings[t_width].GetInt();
+		m_settings.renderWidth = imgSettings[t_width].GetUint();
 
 		assert( imgSettings.HasMember( t_height ) && imgSettings[t_height].IsInt() );
-		m_settings.renderHeight = imgSettings[t_height].GetInt();
+		m_settings.renderHeight = imgSettings[t_height].GetUint();
 	}
 }
 

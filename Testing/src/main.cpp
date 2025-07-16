@@ -1,32 +1,28 @@
-#include <iostream>
-#include <string>
-#include <vector>
-#include <memory>
-#include <map>
-#include <set>
-#include <unordered_map>
-#include <unordered_set>
-#include <cstring>
-#include "sstream"
+#include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
-#include <stack>
-#include <iomanip>
-#include <fstream>
-#include <algorithm>
-#include <random>
-#include <limits>
+#include <cstring>
 #include <filesystem>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <limits>
+#include <map>
+#include <memory>
+#include <random>
+#include <set>
+#include <sstream>
+#include <stack>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
-#include "Bases.h"
 #include "Camera.h"
 #include "Render.h"
 #include "Scene.h"
-#include "DebugObjects.h"
-#include "SpaceConversions.h"
-#include "Triangle.h"
 #include "Vectors.h"
-#include "utils.h"
 
 // TODO: Finish the interactive rendering
 // TODO: Finish the OBJ file parser
@@ -34,18 +30,21 @@
 // TODO: Make the PreparedMesh material property a pointer so materials can be reused.
 // TODO: Implement reading and applying Normal maps.
 // TODO: Replace IsInShadow() with TraceRay.
+// TODO: Implement bitmap texture mapping without stretching. 2 types - Fit, which
+//       puts blakc bars around the texture to fit the geometry, and Fill, which
+//       places the texture making it go "out of bounds" but fill the geometry.
 
 
 /*
-The whole Render Engine is built for ease of use, which costs a lot of memory.
-To make it more efficient for larger scenes, the PreparedMesh class must be
-removed entirely. Teh program should only work with the Mesh class, which should
-also store a vector<Material>. Then, the IntersectionData class should store
-material index, object index, and triangle index to work with. In this case,
-each triangle has to be constructed for every iteration inside the
-GetTriangleIntersection function, for every call. This results in a lot of
-repetitive work, but saves resources.
-*/
+ * The whole Render Engine is built for ease of use, which costs a lot of memory.
+ * To make it more efficient for larger scenes, the PreparedMesh class must be
+ * removed entirely. Teh program should only work with the Mesh class, which should
+ * also store a vector<Material>. Then, the IntersectionData class should store
+ * material index, object index, and triangle index to work with. In this case,
+ * each triangle has to be constructed for every iteration inside the
+ * GetTriangleIntersection function, for every call. This results in a lot of
+ * repetitive work, but saves resources.
+ */
 
 
 //void interactiveRender(Params& params) {
@@ -70,17 +69,32 @@ int main() {
     //params.camera.Tilt( 15 );
     //params.camera.RotateAroundPoint( {0, 0, -3}, {0, 45, 0});
 
-    Scene scene( "./rsc/RefractionBall.crtscene" );
+    Scene scene( "./rsc/scene0.crtscene" );
     //Scene scene( "./rsc/OverlappingTriangles.crtscene" );
     //Scene scene( "./rsc/Pyramid.crtscene" );
     //Scene scene( "./rsc/TestPlane.obj" );
     scene.SetColorMode( ColorMode::LoadedMaterial );
-    scene.SetRenderMode( RenderMode::ShadedNormals );
+    scene.SetRenderMode( RenderMode::Material );
     scene.ParseSceneFile();
     //scene.ParseObjFile();
 
     Render render( scene );
-    render.RenderImage();
+
+    std::chrono::high_resolution_clock::time_point start{
+        std::chrono::high_resolution_clock::now() };
+
+    //render.RenderImage();
+    render.RenderParallel();
+
+    std::chrono::high_resolution_clock::time_point stop{
+        std::chrono::high_resolution_clock::now() };
+
+    std::chrono::microseconds duration{
+        std::chrono::duration_cast<std::chrono::microseconds>(stop - start) };
+    const double seconds{ duration.count() / 1'000'000.0 };
+
+    std::cout << "Execution time: " << seconds << " seconds." << std::endl;
+
 
     //renderCameraMoveAnimation( scene, { 0.f, 1.f, 5.f }, { 0.2f, 0.f, 0.f }, 10 );
     //renderRotationAroundObject( scene, { 0.f, 2.f, 5.f }, 30 );

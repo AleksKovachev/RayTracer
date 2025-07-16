@@ -28,8 +28,8 @@ enum class RenderMode {
 
 // Global scene settings
 struct Settings {
-	int renderWidth;
-	int renderHeight;
+	unsigned renderWidth;
+	unsigned renderHeight;
 	int maxColorComp; // The maximum color component for the scene (color-depth).
 	Color BGColor;
 	std::string saveDir;

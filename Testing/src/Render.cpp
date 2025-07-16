@@ -1,5 +1,6 @@
 #include "Camera.h" // Camera
 #include "Colors.h" // Color, ColorMode, Colors::Black, Colors::Red
+#include "ImageBuffer.h" // ImageBuffer
 #include "Lights.h" // Light, PointLight
 #include "Materials.h" // MaterialType, Bitmap, TextureType
 #include "Mesh.h" // PreparedMesh
@@ -12,11 +13,14 @@
 
 #include <algorithm> // round, min, max, swap
 #include <cassert> // assert
-#include <cmath> // sqrtf
+#include <cmath> // sqrtf, ceil
 #include <filesystem> // create_directories
-#include <iostream> // cout, flush
+#include <functional> // ref
+#include <iostream> // cout, flush, cerr
 #include <numbers> // pi_v
 #include <string> // string, to_string
+#include <thread> // hardware_concurrency
+#include <stdexcept> // runtime_error
 
 
 Render::Render( const Scene& scene )
@@ -514,14 +518,14 @@ IntersectionData Render::TraceRay( const Ray& ray, const float maxT ) const {
 }
 
 void Render::RenderImage() {
-    const int& width{ m_scene.GetSettings().renderWidth };
-    const int& height{ m_scene.GetSettings().renderHeight };
+    const unsigned& width{ m_scene.GetSettings().renderWidth };
+    const unsigned& height{ m_scene.GetSettings().renderHeight };
     const Camera& camera{
         m_overrideCamera == nullptr ? m_scene.GetCamera() : *m_overrideCamera };
     std::ofstream ppmFileStream = PrepareScene();
 
-    for ( int y{}; y < height; ++y ) {
-        for ( int x{}; x < width; ++x ) {
+    for ( unsigned y{}; y < height; ++y ) {
+        for ( unsigned x{}; x < width; ++x ) {
             Ray ray = camera.GenerateRay( x, y, m_scene.GetSettings() );
             IntersectionData intersectData = TraceRay( ray );
             Color pixelColor = Shade( ray, intersectData );
@@ -532,6 +536,98 @@ void Render::RenderImage() {
     }
 
     ppmFileStream.close();
+}
+
+void Render::RenderParallel() {
+    unsigned threadCount{ std::thread::hardware_concurrency() };
+
+    if ( threadCount == 0 ) {
+        std::cerr << "Warning: Could not detect number of hardware threads."
+            "Falling back to 1.\n";
+        threadCount = 1;
+        RenderImage();
+        return;
+    }
+
+    const unsigned& width = m_scene.GetSettings().renderWidth;
+    const unsigned& height = m_scene.GetSettings().renderHeight;
+    const Camera& camera{
+        m_overrideCamera == nullptr ? m_scene.GetCamera() : *m_overrideCamera };
+    std::ofstream ppmFileStream = PrepareScene();
+
+    ImageBuffer buff{ width, height };
+
+    // Calculate number of rows and columns of regions based on number of threads.
+    unsigned rows{ static_cast<unsigned>( std::sqrt( threadCount ) ) };
+    unsigned cols{ static_cast<unsigned>(std::ceil( static_cast<double>( threadCount ) / rows )) };
+    unsigned regionWidth = static_cast<int>(std::ceil( static_cast<double>(width) / cols ));
+    unsigned regionHeight = static_cast<int>(std::ceil( static_cast<double>(height) / rows ));
+
+    std::vector<std::thread> threads{};
+    threads.reserve( threadCount );
+
+    for ( unsigned int row{}; row < rows; ++row ) {
+        for ( unsigned int col{}; col < cols; ++col ) {
+            // Calculate start and end pixels for current region.
+            unsigned startX = col * regionWidth;
+            unsigned startY = row * regionHeight;
+            unsigned endX = startX + regionWidth;
+            unsigned endY = startY + regionHeight;
+
+            // Clamp end coordinates to image boundaries
+            if ( endX > width )
+                endX = width;
+            if ( endY > height )
+                endY = height;
+
+            // Skip region ff the calculated region is empty due to rounding or small image
+            if ( startX >= endX || startY >= endY )
+                continue;
+
+            threads.emplace_back(
+                &Render::RenderRegion,
+                this,
+                startX,
+                startY,
+                endX,
+                endY,
+                std::ref( buff )
+            );
+        }
+    }
+
+    for ( std::thread& t : threads ) {
+        if ( t.joinable() ) {
+            t.join();
+        }
+    }
+
+    for ( unsigned row{}; row < height; ++row ) {
+        for ( unsigned col{}; col < width; ++col ) {
+            writeColorToFile( ppmFileStream, buff[row][col], m_scene.GetSettings().maxColorComp);
+        }
+    }
+    ppmFileStream.close();
+}
+
+void Render::RenderRegion(
+    const unsigned startX,
+    const unsigned startY,
+    const unsigned endX,
+    const unsigned endY,
+    ImageBuffer& buff )
+{
+    const Camera& camera{
+        m_overrideCamera == nullptr ? m_scene.GetCamera() : *m_overrideCamera };
+
+    for ( unsigned row{startY}; row < endY; ++row ) {
+        for ( unsigned col{startX}; col < endX; ++col ) {
+            Ray ray = camera.GenerateRay( col, row, m_scene.GetSettings() );
+            IntersectionData intersectData = TraceRay( ray );
+            Color pixelColor = Shade( ray, intersectData );
+            buff[row][col] = pixelColor;
+        }
+    }
 }
 
 void Render::RenderCameraMoveAnimation(

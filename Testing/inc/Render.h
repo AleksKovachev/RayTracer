@@ -9,6 +9,7 @@
 #include "Vectors.h" // FVector2, FVector3
 
 struct Camera;
+class ImageBuffer;
 class Mesh;
 struct Ray;
 class Scene;
@@ -126,8 +127,21 @@ public:
     IntersectionData TraceRay(
         const Ray& ray, const float maxT = std::numeric_limits<float>::max() ) const;
 
-    // Renders a single image.
+    // Renders a single image with a single thread.
     void RenderImage();
+
+    // Renders a single image with multiple threads, each rendering a separate region.
+    void RenderParallel();
+
+    // Renders a single region of pixels.
+    // @param[in] startX: The row index of the region to render.
+    // @param[in] startY: The column index of the region to render.
+    // @param[in] endX: The max horizontal pixel to render for the current region.
+    // @param[in] endY: The max vertical pixel to render for the current region.
+    // @param[in] buff: The buffer where the rendered colors will be stored.
+    void RenderRegion(
+        const unsigned, const unsigned, const unsigned, const unsigned, ImageBuffer& );
+
     // Renders a camera movement animation around the scene.
     // @param[in] initialPos: The initial camera position.
     // @param[in] moveWith: A vector representing a relative x, y, z
