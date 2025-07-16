@@ -1,3 +1,4 @@
+#include "Bucket.h" // Bucket
 #include "Camera.h" // Camera
 #include "Colors.h" // Color, ColorMode, Colors::Black, Colors::Red
 #include "ImageBuffer.h" // ImageBuffer
@@ -15,7 +16,7 @@
 #include <cassert> // assert
 #include <cmath> // sqrtf, ceil
 #include <filesystem> // create_directories
-#include <functional> // ref
+#include <functional> // ref, cref
 #include <iostream> // cout, flush, cerr
 #include <numbers> // pi_v
 #include <string> // string, to_string
@@ -541,10 +542,10 @@ void Render::RenderImage() {
 void Render::RenderParallel() {
     unsigned threadCount{ std::thread::hardware_concurrency() };
 
-    if ( threadCount == 0 ) {
+    if ( threadCount == 0u ) {
         std::cerr << "Warning: Could not detect number of hardware threads."
             "Falling back to 1.\n";
-        threadCount = 1;
+        threadCount = 1u;
         RenderImage();
         return;
     }
@@ -566,34 +567,30 @@ void Render::RenderParallel() {
     std::vector<std::thread> threads{};
     threads.reserve( threadCount );
 
-    for ( unsigned int row{}; row < rows; ++row ) {
-        for ( unsigned int col{}; col < cols; ++col ) {
-            // Calculate start and end pixels for current region.
-            unsigned startX = col * regionWidth;
-            unsigned startY = row * regionHeight;
-            unsigned endX = startX + regionWidth;
-            unsigned endY = startY + regionHeight;
+    for ( unsigned int i{}; i < threadCount; ++i ) {
+        // Calculate start and end pixels for current region.
+        Bucket region;
+        region.startX = ( i % cols ) * regionWidth;
+        region.startY = ( i / cols ) * regionHeight;
+        region.endX = region.startX + regionWidth;
+        region.endY = region.startY + regionHeight;
 
-            // Clamp end coordinates to image boundaries
-            if ( endX > width )
-                endX = width;
-            if ( endY > height )
-                endY = height;
+        // Clamp end coordinates to image boundaries.
+        if ( region.endX > width )
+            region.endX = width;
+        if ( region.endY > height )
+            region.endY = height;
 
-            // Skip region ff the calculated region is empty due to rounding or small image
-            if ( startX >= endX || startY >= endY )
-                continue;
+        // Skip region if the it's empty due to rounding or small image.
+        if ( region.startX >= region.endX || region.startY >= region.endY )
+            continue;
 
-            threads.emplace_back(
-                &Render::RenderRegion,
-                this,
-                startX,
-                startY,
-                endX,
-                endY,
-                std::ref( buff )
-            );
-        }
+        threads.emplace_back(
+            &Render::RenderRegion,
+            this,
+            std::cref( region ),
+            std::ref( buff )
+        );
     }
 
     for ( std::thread& t : threads ) {
@@ -610,18 +607,91 @@ void Render::RenderParallel() {
     ppmFileStream.close();
 }
 
-void Render::RenderRegion(
-    const unsigned startX,
-    const unsigned startY,
-    const unsigned endX,
-    const unsigned endY,
-    ImageBuffer& buff )
+void Render::RenderBuckets() {
+    unsigned threadCount{ std::thread::hardware_concurrency() };
+
+    if ( threadCount == 0 ) {
+        std::cerr << "Warning: Could not detect number of hardware threads."
+            "Falling back to 1.\n";
+        threadCount = 1;
+        RenderImage();
+        return;
+    }
+
+    const unsigned& width = m_scene.GetSettings().renderWidth;
+    const unsigned& height = m_scene.GetSettings().renderHeight;
+    const Camera& camera{
+        m_overrideCamera == nullptr ? m_scene.GetCamera() : *m_overrideCamera };
+    std::ofstream ppmFileStream = PrepareScene();
+
+    ImageBuffer buff{ width, height };
+
+    std::queue<Bucket> buckets;
+    std::mutex bucketMutex;
+
+
+    unsigned bucketSize{ m_scene.GetSettings().bucketSize };
+    if ( bucketSize == 0u ) {
+        std::cerr << "Error: Buckets must have size. Defaulting to 24." << std::endl;
+        bucketSize = 24u;
+    }
+
+    // Calculate number of rows and columns of buckets based on their size.
+    unsigned cols = static_cast<unsigned>(std::ceil( static_cast<double>(width) / bucketSize ));
+    unsigned rows = static_cast<unsigned>(std::ceil( static_cast<double>(height) / bucketSize ));
+
+    for ( unsigned row = 0; row < rows; ++row ) {
+        for ( unsigned col = 0; col < cols; ++col ) {
+            unsigned startX = col * bucketSize;
+            unsigned startY = row * bucketSize;
+            unsigned endX = startX + bucketSize;
+            unsigned endY = startY + bucketSize;
+
+            // Clamp end coordinates to image boundaries.
+            if ( endX > width ) endX = width;
+            if ( endY > height ) endY = height;
+
+            // Only add valid buckets.
+            if ( startX < endX && startY < endY ) {
+                buckets.push( Bucket( startX, startY, endX, endY ) );
+            }
+        }
+    }
+
+    std::vector<std::thread> threads{};
+    threads.reserve( threadCount );
+
+    for ( unsigned int i{}; i < threadCount; ++i ) {
+        threads.emplace_back(
+            &Render::RenderBucketWorker,
+            this,
+            std::ref( bucketMutex ),
+            std::ref( buckets ),
+            std::ref( buff )
+        );
+    }
+
+    for ( std::thread& t : threads ) {
+        if ( t.joinable() ) {
+            t.join();
+        }
+    }
+
+    for ( unsigned row{}; row < height; ++row ) {
+        for ( unsigned col{}; col < width; ++col ) {
+            writeColorToFile( ppmFileStream, buff[row][col], m_scene.GetSettings().maxColorComp );
+        }
+    }
+    ppmFileStream.close();
+}
+
+void Render::RenderRegion( const Bucket& region, ImageBuffer& buff )
 {
     const Camera& camera{
         m_overrideCamera == nullptr ? m_scene.GetCamera() : *m_overrideCamera };
 
-    for ( unsigned row{startY}; row < endY; ++row ) {
-        for ( unsigned col{startX}; col < endX; ++col ) {
+    for ( unsigned row{ region.startY}; row < region.endY; ++row ) {
+        for ( unsigned col{ region.startX}; col < region.endX; ++col ) {
             Ray ray = camera.GenerateRay( col, row, m_scene.GetSettings() );
             IntersectionData intersectData = TraceRay( ray );
             Color pixelColor = Shade( ray, intersectData );
@@ -658,6 +728,29 @@ void Render::RenderRotationAroundObject( const FVector3& initialPos, const FVect
             { 0.f, 0.f, distToObject }, { frame * rot.x, frame * rot.y, frame * rot.z } );
         saveName = "Orbit" + std::to_string( frame + 1 );
         RenderImage();
+    }
+}
+
+void Render::RenderBucketWorker( std::mutex& bucketMutex, std::queue<Bucket>& buckets, ImageBuffer& buff ) {
+    while ( true ) {
+        Bucket bck;
+        bool gotBucket = false;
+
+        // Acquire lock to safely access the shared queue
+        {
+            std::lock_guard<std::mutex> lock( bucketMutex );
+            if ( !buckets.empty() ) {
+                bck = buckets.front();
+                buckets.pop();
+                gotBucket = true;
+            }
+        } // Lock released when going out of scope.
+
+        if ( gotBucket ) {
+            RenderRegion( bck, buff );
+        } else {
+            break; // No more buckets. This thread can exit.
+        }
     }
 }
 

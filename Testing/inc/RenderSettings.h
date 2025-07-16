@@ -49,6 +49,7 @@ struct Settings {
 	RenderMode renderMode;
 	// Whether the camera rays should hit or ignore the triangle's backfaces.
 	bool ignoreBackface;
+	unsigned bucketSize; // Bucket size for bucket rendering. Defaults to 24.
 
 	// @param[in] colorDepth: The color's bit depth. Defaults to 8-bit colors.
 	Settings( const int colorDepth = 8 );

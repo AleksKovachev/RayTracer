@@ -84,7 +84,8 @@ int main() {
         std::chrono::high_resolution_clock::now() };
 
     //render.RenderImage();
-    render.RenderParallel();
+    //render.RenderParallel();
+    render.RenderBuckets();
 
     std::chrono::high_resolution_clock::time_point stop{
         std::chrono::high_resolution_clock::now() };

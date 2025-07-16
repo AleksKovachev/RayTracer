@@ -113,6 +113,7 @@ void Scene::ParseSettingsTag(const rapidjson::Document& doc) {
 	char t_imgSettings[]{ "image_settings" };
 	char t_width[]{ "width" };
 	char t_height[]{ "height" };
+	char t_bucketSize[]{ "bucket_size" };
 
 	if ( doc.HasMember( t_settings ) && doc[t_settings].IsObject() ) {
 		const rapidjson::Value& settings{doc[t_settings]};
@@ -127,6 +128,10 @@ void Scene::ParseSettingsTag(const rapidjson::Document& doc) {
 
 		assert( imgSettings.HasMember( t_height ) && imgSettings[t_height].IsInt() );
 		m_settings.renderHeight = imgSettings[t_height].GetUint();
+
+		if ( imgSettings.HasMember( t_bucketSize ) && imgSettings[t_bucketSize].IsInt() ) {
+			m_settings.bucketSize = imgSettings[t_bucketSize].GetUint();
+		}
 	}
 }
 

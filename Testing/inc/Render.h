@@ -3,11 +3,14 @@
 
 #include <fstream> // ofstream, ios::binary
 #include <limits> // numeric_limits<float>::max
+#include <mutex> // mutex
+#include <queue> // queue
 #include <string> // string, to_string
 
 #include "RenderSettings.h" // IntersectionData
 #include "Vectors.h" // FVector2, FVector3
 
+struct Bucket;
 struct Camera;
 class ImageBuffer;
 class Mesh;
@@ -133,14 +136,13 @@ public:
     // Renders a single image with multiple threads, each rendering a separate region.
     void RenderParallel();
 
+    // Renders a single image with multiple threads, taking buckets from a pool.
+    void RenderBuckets();
+
     // Renders a single region of pixels.
-    // @param[in] startX: The row index of the region to render.
-    // @param[in] startY: The column index of the region to render.
-    // @param[in] endX: The max horizontal pixel to render for the current region.
-    // @param[in] endY: The max vertical pixel to render for the current region.
+    // @param[in] region: A structure holding the start and end positions for the region to render.
     // @param[in] buff: The buffer where the rendered colors will be stored.
-    void RenderRegion(
-        const unsigned, const unsigned, const unsigned, const unsigned, ImageBuffer& );
+    void RenderRegion( const Bucket&, ImageBuffer& );
 
     // Renders a camera movement animation around the scene.
     // @param[in] initialPos: The initial camera position.
@@ -154,6 +156,12 @@ public:
     void RenderRotationAroundObject( const FVector3&, const FVector3& );
 
 private:
+    // Renders a single bucket of an image. Used with bucket rendering.
+    // @param[in] bucketMutex: A mutex used to lock the buckets.
+    // @param[in] buckets: A queue of nuckets to render.
+    // @param[in] buff: The image buffer to store the data.
+    void RenderBucketWorker( std::mutex&, std::queue<Bucket>&, ImageBuffer& );
+
     // Prepares a .PPM file to be filled in with color data.
     // @return A stream to fill in the color data to.
 	std::ofstream PrepareScene();

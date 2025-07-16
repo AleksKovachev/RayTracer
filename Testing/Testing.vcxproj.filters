@@ -110,6 +110,9 @@
     <ClInclude Include="inc\ImageBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="inc\Bucket.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="config\config.ini" />
