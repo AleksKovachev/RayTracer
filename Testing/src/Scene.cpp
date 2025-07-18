@@ -10,7 +10,6 @@
 
 #include <algorithm> // find
 #include <cassert> // assert
-#include <limits> // <float>::min, <float>::max
 #include <fstream> // ifstream
 #include <filesystem> // path
 #include <iostream> // cerr
@@ -24,13 +23,7 @@ std::vector<int> loadMeshTris( const rapidjson::Value::ConstArray& arr );
 
 
 Scene::Scene( const std::string& sceneFilePath )
-	: m_filePath{ sceneFilePath },
-	m_AABBmin{ std::numeric_limits<float>::max(),
-		std::numeric_limits<float>::max(),
-		std::numeric_limits<float>::max() },
-	m_AABBmax{ std::numeric_limits<float>::min(),
-		std::numeric_limits<float>::min(),
-		std::numeric_limits<float>::min() } {
+	: m_filePath{ sceneFilePath }, m_aabb{} {
 	// Create a path of the save file name string
 	std::filesystem::path path( m_filePath );
 	// Get a string representation of absolute path to save file name
@@ -113,13 +106,10 @@ const std::vector<Light*>& Scene::GetLights() const {
 	return m_lights;
 }
 
-const FVector3& Scene::GetAABBmin() const {
-	return m_AABBmin;
+const AABBox& Scene::GetAABB() const {
+	return m_aabb;
 }
 
-const FVector3& Scene::GetAABBmax() const {
-	return m_AABBmax;
-}
 
 void Scene::ParseSettingsTag(const rapidjson::Document& doc) {
 	// JSON Tags to look for
@@ -328,8 +318,14 @@ void Scene::ParseMaterialsTag( const rapidjson::Document& doc ) {
 				mat.ior = static_cast<float>(material[t_ior].GetDouble());
 
 			// Assign a value for the albedo if there is one.
-			if ( material.HasMember( t_albedo ) && material[t_albedo].IsString() ) {
-				mat.texName = material[t_albedo].GetString();
+			if ( material.HasMember( t_albedo ) ) {
+				if ( material[t_albedo].IsString() ) {
+					mat.texName = material[t_albedo].GetString();
+				}
+				else if ( material[t_albedo].IsArray() ) {
+					mat.texture.type = TextureType::SolidColor;
+					mat.texture.albedo = loadVector3<Color>( material[t_albedo].GetArray() );
+				}
 			}
 
 			for ( const Texture& tex : m_textures ) {
@@ -364,6 +360,7 @@ Matrix3 loadMatrix3( const rapidjson::Value::ConstArray& arr ) {
 
 std::vector<FVector3> Scene::LoadVertices( const rapidjson::Value::ConstArray& arr ) {
 	std::vector<FVector3> verts{};
+	verts.reserve( arr.Size() / 3 );
 
 	for ( unsigned i{}; i + 2 < arr.Size(); i += 3 ) {
 		FVector3 vertex = {
@@ -372,13 +369,13 @@ std::vector<FVector3> Scene::LoadVertices( const rapidjson::Value::ConstArray& a
 			static_cast<float>(arr[i + 2].GetDouble())
 		};
 
-		m_AABBmin.x = std::min( m_AABBmin.x, vertex.x );
-		m_AABBmin.y = std::min( m_AABBmin.y, vertex.y );
-		m_AABBmin.z = std::min( m_AABBmin.z, vertex.z );
+		m_aabb.min.x = std::min( m_aabb.min.x, vertex.x );
+		m_aabb.min.y = std::min( m_aabb.min.y, vertex.y );
+		m_aabb.min.z = std::min( m_aabb.min.z, vertex.z );
 
-		m_AABBmax.x = std::max( m_AABBmax.x, vertex.x );
-		m_AABBmax.y = std::max( m_AABBmax.y, vertex.y );
-		m_AABBmax.z = std::max( m_AABBmax.z, vertex.z );
+		m_aabb.max.x = std::max( m_aabb.max.x, vertex.x );
+		m_aabb.max.y = std::max( m_aabb.max.y, vertex.y );
+		m_aabb.max.z = std::max( m_aabb.max.z, vertex.z );
 
 		verts.push_back( std::move( vertex ) );
 	}

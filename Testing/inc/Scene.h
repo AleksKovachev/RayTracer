@@ -7,6 +7,7 @@
 
 #include "rapidjson/document.h" // Document, Value, Value::ConstArray
 
+#include "AccelerationStructures.h" // AABBox
 #include "Camera.h" // Camera
 #include "Colors.h" // Color, ColorMode, Colors::Black
 #include "Lights.h" // Light, PointLight
@@ -22,10 +23,10 @@ public:
 
 	~Scene();
 
-	// Parse the scene file to get all data
+	// Parse the scene file to get all data.
 	void ParseSceneFile();
 
-	// Override the name of the saved file
+	// Override the name of the saved file.
 	// @param[in] saveName: The new name for the rendered image.
 	void SetSaveFileName( const std::string& );
 
@@ -33,7 +34,7 @@ public:
 	// @param[in] colorMode: The color mode to use for the rendered image.
 	void SetColorMode( const ColorMode );
 
-	// Set render resolutions
+	// Set render resolutions.
 	// @param[in] width: The width of the rendered image in pixels.
 	// @param[in] height: The height of the rendered image in pixels.
 	void SetRenderResolution( const int, const int );
@@ -66,15 +67,11 @@ public:
 	// @return A collection of all light objects in the scene.
 	const std::vector<Light*>& GetLights() const;
 
-	// A getter function for the axis aligned bounding box min.
-	// @return The value as an FVector3 object.
-	const FVector3& GetAABBmin() const;
+	// A getter function for the axis aligned bounding box.
+	// @return The AABB object.
+	const AABBox& GetAABB() const;
 
-	// A getter function for the axis aligned bounding box max.
-	// @return The value as an FVector3 object.
-	const FVector3& GetAABBmax() const;
-
-	// Parse an obj file and load all relevant data
+	// Parse an obj file and load all relevant data.
 	void ParseObjFile();
 private:
 	std::string m_filePath;
@@ -84,8 +81,7 @@ private:
 	Settings m_settings; // Global scene settings
 	std::vector<Light*> m_lights;
 	std::vector<Texture> m_textures; // Texture objects
-	FVector3 m_AABBmin;
-	FVector3 m_AABBmax;
+	AABBox m_aabb; // AABB for the whole scene
 
 // crtscene file parsing (json)
 private:

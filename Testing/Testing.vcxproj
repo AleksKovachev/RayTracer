@@ -162,6 +162,7 @@ echo ===========================================================================
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\AccelerationStructures.cpp" />
     <ClCompile Include="src\Bases.cpp" />
     <ClCompile Include="src\Colors.cpp" />
     <ClCompile Include="src\DebugObjects.cpp" />
@@ -184,6 +185,7 @@ echo ===========================================================================
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="inc\AccelerationStructures.h" />
     <ClInclude Include="inc\Bucket.h" />
     <ClInclude Include="inc\Bases.h" />
     <ClInclude Include="inc\Camera.h" />

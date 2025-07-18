@@ -1,3 +1,4 @@
+#include "AccelerationStructures.h" // AABBox
 #include "Bucket.h" // Bucket
 #include "Camera.h" // Camera
 #include "Colors.h" // Color, ColorMode, Colors::Black, Colors::Red
@@ -298,8 +299,7 @@ void Render::RenderBucketWorker( std::mutex& bucketMutex, std::queue<Bucket>& bu
 }
 
 bool Render::HasAABBCollision( const Ray& ray ) const {
-    const FVector3& AABBmax{ m_scene.GetAABBmax() };
-    const FVector3& AABBmin{ m_scene.GetAABBmin() };
+    const AABBox& aabb{ m_scene.GetAABB() };
 
     float tMin{ 0.f }; // The closes intersection point along the ray must be positive.
     float tMax{ std::numeric_limits<float>::max() };
@@ -313,18 +313,18 @@ bool Render::HasAABBCollision( const Ray& ray ) const {
         if ( i == 0 ) {
             rayOriginComponent = ray.origin.x;
             rayDirComponent = ray.direction.x;
-            AABBminComponent = AABBmin.x;
-            AABBmaxComponent = AABBmax.x;
+            AABBminComponent = aabb.min.x;
+            AABBmaxComponent = aabb.max.x;
         } else if ( i == 1 ) {
             rayOriginComponent = ray.origin.y;
             rayDirComponent = ray.direction.y;
-            AABBminComponent = AABBmin.y;
-            AABBmaxComponent = AABBmax.y;
+            AABBminComponent = aabb.min.y;
+            AABBmaxComponent = aabb.max.y;
         } else if ( i == 2 ) {
             rayOriginComponent = ray.origin.z;
             rayDirComponent = ray.direction.z;
-            AABBminComponent = AABBmin.z;
-            AABBmaxComponent = AABBmax.z;
+            AABBminComponent = aabb.min.z;
+            AABBmaxComponent = aabb.max.z;
         }
 
         float t0 = (AABBminComponent - rayOriginComponent) / rayDirComponent;
@@ -494,6 +494,7 @@ Color Render::GetRenderColor( const IntersectionData& data ) const {
             return m_scene.GetSettings().colorMode == ColorMode::RandomTriangleColor
                 ? data.triangle.color : data.material->texture.albedo;
         }
+        case TextureType::Invalid:
         default: {
             assert( false );
         }

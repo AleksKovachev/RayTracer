@@ -82,5 +82,5 @@ void FVector3::NormalizeInPlace() {
 }
 
 void FVector3::CalculateLength() {
-	length = sqrt( x * x + y * y + z * z );
+	length = std::sqrt( x * x + y * y + z * z );
 }
