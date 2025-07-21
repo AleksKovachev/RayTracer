@@ -7,10 +7,10 @@
 constexpr int vertsInTriangle{ 3 };
 
 struct Vertex {
-    FVector3 pos;
-    FVector3 normal; // Normal vector of the vertex.
-    FVector3 UVCoords;
-    int origIdx; // Index of this vertex in the scene file.
+    FVector3 pos{};
+    FVector3 normal{}; // Normal vector of the vertex.
+    FVector3 UVCoords{};
+    int origIdx{}; // Index of this vertex in the scene file.
 };
 
 

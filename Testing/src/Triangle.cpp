@@ -2,6 +2,7 @@
 #include "utils.h" // isLessThan
 
 #include <iostream> // cerr
+#include <stdexcept> // out_of_range
 
 Triangle::Triangle() {
     init( {}, {}, {} );
@@ -41,7 +42,7 @@ float Triangle::GetArea() const {
 
 Vertex Triangle::GetVert( const unsigned vertIdx ) const {
     if ( !(vertIdx < vertsInTriangle) )
-        std::cerr << "Wrong Vertex Index\n";
+        throw std::out_of_range( "Triangle::GetVert: Wrong Vertex Index (out of bounds)" );
     return verts[vertIdx];
 }
 

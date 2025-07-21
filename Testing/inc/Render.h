@@ -83,11 +83,6 @@ private:
     // @return Boolean indicating if the given point is in shadow.
     bool IsInShadow( const Ray&, const float ) const;
 
-    // Gets the color of the hit mesh or triangle, depending on color mode.
-    // @param[in] data: The intersection data needed for getting the color.
-    // @return The color to render.
-    Color ShadeConstant( const IntersectionData& ) const;
-
     // Calculates the Barycentric coordinates of a triangle.
     // @param[in] intersectionPt: The intersection point on the triangle to calculate.
     // @param[in] triangle: The triangle for which the coordinates will be calculated.

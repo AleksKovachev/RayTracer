@@ -3,11 +3,11 @@
 
 #include <string> // string
 
-#include "Colors.h" // Color, ColorMode
+#include "Colors.h" // Color
 #include "Mesh.h" // PreparedMesh
+#include "RenderMode.h" // RenderMode
 #include "Vectors.h" // FVector2, FVector3
 
-enum class ColorMode;
 struct Color;
 class FVector3;
 struct Material;
@@ -16,15 +16,7 @@ class Triangle;
 
 constexpr int InvalidIdx = -1;
 
-// Enum for choosing render style
-enum class RenderMode {
-	// Render the object with its override material. Either mesh or triangle color.
-	ObjectColor,
-	Barycentric, // Render object visualizing the Barycentric coordinates.
-	Normals, // Render object using normal vectors as colors.
-	ShadedNormals, // Render object using normal vectors as colors (with shading).
-	Material // Render the object with its material.
-};
+
 
 // Global scene settings
 struct Settings {
@@ -34,7 +26,6 @@ struct Settings {
 	Color BGColor;
 	std::string saveDir;
 	std::string saveName;
-	ColorMode colorMode;
 	// Define a small epsilon to avoid self - intersection artifacts. Often
 	// 1e-3 - 1e-5 is used for ray origins. Smaller value if scene scale is
 	// tiny. A good approach is to have an adaptive shadow bias, based on the

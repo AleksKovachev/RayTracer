@@ -73,28 +73,35 @@ int main() {
     //Scene scene( "./rsc/OverlappingTriangles.crtscene" );
     //Scene scene( "./rsc/Pyramid.crtscene" );
     //Scene scene( "./rsc/TestPlane.obj" );
-    scene.SetColorMode( ColorMode::LoadedMaterial );
     scene.SetRenderMode( RenderMode::Material );
     scene.ParseSceneFile();
     //scene.ParseObjFile();
 
     Render render( scene );
-    std::chrono::high_resolution_clock::time_point start{
-        std::chrono::high_resolution_clock::now() };
 
-    //render.RenderImage();
-    //render.RenderParallel();
-    render.RenderBuckets();
+    double secondsMedian{};
+    int nrRuns{ 10 };
+    for ( int i{}; i < nrRuns; ++i ) {
+        std::chrono::high_resolution_clock::time_point start{
+            std::chrono::high_resolution_clock::now() };
 
-    std::chrono::high_resolution_clock::time_point stop{
-        std::chrono::high_resolution_clock::now() };
+        //render.RenderImage();
+        //render.RenderParallel();
+        render.RenderBuckets();
 
-    std::chrono::microseconds duration{
-        std::chrono::duration_cast<std::chrono::microseconds>(stop - start) };
-    const double seconds{ duration.count() / 1'000'000.0 };
+        std::chrono::high_resolution_clock::time_point stop{
+            std::chrono::high_resolution_clock::now() };
 
-    std::cout << "Execution time: " << seconds << " seconds." << std::endl;
+        std::chrono::microseconds duration{
+            std::chrono::duration_cast<std::chrono::microseconds>(stop - start) };
+        const double seconds{ duration.count() / 1'000'000.0 };
+        secondsMedian += seconds;
 
+        std::cout << "Execution time: " << seconds << " seconds." << std::endl;
+    }
+
+    std::cout << "\n\nMedian execution time: " << secondsMedian / nrRuns <<
+        " for " << nrRuns << " runs." << std::endl;
 
     //renderCameraMoveAnimation( scene, { 0.f, 1.f, 5.f }, { 0.2f, 0.f, 0.f }, 10 );
     //renderRotationAroundObject( scene, { 0.f, 2.f, 5.f }, 30 );

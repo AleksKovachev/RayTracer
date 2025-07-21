@@ -7,9 +7,9 @@
 
 #include "rapidjson/document.h" // Document, Value, Value::ConstArray
 
-#include "AccelerationStructures.h" // AABBox
+#include "AccelerationStructures.h" // AABBox, AccTreeNode
 #include "Camera.h" // Camera
-#include "Colors.h" // Color, ColorMode, Colors::Black
+#include "Colors.h" // Color, Colors::Black
 #include "Lights.h" // Light, PointLight
 #include "Materials.h" // Material, MaterialType, Texture, TextureType
 #include "Mesh.h" // Mesh, PreparedMesh
@@ -29,10 +29,6 @@ public:
 	// Override the name of the saved file.
 	// @param[in] saveName: The new name for the rendered image.
 	void SetSaveFileName( const std::string& );
-
-	// Set a render color mode
-	// @param[in] colorMode: The color mode to use for the rendered image.
-	void SetColorMode( const ColorMode );
 
 	// Set render resolutions.
 	// @param[in] width: The width of the rendered image in pixels.
@@ -73,6 +69,14 @@ public:
 
 	// Parse an obj file and load all relevant data.
 	void ParseObjFile();
+
+	// Get all scene materials.
+	// @reutrn A collection of all scene materials.
+	const std::vector<Material>& GetMaterials() const;
+
+	// Get all scene override materials.
+	// @reutrn A collection of all scene override materials.
+	const std::vector<Material>& GetOverrideMaterials() const;
 private:
 	std::string m_filePath;
 	std::vector<Mesh> m_meshes; // Scene objects
@@ -82,6 +86,8 @@ private:
 	std::vector<Light*> m_lights;
 	std::vector<Texture> m_textures; // Texture objects
 	AABBox m_aabb; // AABB for the whole scene
+	std::vector<Material> m_materials;
+	std::vector<Material> m_overrideMaterials;
 
 // crtscene file parsing (json)
 private:

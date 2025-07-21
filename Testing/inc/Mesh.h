@@ -3,8 +3,8 @@
 
 #include <vector> // vector
 
-#include "Colors.h" // ColorMode
 #include "Materials.h" // Material, MaterialType, Texture
+#include "RenderMode.h" // RenderMode
 #include "Triangle.h" // Triangle, Vertex
 #include "Vectors.h" // FVector3
 
@@ -25,14 +25,6 @@ public:
 	// Gets the triangles of this mesh.
 	// @return A collection vertex index tripplets representing this mesh' triangles.
 	const std::vector<int>& GetTriangles() const;
-
-	// Gets the material of this mesh.
-	// @return A material object.
-	const Material& GetMaterial() const;
-
-	// Sets the material of this mesh.
-	// @param[in] mat: A material object to assign this mesh' material to.
-	void SetMaterial( const Material& );
 
 	// Gets the material this mesh' material will be overridden with.
 	// @return A material object.
@@ -58,9 +50,9 @@ public:
 	// @param[in] uvs: The collection of UV coordinaes to assign.
 	void SetTextureUVs( const std::vector<FVector3> );
 private:
-	Material material;
 	Material m_materialOverride;
 	int matIdx;
+	int overrideMatIdx;
 	std::vector<FVector3> vertices; // 3D coordinates for the whole mesh
 	std::vector<int> triangles; // Each triple of vertices form a triangle
 	std::vector<FVector3> m_faceNormals;
@@ -70,13 +62,15 @@ private:
 
 // Collection of built Triangles representing a 3D object
 struct PreparedMesh {
-	Material m_material;
-	std::vector<Triangle> m_triangles;
+	int matIdx{};
+	int overrideMatIdx{};
+	std::vector<Triangle> m_triangles{};
 
 	// Converts all mesh data inside a mesh object to a prepared mesh object.
 	// @param[in] mesh: The mesh to get the data from.
-	// @param[in] colorMode: The chosen color mode to assign correct color.
-	void PrepMesh( const Mesh&, const ColorMode& );
+	// @param[in] overrideMaterialIdx: The index of the override material for this mesh.
+	// @param[in] renderMode: The chosen color mode to assign correct color.
+	void PrepMesh( const Mesh&, const size_t, const RenderMode& );
 };
 
 #endif // MESH_H

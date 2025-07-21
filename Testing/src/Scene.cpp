@@ -55,10 +55,11 @@ void Scene::ParseSceneFile() {
 	for ( Mesh& mesh : m_meshes ) {
 		Material mat{};
 		mat.texture.albedo = getRandomColor();
-		mesh.SetMaterialOverride( mat );
+		m_overrideMaterials.push_back( mat );
 
 		m_rdyMeshes.emplace_back();
-		m_rdyMeshes[counter++].PrepMesh( mesh, m_settings.colorMode );
+		m_rdyMeshes[counter++].PrepMesh(
+			mesh, m_overrideMaterials.size() - 1, m_settings.renderMode);
 	}
 }
 
@@ -67,10 +68,6 @@ void Scene::SetSaveFileName( const std::string& saveName ) {
 		std::exit( 1 );
 
 	m_settings.saveName = saveName;
-}
-
-void Scene::SetColorMode( const ColorMode colorMode ) {
-	m_settings.colorMode = colorMode;
 }
 
 void Scene::SetRenderResolution( const int width, const int height ) {
@@ -293,7 +290,9 @@ void Scene::ParseMaterialsTag( const rapidjson::Document& doc ) {
 	if ( doc.HasMember( t_materials ) && doc[t_materials].IsArray() ) {
 		const rapidjson::Value::ConstArray& matsArr = doc[t_materials].GetArray();
 
-		for ( unsigned i{}; i < matsArr.Size(); ++i ) {
+		unsigned nrMats = matsArr.Size();
+		m_materials.reserve( nrMats );
+		for ( unsigned i{}; i < nrMats; ++i ) {
 			assert( matsArr[i].IsObject() );
 			const rapidjson::Value& material{ matsArr[i] };
 			assert( material.HasMember( t_type ) && material[t_type].IsString() );
@@ -334,11 +333,7 @@ void Scene::ParseMaterialsTag( const rapidjson::Document& doc ) {
 				}
 			}
 
-			for ( Mesh& mesh : m_meshes ) {
-				if ( mesh.GetMaterialIdx() == i ) {
-					mesh.SetMaterial( mat );
-				}
-			}
+			m_materials.push_back( mat );
 		}
 	}
 }
@@ -587,7 +582,15 @@ void Scene::ParseObjFile() {
 		mat.type = MaterialType::Diffuse;
 		mat.texture.albedo = getRandomColor();
 		mat.smoothShading = false;
-		mesh.SetMaterial( mat );
+		//! mesh.SetMaterial( mat );
 		m_meshes.push_back( mesh );
 	}
+}
+
+const std::vector<Material>& Scene::GetMaterials() const {
+	return m_materials;
+}
+
+const std::vector<Material>& Scene::GetOverrideMaterials() const {
+	return m_overrideMaterials;
 }

@@ -46,4 +46,27 @@ struct AccTreeNode {
 	int parent; // The index of the parent node for this node and its sub space.
 };
 
+
+class AccTree {
+public:
+	AccTree();
+
+	void AddNode(
+		const AABBox& aabb,
+		const int child0Idx,
+		const int child1Idx,
+		const std::vector<Triangle>& triangles
+	);
+
+	AccTreeNode* operator[]( const int idx );
+
+	//! const AccTreeNode* operator[]( const int idx ) const;
+};
+
+//? buildAccTre( rootIdx, 0, triangles ); // buildAccTree( parentIdx, depth, triangles )
+//? accTree[parentIdx].triangles = triangles;
+// Acc Tree Traversing
+//? stack<int> nodeIndicesToCheck;
+//? nodeIndicesToCheck.push( rootIdx );
+
 #endif // ACCELERATION_STRUCTURES_H

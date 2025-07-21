@@ -1,7 +1,7 @@
 #include "AccelerationStructures.h" // AABBox
 #include "Bucket.h" // Bucket
 #include "Camera.h" // Camera
-#include "Colors.h" // Color, ColorMode, Colors::Black, Colors::Red
+#include "Colors.h" // Color, Colors::Black, Colors::Red
 #include "ImageBuffer.h" // ImageBuffer
 #include "Lights.h" // Light, PointLight
 #include "Materials.h" // MaterialType, Bitmap, TextureType
@@ -121,13 +121,14 @@ void Render::RenderParallel() {
             region.endY = height;
 
         // Skip region if the it's empty due to rounding or small image.
-        if ( region.startX >= region.endX || region.startY >= region.endY )
+        if ( region.startX >= region.endX || region.startY >= region.endY ) {
             continue;
+        }
 
         threads.emplace_back(
             &Render::RenderRegion,
             this,
-            std::cref( region ),
+            region,
             std::ref( buff )
         );
     }
@@ -187,8 +188,10 @@ void Render::RenderBuckets() {
             unsigned endY = startY + bucketSize;
 
             // Clamp end coordinates to image boundaries.
-            if ( endX > width ) endX = width;
-            if ( endY > height ) endY = height;
+            if ( endX > width )
+                endX = width;
+            if ( endY > height )
+                endY = height;
 
             // Only add valid buckets.
             if ( startX < endX && startY < endY ) {
@@ -229,8 +232,8 @@ void Render::RenderRegion( const Bucket& region, ImageBuffer& buff ) {
         m_overrideCamera == nullptr ? m_scene.GetCamera() : *m_overrideCamera };
     Color pixelColor{};
 
-    for ( unsigned row{ region.startY}; row < region.endY; ++row ) {
-        for ( unsigned col{ region.startX}; col < region.endX; ++col ) {
+    for ( unsigned row{ region.startY }; row < region.endY; ++row ) {
+        for ( unsigned col{ region.startX }; col < region.endX; ++col ) {
             Ray ray = camera.GenerateRay( col, row, m_scene.GetSettings() );
             if ( !HasAABBCollision( ray ) ) {
                 pixelColor = m_scene.GetSettings().BGColor;
@@ -348,7 +351,7 @@ bool Render::IsInShadow( const Ray& ray, const float distToLight ) const {
     for ( const PreparedMesh& mesh : m_scene.GetPreparedMeshes() ) {
 
         // Skip shadowing meshes with refractive materials.
-        if ( mesh.m_material.type == MaterialType::Refractive )
+        if ( m_scene.GetMaterials()[mesh.matIdx].type == MaterialType::Refractive )
             continue;
 
         for ( const Triangle& triangle : mesh.m_triangles ) {
@@ -382,22 +385,6 @@ bool Render::IsInShadow( const Ray& ray, const float distToLight ) const {
         }
     }
     return false;
-}
-
-Color Render::ShadeConstant( const IntersectionData& data ) const {
-    switch ( m_scene.GetSettings().colorMode ) {
-
-        case ColorMode::RandomTriangleColor: {
-            return data.triangle.color;
-        }
-        case (ColorMode::LoadedMaterial):
-        case (ColorMode::RandomMeshColor): {
-            return data.material->texture.albedo;
-        }
-    }
-
-    // Should never get here.
-    return Colors::Black;
 }
 
 FVector2 Render::CalcBaryCoords( const FVector3& intersectionPt, const Triangle& triangle ) {
@@ -491,7 +478,7 @@ Color Render::GetRenderColor( const IntersectionData& data ) const {
             return GetBitmapColor( data );
         }
         case TextureType::SolidColor: {
-            return m_scene.GetSettings().colorMode == ColorMode::RandomTriangleColor
+            return m_scene.GetSettings().renderMode == RenderMode::RandomTriangleColor
                 ? data.triangle.color : data.material->texture.albedo;
         }
         case TextureType::Invalid:
@@ -598,13 +585,16 @@ Color Render::ShadeReflective( const Ray& ray, const IntersectionData& data ) co
 }
 
 float Render::CalcFresnelSchlickApprox( const float ior1, const float ior2, const float dotIN ) {
-    float ratioIORs{ ior1 / ior2 };
+    // More info: https://en.wikipedia.org/wiki/Schlick%27s_approximation
+    // More info: https://en.wikipedia.org/wiki/Fresnel_equations
+    // Calculations at: https://webs.optics.arizona.edu/gsmith/FresnelCalculator.html
+    float eta{ ior1 / ior2 };
     float cosIN = -dotIN; // cos(A)
     float R0 = std::pow( (ior1 - ior2) / (ior1 + ior2), 2.0f );
     // Use the cosine of the angle *inside* the denser material for the Fresnel term.
     // If ray was entering (original dotIN <= 0), use cosIN.
     // If ray was exiting (original dotIN > 0), use cosRnN.
-    float cosRnN = std::sqrtf( 1.f - ratioIORs * ratioIORs * (1.f - (cosIN * cosIN)) );
+    float cosRnN = std::sqrtf( 1.f - eta * eta * (1.f - (cosIN * cosIN)) );
     float cosTermForFresnel = (dotIN > 0) ? cosRnN : cosIN;
     return R0 + (1.0f - R0) * std::pow( (1.0f - cosTermForFresnel), 5.0f );
 }
@@ -708,18 +698,18 @@ Color Render::Shade( const Ray& ray, const IntersectionData& data ) const {
         pixelColor = ShadeNormals( data );
     } else if ( m_scene.GetRenderMode() == RenderMode::ShadedNormals ) {
         pixelColor = ShadeDiffuse( data );
-    } else if ( m_scene.GetRenderMode() == RenderMode::ObjectColor ) {
-        pixelColor = ShadeConstant( data );
+    } else if ( m_scene.GetRenderMode() == RenderMode::RandomTriangleColor ) {
+        pixelColor = data.triangle.color;
+    } else if ( m_scene.GetRenderMode() == RenderMode::RandomMeshColor ) {
+        pixelColor = data.material->texture.albedo;
     } else if ( m_scene.GetRenderMode() == RenderMode::Material
         && data.material->type == MaterialType::Diffuse ) {
         pixelColor = ShadeDiffuse( data );
     } else if ( m_scene.GetRenderMode() == RenderMode::Material
         && data.material->type == MaterialType::Reflective ) {
-        //pixelColor = ShadeDiffuse( data );
         pixelColor = ShadeReflective( ray, data );
     } else if ( m_scene.GetRenderMode() == RenderMode::Material
         && data.material->type == MaterialType::Refractive ) {
-        //pixelColor = ShadeDiffuse( data );
         pixelColor = ShadeRefractive( ray, data );
     } else {
         assert( false );
@@ -795,7 +785,12 @@ IntersectionData Render::TraceRay( const Ray& ray, const float maxT ) const {
             closestIntersectionP = rayPointDist;
             intersectData.faceNormal = triangle.GetNormal();
             intersectData.hitPoint = intersectionPt;
-            intersectData.material = &mesh.m_material;
+            if ( m_scene.GetRenderMode() == RenderMode::RandomMeshColor ) {
+                intersectData.material = &(m_scene.GetOverrideMaterials()[mesh.overrideMatIdx]);
+            }
+            else {
+                intersectData.material = &(m_scene.GetMaterials()[mesh.matIdx]);
+            }
             intersectData.triangle = triangle;
         }
     }

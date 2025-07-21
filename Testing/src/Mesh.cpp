@@ -5,10 +5,7 @@
 
 
 Mesh::Mesh( const std::vector<FVector3>& verts, const std::vector<int>& triangles )
-    : vertices{ verts },
-    triangles{ triangles },
-    material{ Material( MaterialType::Diffuse, Texture( {255, 0, 0 } ), false ) },
-    matIdx{ -1 } {
+    : vertices{ verts }, triangles{ triangles }, matIdx{ -1 }, overrideMatIdx{ -1 } {
 }
 
 const std::vector<FVector3>& Mesh::GetVertices() const {
@@ -17,14 +14,6 @@ const std::vector<FVector3>& Mesh::GetVertices() const {
 
 const std::vector<int>& Mesh::GetTriangles() const {
     return triangles;
-}
-
-const Material& Mesh::GetMaterial() const {
-    return material;
-}
-
-void Mesh::SetMaterial( const Material& mat ) {
-    material = mat;
 }
 
 Material Mesh::GetMaterialOverride() const {
@@ -55,8 +44,9 @@ void Mesh::SetTextureUVs( const std::vector<FVector3> uvs ) {
     m_UVs = uvs;
 }
 
-void PreparedMesh::PrepMesh( const Mesh& mesh, const ColorMode& colorMode ) {
-
+void PreparedMesh::PrepMesh(
+    const Mesh& mesh, const size_t overrideMaterialIdx, const RenderMode& renderMode
+) {
     const std::vector<FVector3>& vertices = mesh.GetVertices();
     const std::vector<FVector3>& UVs = mesh.GetTextureUVs();
     size_t vertSize = vertices.size();
@@ -100,17 +90,10 @@ void PreparedMesh::PrepMesh( const Mesh& mesh, const ColorMode& colorMode ) {
         vertexNormalCounts[idx1]++;
         vertexNormalCounts[idx2]++;
 
-        if ( colorMode == ColorMode::LoadedMaterial ) {
-            const Material& mat = mesh.GetMaterial();
-            // Backwards Compatible - needs removal
-            m_triangles[lastTriIdx].color = mat.texture.albedo;
-            m_material = mat;
-        } else if ( colorMode == ColorMode::RandomMeshColor ) {
-            const Material& mat = mesh.GetMaterialOverride();
-            // Backwards Compatible - needs removal
-            m_triangles[lastTriIdx].color = mat.texture.albedo;
-            m_material = mat;
-        } else if ( colorMode == ColorMode::RandomTriangleColor ) {
+        matIdx = mesh.GetMaterialIdx();
+        if ( renderMode == RenderMode::RandomMeshColor ) {
+            overrideMatIdx = static_cast<int>( overrideMaterialIdx );
+        } else if ( renderMode == RenderMode::RandomTriangleColor ) {
             m_triangles[lastTriIdx].color = getRandomColor();
         }
     }

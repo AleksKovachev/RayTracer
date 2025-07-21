@@ -9,7 +9,7 @@ AccTreeNode::AccTreeNode(
 	const int leftNodeIdx,
 	const int rightNodeIdx,
 	const std::vector<Triangle>& triangles
-) {
+) : children{ -1, -1 }, parent{ -1 } {
 }
 
 void AccTreeNode::Intersect(
@@ -26,7 +26,7 @@ AABBox::AABBox()
 	: min{ std::numeric_limits<float>::max(),
 		std::numeric_limits<float>::max(),
 		std::numeric_limits<float>::max() },
-	max{ std::numeric_limits<float>::min(),
-		std::numeric_limits<float>::min(),
-		std::numeric_limits<float>::min() } {
+	max{ std::numeric_limits<float>::lowest(),
+		std::numeric_limits<float>::lowest(),
+		std::numeric_limits<float>::lowest() } {
 }
