@@ -60,17 +60,4 @@ private:
 	std::vector<FVector3> m_UVs;
 };
 
-// Collection of built Triangles representing a 3D object
-struct PreparedMesh {
-	int matIdx{};
-	int overrideMatIdx{};
-	std::vector<Triangle> m_triangles{};
-
-	// Converts all mesh data inside a mesh object to a prepared mesh object.
-	// @param[in] mesh: The mesh to get the data from.
-	// @param[in] overrideMaterialIdx: The index of the override material for this mesh.
-	// @param[in] renderMode: The chosen color mode to assign correct color.
-	void PrepMesh( const Mesh&, const size_t, const RenderMode& );
-};
-
 #endif // MESH_H

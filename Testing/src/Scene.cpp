@@ -8,7 +8,7 @@
 #include "stb_image.h" // stbi_load
 #include "rapidjson/istreamwrapper.h" // IStreamWrapper
 
-#include <algorithm> // find
+#include <algorithm> // find, min, max
 #include <cassert> // assert
 #include <fstream> // ifstream
 #include <filesystem> // path
@@ -19,11 +19,10 @@ template <typename T>
 T loadVector3( const rapidjson::Value::ConstArray& arr );
 Matrix3 loadMatrix3( const rapidjson::Value::ConstArray& arr );
 std::vector<FVector3> loadUVs( const rapidjson::Value::ConstArray& arr );
-std::vector<int> loadMeshTris( const rapidjson::Value::ConstArray& arr );
 
 
 Scene::Scene( const std::string& sceneFilePath )
-	: m_filePath{ sceneFilePath }, m_aabb{} {
+	: m_filePath{ sceneFilePath }, m_aabb{}, m_accTree{ *this } {
 	// Create a path of the save file name string
 	std::filesystem::path path( m_filePath );
 	// Get a string representation of absolute path to save file name
@@ -51,16 +50,30 @@ void Scene::ParseSceneFile() {
 	ParseTexturesTag( doc );
 	ParseMaterialsTag( doc );
 
-	unsigned counter{};
-	for ( Mesh& mesh : m_meshes ) {
-		Material mat{};
-		mat.texture.albedo = getRandomColor();
-		m_overrideMaterials.push_back( mat );
+	//! Fix placing a pointer in each Triangle to the mesh it belongs to.
+	// Create and assign an override material for each mesh.
+	//unsigned counter{};
+	//for ( Mesh& mesh : m_meshes ) {
+	//	Material mat{};
+	//	mat.texture.albedo = getRandomColor();
+	//	m_overrideMaterials.push_back( mat );
+	//	unsigned overrideMatIdx = static_cast<unsigned>( m_overrideMaterials.size() ) - 1;
 
-		m_rdyMeshes.emplace_back();
-		m_rdyMeshes[counter++].PrepMesh(
-			mesh, m_overrideMaterials.size() - 1, m_settings.renderMode);
-	}
+	//	// Assign the override material index to each triangle
+	//	for ( Triangle& triangle : m_rdyMeshes[counter].m_triangles ) {
+	//		triangle.overrideMatIdx = overrideMatIdx;
+	//	}
+	//	++counter;
+	//}
+
+	// Using SAH eliminates the need for fine tuning maxDepth and maxBoxTriCount.
+	// Default formula: static_cast<int>( 8 + 1.3 * log2f( static_cast<float>( m_triangles.size() ) ) );
+	// Formula without the (1.3 *) part also exists.
+	m_accTree.maxDepth = 10; //! Create a setting!
+	// Typical 1-10. 1-4 for high perf. 5-10 for fast tree building. 4-8 is okay for GPU rendering.
+	m_accTree.maxBoxTriangleCount = 2; //! Create a setting!
+	int rootIdx = m_accTree.AddNode( m_aabb, -1, -1, {}, *this );
+	m_accTree.Build( rootIdx, 0, m_triangles );
 }
 
 void Scene::SetSaveFileName( const std::string& saveName ) {
@@ -83,8 +96,8 @@ void Scene::SetRenderMode( const RenderMode& renderMode ) {
 	m_settings.renderMode = renderMode;
 }
 
-const std::vector<PreparedMesh>& Scene::GetPreparedMeshes() const {
-	return m_rdyMeshes;
+const std::vector<Triangle>& Scene::GetTriangles() const {
+	return m_triangles;
 }
 
 const std::vector<Mesh>& Scene::GetMeshes() const {
@@ -106,7 +119,6 @@ const std::vector<Light*>& Scene::GetLights() const {
 const AABBox& Scene::GetAABB() const {
 	return m_aabb;
 }
-
 
 void Scene::ParseSettingsTag(const rapidjson::Document& doc) {
 	// JSON Tags to look for
@@ -169,11 +181,18 @@ void Scene::ParseObjectsTag( const rapidjson::Document& doc ) {
 			const rapidjson::Value& mesh{ objArr[i] };
 			assert( mesh.HasMember( t_vertices ) && mesh[t_vertices].IsArray() );
 			assert( mesh.HasMember( t_triangles ) && mesh[t_triangles].IsArray() );
-			m_meshes.emplace_back( LoadVertices( mesh[t_vertices].GetArray() ),
-				loadMeshTris( mesh[t_triangles].GetArray() ) );
+
+			int matIdx = -1;
+			if ( mesh.HasMember( t_matIdx ) && mesh[t_matIdx].IsInt() )
+				matIdx = mesh[t_matIdx].GetInt();
+
+			std::vector<FVector3> meshVerts = LoadVertices( mesh[t_vertices].GetArray() );
+			std::vector<int> meshTris = LoadMeshTris( mesh[t_triangles].GetArray(), meshVerts, matIdx );
+
+			m_meshes.emplace_back( meshVerts, meshTris );
 
 			if ( mesh.HasMember( t_matIdx ) && mesh[t_matIdx].IsInt() )
-				m_meshes[i].SetMaterialIdx( mesh[t_matIdx].GetInt() );
+				m_meshes[i].SetMaterialIdx( matIdx );
 
 			if ( mesh.HasMember( t_uvs ) && mesh[t_uvs].IsArray() )
 				m_meshes[i].SetTextureUVs( loadUVs( mesh[t_uvs].GetArray() ) );
@@ -389,11 +408,38 @@ std::vector<FVector3> loadUVs( const rapidjson::Value::ConstArray& arr ) {
 	return uvs;
 }
 
-std::vector<int> loadMeshTris( const rapidjson::Value::ConstArray& arr ) {
+std::vector<int> Scene::LoadMeshTris(
+	const rapidjson::Value::ConstArray& arr, const std::vector<FVector3>& meshVerts, const int matIdx ) {
 	std::vector<int> tris{};
+	tris.reserve( arr.Size() );
 
-	for ( unsigned i{}; i < arr.Size(); ++i )
+	unsigned triangleCounter{};
+
+	for ( unsigned i{}; i < arr.Size(); ++i ) {
+
 		tris.emplace_back( arr[i].GetInt() );
+		triangleCounter++;
+
+		if ( triangleCounter % 3 == 0 ) {
+			Vertex v0, v1, v2;
+			int idx0 = tris[tris.size() - 3];
+			int idx1 = tris[tris.size() - 2];
+			int idx2 = tris[tris.size() - 1];
+
+			v0.origIdx = idx0;
+			v1.origIdx = idx1;
+			v2.origIdx = idx2;
+
+			v0.pos = meshVerts[idx0];
+			v1.pos = meshVerts[idx1];
+			v2.pos = meshVerts[idx2];
+
+			m_triangles.emplace_back(v0, v1, v2 );
+			if ( matIdx != -1 ) {
+				m_triangles[m_triangles.size() - 1].matIdx = matIdx;
+			}
+		}
+	}
 
 	return tris;
 }
@@ -593,4 +639,8 @@ const std::vector<Material>& Scene::GetMaterials() const {
 
 const std::vector<Material>& Scene::GetOverrideMaterials() const {
 	return m_overrideMaterials;
+}
+
+const AccTree& Scene::GetAccTree() const {
+	return m_accTree;
 }

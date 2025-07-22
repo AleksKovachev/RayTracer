@@ -17,6 +17,9 @@ struct Vertex {
 // Triangle class with position vertices.
 class Triangle {
 public:
+    unsigned matIdx;
+    unsigned overrideMatIdx;
+
     Color color;
 
     Triangle();

@@ -1,15 +1,16 @@
 #ifndef ACCELERATION_STRUCTURES_H
 #define ACCELERATION_STRUCTURES_H
 
-#include <vector>
+#include <utility> // pair
+#include <vector> // vector
 
-#include "Triangle.h"
-#include "Vectors.h"
+#include "Triangle.h" // Triangle
+#include "Vectors.h" // FVector3
 
 struct IntersectionData;
 struct Material;
 struct Ray;
-
+class Scene;
 
 // Simple structure representing an Axis Aligned Bounding Box.
 struct AABBox {
@@ -17,15 +18,18 @@ struct AABBox {
 	FVector3 max;
 
 	AABBox();
+	AABBox( const FVector3&, const FVector3& );
+
+	std::pair<AABBox, AABBox> Split( const int splitAxis );
 };
 
 struct AccTreeNode {
 	AccTreeNode(
 		const AABBox& aabb,
-		const int parentIdx,
 		const int leftNodeIdx,
 		const int rightNodeIdx,
-		const std::vector<Triangle>& triangles
+		const std::vector<Triangle>& triangles,
+		const Scene& scene
 	);
 
 	// Intersect the given ray with the triangles in the box (leaf nodes).
@@ -33,7 +37,6 @@ struct AccTreeNode {
 		const Ray& ray,
 		const float maxT,
 		const std::vector<Material>& materials,
-		float& t,
 		float& minT,
 		IntersectionData& data
 	) const;
@@ -43,30 +46,37 @@ struct AccTreeNode {
 	// The left and right indices for the node's children,
 	// indexing in the big list for the tree with all the nodes.
 	int children[2];
-	int parent; // The index of the parent node for this node and its sub space.
+
+private:
+	const Scene& m_scene;
 };
 
 
 class AccTree {
 public:
-	AccTree();
+	std::vector<AccTreeNode> nodes;
+	int maxDepth;
+	int maxBoxTriangleCount;
+	int axisCount;
 
-	void AddNode(
-		const AABBox& aabb,
-		const int child0Idx,
-		const int child1Idx,
-		const std::vector<Triangle>& triangles
+	AccTree( const Scene& );
+	AccTree(
+		const Scene& scene,
+		const int maxDepth_,
+		const int maxBoxTriangleCount_,
+		const int axisCount = 3
 	);
 
-	AccTreeNode* operator[]( const int idx );
+	int AddNode( const AABBox&, const int, const int, const std::vector<Triangle>&, const Scene& );
 
-	//! const AccTreeNode* operator[]( const int idx ) const;
+	void Build( const int, const int, std::vector<Triangle>& );
+
+	bool TriangleIntersectAABB( const Triangle& triangle, const AABBox& aabb );
+
+	AccTreeNode& operator[]( const int );
+
+private:
+	const Scene& m_scene;
 };
-
-//? buildAccTre( rootIdx, 0, triangles ); // buildAccTree( parentIdx, depth, triangles )
-//? accTree[parentIdx].triangles = triangles;
-// Acc Tree Traversing
-//? stack<int> nodeIndicesToCheck;
-//? nodeIndicesToCheck.push( rootIdx );
 
 #endif // ACCELERATION_STRUCTURES_H

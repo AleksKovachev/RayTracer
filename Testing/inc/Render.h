@@ -7,9 +7,10 @@
 #include <queue> // queue
 #include <string> // string, to_string
 
-#include "RenderSettings.h" // IntersectionData
+#include "RenderSettings.h" // RenderMode, IntersectionData, Settings
 #include "Vectors.h" // FVector2, FVector3
 
+struct AABBox;
 struct Bucket;
 struct Camera;
 class ImageBuffer;
@@ -50,6 +51,11 @@ public:
     // @param[in] buff: The buffer where the rendered colors will be stored.
     void RenderRegion( const Bucket&, ImageBuffer& );
 
+    // Used for bucket rendering, but uses acceleration tree traversal.
+    // @param[in] region: A structure holding the start and end positions for the region to render.
+    // @param[in] buff: The buffer where the rendered colors will be stored.
+    void RenderTree( const Bucket&, ImageBuffer& );
+
     // Renders a camera movement animation around the scene.
     // @param[in] initialPos: The initial camera position.
     // @param[in] moveWith: A vector representing a relative x, y, z
@@ -74,8 +80,10 @@ private:
     void RenderBucketWorker( std::mutex&, std::queue<Bucket>&, ImageBuffer& );
 
     // Checks if the current ray intersects the scene's axis aligned bounding box.
-    // @param[in-out] ray: The ray to be checked.
-    bool HasAABBCollision( const Ray& ) const;
+    // @param[in] ray: The ray to be checked.
+    // @param[in] aabb: The AABB to check if the ray has intersection with.
+    // @return If the ray intersects with the AABB.
+    bool HasAABBCollision( const Ray&, const AABBox& ) const;
 
     // Traces ShadowRay from hit point to light sources.
     // @param[in] ray: The shadow ray to trace.
@@ -153,6 +161,13 @@ private:
     // @param[in] data: All intersection data needed for further calculations.
     // @return A color to render for the current pixel after all calculations.
     Color Shade( const Ray&, const IntersectionData& ) const;
+
+    // Traces a ray and checks if it hits any mesh triangle, using acceleration trees.
+    // @param[in] ray: The ray to trace.
+    // @param[in] maxT: A value beyon which calculations should be cut. Used for shadow rays.
+    // @return Intersection data used for further color calculations.
+    IntersectionData IntersectRay(
+        const Ray& ray, const float maxT = std::numeric_limits<float>::max() ) const;
 
     // Traces a ray and checks if it hits any mesh triangle.
     // @param[in] ray: The ray to trace.

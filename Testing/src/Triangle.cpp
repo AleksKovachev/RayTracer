@@ -1,5 +1,5 @@
 #include "Triangle.h"
-#include "utils.h" // isLessThan
+#include "utils.h" // isLT
 
 #include <iostream> // cerr
 #include <stdexcept> // out_of_range
@@ -55,11 +55,11 @@ void Triangle::SetVertexNormal( const unsigned vertIdx, const FVector3& val ) {
 }
 
 bool Triangle::IsPointInside( const FVector3& point ) const {
-    if ( isLessEqualThan( (edges[0] * (point - verts[0].pos)).Dot( normal ), 0.f, -1e-5f ) )
+    if ( isLE( (edges[0] * (point - verts[0].pos)).Dot( normal ), 0.f, -1e-5f ) )
         return false;
-    if ( isLessEqualThan( (edges[1] * (point - verts[1].pos)).Dot( normal ), 0.f, -1e-5f ) )
+    if ( isLE( (edges[1] * (point - verts[1].pos)).Dot( normal ), 0.f, -1e-5f ) )
         return false;
-    if ( isLessEqualThan( (edges[2] * (point - verts[2].pos)).Dot( normal ), 0.f, -1e-5f ) )
+    if ( isLE( (edges[2] * (point - verts[2].pos)).Dot( normal ), 0.f, -1e-5f ) )
         return false;
 
     return true;

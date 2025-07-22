@@ -7,12 +7,12 @@
 
 #include "rapidjson/document.h" // Document, Value, Value::ConstArray
 
-#include "AccelerationStructures.h" // AABBox, AccTreeNode
+#include "AccelerationStructures.h" // AABBox, AccTreeNode, AccTree
 #include "Camera.h" // Camera
 #include "Colors.h" // Color, Colors::Black
 #include "Lights.h" // Light, PointLight
 #include "Materials.h" // Material, MaterialType, Texture, TextureType
-#include "Mesh.h" // Mesh, PreparedMesh
+#include "Mesh.h" // Mesh
 #include "RenderSettings.h" // Settings, RenderMode
 
 
@@ -43,9 +43,9 @@ public:
 	// @param[in] renderMode: The render mode to use for the final image.
 	void SetRenderMode( const RenderMode& );
 
-	// Gets all the prepared meshes in the scene.
-	// @return A collection of prepared meshes, ready to iterate.
-	const std::vector<PreparedMesh>& GetPreparedMeshes() const;
+	// Gets all the triangles in the scene.
+	// @return A collection of triangles, ready to iterate.
+	const std::vector<Triangle>& GetTriangles() const;
 
 	// Gets all meshes loaded from the scene file.
 	// @return A collection of mesh objects.
@@ -77,17 +77,24 @@ public:
 	// Get all scene override materials.
 	// @reutrn A collection of all scene override materials.
 	const std::vector<Material>& GetOverrideMaterials() const;
+
+	std::vector<int> LoadMeshTris(
+		const rapidjson::Value::ConstArray&, const std::vector<FVector3>&, const int );
+
+	const AccTree& GetAccTree() const;
 private:
 	std::string m_filePath;
 	std::vector<Mesh> m_meshes; // Scene objects
-	std::vector<PreparedMesh> m_rdyMeshes;
 	Camera m_camera; // Main scene Camera
 	Settings m_settings; // Global scene settings
 	std::vector<Light*> m_lights;
 	std::vector<Texture> m_textures; // Texture objects
-	AABBox m_aabb; // AABB for the whole scene
 	std::vector<Material> m_materials;
 	std::vector<Material> m_overrideMaterials;
+
+	AABBox m_aabb; // AABB for the whole scene
+	AccTree m_accTree;
+	std::vector<Triangle> m_triangles;
 
 // crtscene file parsing (json)
 private:

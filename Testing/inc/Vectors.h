@@ -41,6 +41,8 @@ public:
     // @param[in] in_z: The "z" value for this vector.
     FVector3( const FVector2&, float );
 
+    FVector3( const FVector3& ) = default;
+
     // Adds a vector to this one.
     // @param[in] other: The vector that's beeing added.
     // @return The resulting vector.
@@ -63,7 +65,7 @@ public:
     // Compares two vectors.
     // @param[in] other: The vectors this one is being compared to.
     // @return If the vectors are identical.
-    bool operator==( const FVector3& );
+    bool operator==( const FVector3& ) const;
 
     // Scalar multiplication. Multiplies each vector component by the given scalar.
     // @param[in] val: The value each component of this vector is being multiplied by.
@@ -74,6 +76,9 @@ public:
     // @param[in] other: The second vector that will be in the cross product calculation.
     // @return The resulting vector.
     FVector3 operator*( const FVector3& ) const;
+
+    float& operator[]( const int idx );
+    const float& operator[]( const int idx ) const;
  
     // ReGets turns vector length/magnitude.
     // @return the length as a float.

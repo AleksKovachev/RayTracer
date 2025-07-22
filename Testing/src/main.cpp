@@ -27,7 +27,6 @@
 // TODO: Finish the interactive rendering
 // TODO: Finish the OBJ file parser
 // TODO: Make the Triangle class hold pointers or indices to the vertices, not their copies.
-// TODO: Make the PreparedMesh material property a pointer so materials can be reused.
 // TODO: Implement reading and applying Normal maps.
 // TODO: Replace IsInShadow() with TraceRay.
 // TODO: Implement bitmap texture mapping without stretching. 2 types - Fit, which
@@ -38,7 +37,7 @@
 /*
  * The whole Render Engine is built for ease of use, which costs a lot of memory.
  * To make it more efficient for larger scenes, the PreparedMesh class must be
- * removed entirely. Teh program should only work with the Mesh class, which should
+ * removed entirely. The program should only work with the Mesh class, which should
  * also store a vector<Material>. Then, the IntersectionData class should store
  * material index, object index, and triangle index to work with. In this case,
  * each triangle has to be constructed for every iteration inside the
@@ -80,7 +79,7 @@ int main() {
     Render render( scene );
 
     double secondsMedian{};
-    int nrRuns{ 10 };
+    int nrRuns{ 1 };
     for ( int i{}; i < nrRuns; ++i ) {
         std::chrono::high_resolution_clock::time_point start{
             std::chrono::high_resolution_clock::now() };

@@ -37,19 +37,19 @@ bool areEqual( const float a, const float b, const float epsilon) {
     return std::fabs( a - b ) < epsilon;
 }
 
-bool isLessThan( const float a, const float b, const float epsilon) {
+bool isLT( const float a, const float b, const float epsilon) {
     return (b - a) > epsilon;
 }
 
-bool isGreaterThan( const float a, const float b, const float epsilon) {
+bool isGT( const float a, const float b, const float epsilon) {
     return (a - b) > epsilon;
 }
 
-bool isLessEqualThan( const float a, const float b, const float epsilon) {
+bool isLE( const float a, const float b, const float epsilon) {
     return (b - a) >= -epsilon;
 }
 
-bool isGreaterEqualThan( const float a, const float b, const float epsilon) {
+bool isGE( const float a, const float b, const float epsilon) {
     return (a - b) >= -epsilon;
 }
 

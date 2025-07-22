@@ -4,18 +4,16 @@
 #include <string> // string
 
 #include "Colors.h" // Color
-#include "Mesh.h" // PreparedMesh
 #include "RenderMode.h" // RenderMode
+#include "Triangle.h" // Triangle
 #include "Vectors.h" // FVector2, FVector3
 
 struct Color;
 class FVector3;
 struct Material;
 class Scene;
-class Triangle;
 
 constexpr int InvalidIdx = -1;
-
 
 
 // Global scene settings
@@ -41,6 +39,9 @@ struct Settings {
 	// Whether the camera rays should hit or ignore the triangle's backfaces.
 	bool ignoreBackface;
 	unsigned bucketSize; // Bucket size for bucket rendering. Defaults to 24.
+	unsigned accTreeMaxDepth; // Maximum depth for building acceleration tree.
+	// Maximum number of triangles to store in an AccTree node.
+	unsigned maxAABBTriangleCount;
 
 	// @param[in] colorDepth: The color's bit depth. Defaults to 8-bit colors.
 	Settings( const int colorDepth = 8 );
