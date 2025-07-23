@@ -40,16 +40,8 @@ public:
     // Renders a single image with a single thread.
     void RenderImage();
 
-    // Renders a single image with multiple threads, each rendering a separate region.
-    void RenderParallel();
-
     // Renders a single image with multiple threads, taking buckets from a pool.
     void RenderBuckets();
-
-    // Renders a single region of pixels.
-    // @param[in] region: A structure holding the start and end positions for the region to render.
-    // @param[in] buff: The buffer where the rendered colors will be stored.
-    void RenderRegion( const Bucket&, ImageBuffer& );
 
     // Used for bucket rendering, but uses acceleration tree traversal.
     // @param[in] region: A structure holding the start and end positions for the region to render.
@@ -161,13 +153,6 @@ private:
     // @param[in] maxT: A value beyon which calculations should be cut. Used for shadow rays.
     // @return Intersection data used for further color calculations.
     IntersectionData IntersectRay(
-        const Ray& ray, const float maxT = std::numeric_limits<float>::max() ) const;
-
-    // Traces a ray and checks if it hits any mesh triangle.
-    // @param[in] ray: The ray to trace.
-    // @param[in] maxT: A value beyon which calculations should be cut. Used for shadow rays.
-    // @return Intersection data used for further color calculations.
-    IntersectionData TraceRay(
         const Ray& ray, const float maxT = std::numeric_limits<float>::max() ) const;
 
     // Prepares a .PPM file to be filled in with color data.

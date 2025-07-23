@@ -70,8 +70,7 @@ int main() {
     //params.camera.RotateAroundPoint( {0, 0, -3}, {0, 45, 0});
 
     Scene scene( "./rsc/scene1.crtscene" );
-    //Scene scene( "./rsc/OverlappingTriangles.crtscene" );
-    //Scene scene( "./rsc/Pyramid.crtscene" );
+    //Scene scene( "./rsc/RefractionBall.crtscene" );
     //Scene scene( "./rsc/TestPlane.obj" );
     scene.SetRenderMode( RenderMode::Material );
     scene.ParseSceneFile();
@@ -80,13 +79,12 @@ int main() {
     Render render( scene );
 
     double secondsMedian{};
-    int nrRuns{ 10 };
+    int nrRuns{ 1 };
     for ( int i{}; i < nrRuns; ++i ) {
         std::chrono::high_resolution_clock::time_point start{
             std::chrono::high_resolution_clock::now() };
 
         //render.RenderImage();
-        //render.RenderParallel();
         render.RenderBuckets();
 
         std::chrono::high_resolution_clock::time_point stop{
