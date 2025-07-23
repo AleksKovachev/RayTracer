@@ -52,7 +52,7 @@ int main() {
     //Scene scene( "./rsc/scene1.crtscene" );
     Scene scene( "./rsc/RefractionBall.crtscene" );
     //Scene scene( "./rsc/TestPlane.obj" );
-    scene.SetRenderMode( RenderMode::Material );
+    scene.SetRenderMode( RenderMode::RandomTriangleColor );
     scene.ParseSceneFile();
     //scene.ParseObjFile();
 

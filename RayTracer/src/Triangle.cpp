@@ -22,9 +22,6 @@ Triangle::Triangle( const Vertex& vert0, const Vertex& vert1, const Vertex& vert
 }
 
 void Triangle::init( const FVector3& v0, const FVector3& v1, const FVector3& v2 ) {
-    edges[0] = v1 - v0;
-    edges[1] = v2 - v1;
-    edges[2] = v0 - v2;
     CalculateNormal();
     CalculateArea();
     verts[0].normal = {};
@@ -55,20 +52,23 @@ void Triangle::SetVertexNormal( const unsigned vertIdx, const FVector3& val ) {
 }
 
 bool Triangle::IsPointInside( const FVector3& point ) const {
-    if ( isLE( (edges[0] * (point - verts[0].pos)).Dot( normal ), 0.f, -1e-5f ) )
+    if ( isLE( ((verts[1].pos - verts[0].pos) * (point - verts[0].pos)).Dot( normal ),
+        0.f, -1e-5f ) )
         return false;
-    if ( isLE( (edges[1] * (point - verts[1].pos)).Dot( normal ), 0.f, -1e-5f ) )
+    if ( isLE( ((verts[2].pos - verts[1].pos) * (point - verts[1].pos)).Dot( normal ),
+        0.f, -1e-5f ) )
         return false;
-    if ( isLE( (edges[2] * (point - verts[2].pos)).Dot( normal ), 0.f, -1e-5f ) )
+    if ( isLE( ((verts[0].pos - verts[2].pos) * (point - verts[2].pos)).Dot( normal ),
+        0.f, -1e-5f ) )
         return false;
 
     return true;
 }
 
 void Triangle::CalculateNormal() {
-    normal = (edges[0] * (verts[2].pos - verts[0].pos)).Normalize();
+    normal = ((verts[1].pos - verts[0].pos) * (verts[2].pos - verts[0].pos)).Normalize();
 }
 
 void Triangle::CalculateArea() {
-    area = (edges[0] * edges[1]).GetLength() / 2.f;
+    area = ((verts[1].pos - verts[0].pos) * (verts[2].pos - verts[1].pos)).GetLength() / 2.f;
 }

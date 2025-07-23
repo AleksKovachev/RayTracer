@@ -467,8 +467,11 @@ std::vector<int> Scene::LoadMeshTris(
 		if ( m_settings.renderMode == RenderMode::RandomMeshColor )
 			m_triangles[lastTriIdx].overrideMatIdx = overrideMatIdx;
 
-		if ( m_settings.renderMode == RenderMode::RandomTriangleColor )
-			m_triangles[lastTriIdx].color = getRandomColor();
+		if ( m_settings.renderMode == RenderMode::RandomTriangleColor ) {
+			m_triangleColors.push_back( getRandomColor() );
+			m_triangles[lastTriIdx].colorIdx = static_cast<unsigned>(
+				m_triangleColors.size() ) - 1;
+		}
 	}
 
 	// Normalize all Vertex Normals.
@@ -682,6 +685,10 @@ const std::vector<Material>& Scene::GetMaterials() const {
 
 const std::vector<Material>& Scene::GetOverrideMaterials() const {
 	return m_overrideMaterials;
+}
+
+const std::vector<Color>& Scene::GetTriangleColors() const {
+	return m_triangleColors;
 }
 
 const AccTree& Scene::GetAccTree() const {

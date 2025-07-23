@@ -392,7 +392,8 @@ Color Render::GetRenderColor( const IntersectionData& data ) const {
         }
         case TextureType::SolidColor: {
             return m_scene.GetSettings().renderMode == RenderMode::RandomTriangleColor
-                ? data.triangle.color : data.material->texture.albedo;
+                ? m_scene.GetTriangleColors()[data.triangle.colorIdx]
+                : data.material->texture.albedo;
         }
         case TextureType::Invalid:
         default: {
@@ -614,7 +615,7 @@ Color Render::Shade( const Ray& ray, const IntersectionData& data ) const {
     } else if ( m_scene.GetRenderMode() == RenderMode::ShadedNormals ) {
         pixelColor = ShadeDiffuse( data );
     } else if ( m_scene.GetRenderMode() == RenderMode::RandomTriangleColor ) {
-        pixelColor = data.triangle.color;
+        pixelColor = m_scene.GetTriangleColors()[data.triangle.colorIdx];
     } else if ( m_scene.GetRenderMode() == RenderMode::RandomMeshColor ) {
         pixelColor = data.material->texture.albedo;
     } else if ( m_scene.GetRenderMode() == RenderMode::Material

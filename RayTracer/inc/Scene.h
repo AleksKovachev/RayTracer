@@ -7,7 +7,7 @@
 
 #include "rapidjson/document.h" // Document, Value, Value::ConstArray
 
-#include "AccelerationStructures.h" // AABBox, AccTreeNode, AccTree
+#include "AccelerationStructures.h" // AABBox, AccTree
 #include "Camera.h" // Camera
 #include "Colors.h" // Color, Colors::Black
 #include "Lights.h" // Light, PointLight
@@ -78,6 +78,10 @@ public:
 	// @reutrn A collection of all scene override materials.
 	const std::vector<Material>& GetOverrideMaterials() const;
 
+	// Get all triangle colors in the scene. Only filled if RandomTriangleColor used.
+	// @return A collection of color objects.
+	const std::vector<Color>& GetTriangleColors() const;
+
 	const AccTree& GetAccTree() const;
 private:
 	std::string m_filePath;
@@ -88,6 +92,7 @@ private:
 	std::vector<Texture> m_textures; // Texture objects
 	std::vector<Material> m_materials;
 	std::vector<Material> m_overrideMaterials;
+	std::vector<Color> m_triangleColors;
 
 	AABBox m_aabb; // AABB for the whole scene
 	AccTree m_accTree;

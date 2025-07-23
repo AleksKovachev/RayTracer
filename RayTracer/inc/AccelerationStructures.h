@@ -41,7 +41,7 @@ struct AccTreeNode {
 		IntersectionData& data
 	) const;
 
-	std::vector<Triangle> triangles; // Use for intersection in leaf nodes.
+	std::vector<Triangle> triangles; // Used for intersection in leaf nodes.
 	AABBox aabb; // Axis Aligned Bounding Box for the sub space this node represents.
 	// The left and right indices for the node's children,
 	// indexing in the big list for the tree with all the nodes.

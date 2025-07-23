@@ -19,8 +19,7 @@ class Triangle {
 public:
     unsigned matIdx;
     unsigned overrideMatIdx;
-
-    Color color;
+    unsigned colorIdx;
 
     Triangle();
     // @param[in] vert0: The first triplet vertex position.
@@ -32,7 +31,7 @@ public:
     // @param[in] vet2: The last remaining vertex.
     Triangle( const Vertex&, const Vertex&, const Vertex& );
 
-    // Calculates Edges, Normal Vector and Area.
+    // Calculates Normal Vector and Area.
     // @param[in] vert0: The first triplet vertex position.
     // @param[in] vert1: The next counter-cloackwise vertex position.
     // @param[in] vet2: The last remaining vertex position.
@@ -64,7 +63,6 @@ private:
     /* v0, v1, v2 are the indices of this array. The order matters
     for cross product and Triangle normal vector calculation. */
     Vertex verts[vertsInTriangle];
-    FVector3 edges[vertsInTriangle];
     FVector3 normal;
     float area;
 
@@ -72,6 +70,10 @@ private:
     void CalculateNormal();
     // Calculates the area of this triangle.
     void CalculateArea();
+
+    //edge0 = vert1 - vert0;
+    //edge1 = vert2 - vert1;
+    //edge2 = vert0 - vert2;
 };
 
 #endif // SHAPES_H
