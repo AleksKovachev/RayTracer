@@ -78,13 +78,6 @@ public:
 	// @reutrn A collection of all scene override materials.
 	const std::vector<Material>& GetOverrideMaterials() const;
 
-	std::vector<int> LoadMeshTris(
-		const rapidjson::Value::ConstArray&,
-		const std::vector<FVector3>&,
-		const std::vector<FVector3>&,
-		const int
-	);
-
 	const AccTree& GetAccTree() const;
 private:
 	std::string m_filePath;
@@ -130,6 +123,20 @@ private:
 	// @param[in] arr: The array to traverse.
 	// @return A collection of FVector3 objects representing the vertices.
 	std::vector<FVector3> LoadVertices( const rapidjson::Value::ConstArray& );
+
+	// Loads all triangles of a given mesh. Computes and loads vertex normals
+	// and UV coordinates, and assigns triangle color and override mesh material.
+	// @param[in] arr: The array to traverse.
+	// @param[in] meshVerts: A collection of vertex positions for a given mesh.
+	// @param[in] UVs: A collection of UV coordinates for a given mesh.
+	// @param[in] matIdx: The material index for the given mesh.
+	// @return: A collection of the mesh's triangles.
+	std::vector<int> LoadMeshTris(
+		const rapidjson::Value::ConstArray&,
+		const std::vector<FVector3>&,
+		const std::vector<FVector3>&,
+		const int
+	);
 
 // Obj file parsing
 private:

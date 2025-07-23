@@ -50,22 +50,6 @@ void Scene::ParseSceneFile() {
 	ParseTexturesTag( doc );
 	ParseMaterialsTag( doc );
 
-	//! Fix placing a pointer in each Triangle to the mesh it belongs to.
-	// Create and assign an override material for each mesh.
-	//unsigned counter{};
-	//for ( Mesh& mesh : m_meshes ) {
-	//	Material mat{};
-	//	mat.texture.albedo = getRandomColor();
-	//	m_overrideMaterials.push_back( mat );
-	//	unsigned overrideMatIdx = static_cast<unsigned>( m_overrideMaterials.size() ) - 1;
-
-	//	// Assign the override material index to each triangle
-	//	for ( Triangle& triangle : m_rdyMeshes[counter].m_triangles ) {
-	//		triangle.overrideMatIdx = overrideMatIdx;
-	//	}
-	//	++counter;
-	//}
-
 	// Using SAH eliminates the need for fine tuning maxDepth and maxBoxTriCount.
 	// Default formula: static_cast<int>( 8 + 1.3 * log2f( static_cast<float>( m_triangles.size() ) ) );
 	// Formula without the (1.3 *) part also exists.
@@ -377,6 +361,17 @@ Matrix3 loadMatrix3( const rapidjson::Value::ConstArray& arr ) {
 		FVector3{ arr[6].GetDouble(), arr[7].GetDouble(), arr[8].GetDouble() } };
 }
 
+std::vector<FVector3> loadUVs( const rapidjson::Value::ConstArray& arr ) {
+	std::vector<FVector3> uvs{};
+
+	for ( unsigned i{}; i + 2 < arr.Size(); i += 3 )
+		uvs.emplace_back( static_cast<float>(arr[i].GetDouble()),
+			static_cast<float>(arr[i + 1].GetDouble()),
+			static_cast<float>(arr[i + 2].GetDouble()) );
+
+	return uvs;
+}
+
 std::vector<FVector3> Scene::LoadVertices( const rapidjson::Value::ConstArray& arr ) {
 	std::vector<FVector3> verts{};
 	verts.reserve( arr.Size() / 3 );
@@ -402,17 +397,6 @@ std::vector<FVector3> Scene::LoadVertices( const rapidjson::Value::ConstArray& a
 	return verts;
 }
 
-std::vector<FVector3> loadUVs( const rapidjson::Value::ConstArray& arr ) {
-	std::vector<FVector3> uvs{};
-
-	for ( unsigned i{}; i + 2 < arr.Size(); i += 3 )
-		uvs.emplace_back( static_cast<float>(arr[i].GetDouble()),
-			static_cast<float>(arr[i + 1].GetDouble()),
-			static_cast<float>(arr[i + 2].GetDouble()));
-
-	return uvs;
-}
-
 std::vector<int> Scene::LoadMeshTris(
 	const rapidjson::Value::ConstArray& arr,
 	const std::vector<FVector3>& meshVerts,
@@ -426,6 +410,15 @@ std::vector<int> Scene::LoadMeshTris(
 
 	std::vector<FVector3> vertexNormals( vertSize, { 0.f, 0.f, 0.f } );
 	std::vector<int> vertexNormalCounts( vertSize, 0 );
+
+	// Create an override material for this mesh.
+	Material overrideMat{};
+	unsigned overrideMatIdx{};
+	if ( m_settings.renderMode == RenderMode::RandomMeshColor ) {
+		overrideMat.texture.albedo = getRandomColor();
+		m_overrideMaterials.push_back( overrideMat );
+		overrideMatIdx = static_cast<unsigned>(m_overrideMaterials.size()) - 1;
+	}
 
 	for ( unsigned i{}; i < arr.Size(); ++i ) {
 
@@ -469,6 +462,13 @@ std::vector<int> Scene::LoadMeshTris(
 		if ( matIdx != -1 ) {
 			m_triangles[lastTriIdx].matIdx = matIdx;
 		}
+
+		// Assign the override material index to each triangle
+		if ( m_settings.renderMode == RenderMode::RandomMeshColor )
+			m_triangles[lastTriIdx].overrideMatIdx = overrideMatIdx;
+
+		if ( m_settings.renderMode == RenderMode::RandomTriangleColor )
+			m_triangles[lastTriIdx].color = getRandomColor();
 	}
 
 	// Normalize all Vertex Normals.

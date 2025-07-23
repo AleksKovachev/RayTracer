@@ -9,12 +9,12 @@
 #include "Render.h"
 #include "Scene.h" // Scene
 #include "Triangle.h" // Triangle
-#include "utils.h" // writeColorToFile, areEqual, isGE, isLE, isLT, isGT
+#include "utils.h" // writeColorToFile, areEqual, isGT
 
 #include <algorithm> // round, min, max, swap
 #include <cmath> // sqrtf, ceil
 #include <filesystem> // create_directories
-#include <functional> // ref, cref
+#include <functional> // ref
 #include <iostream> // cout, flush, cerr
 #include <numbers> // pi_v
 #include <stack> // stack
