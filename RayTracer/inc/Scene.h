@@ -96,7 +96,8 @@ private:
 
 	AABBox m_aabb; // AABB for the whole scene
 	AccTree m_accTree;
-	std::vector<Triangle> m_triangles;
+	std::vector<Triangle> m_triangles; // All scene triangles
+	std::vector<int> m_triIndices; // Indices of all scene triangles
 
 // crtscene file parsing (json)
 private:

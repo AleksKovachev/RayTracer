@@ -14,12 +14,12 @@ AccTreeNode::AccTreeNode(
 	const AABBox& aabb,
 	const int leftNodeIdx,
 	const int rightNodeIdx,
-	const std::vector<Triangle>& triangles,
+	const std::vector<int>& triIndices_,
 	const Scene& scene
 )
 	: aabb{ aabb },
 	children{ leftNodeIdx, rightNodeIdx },
-	triangles{ triangles }, m_scene{ scene } {
+	triIndices{ triIndices_ }, m_scene{ scene } {
 }
 
 void AccTreeNode::Intersect(
@@ -36,7 +36,8 @@ void AccTreeNode::Intersect(
 	else if ( ray.type == RayType::Refractive )
 		bias = m_scene.GetSettings().refractBias;
 
-	for ( const Triangle& triangle : triangles ) {
+	for ( const int triIdx : triIndices ) {
+		const Triangle& triangle = m_scene.GetTriangles()[triIdx];
 		// Skip Refractive materials with Shadow Rays
 		if ( ray.type == RayType::Shadow
 			&& m_scene.GetMaterials()[triangle.matIdx].type == MaterialType::Refractive ) {
@@ -152,10 +153,10 @@ int AccTree::AddNode(
 	const AABBox& aabb,
 	const int child0Idx,
 	const int child1Idx,
-	const std::vector<Triangle>& triangles,
+	const std::vector<int>& triIndices,
 	const Scene& scene
 ) {
-	nodes.emplace_back( aabb, child0Idx, child1Idx, triangles, scene );
+	nodes.emplace_back( aabb, child0Idx, child1Idx, triIndices, scene );
 	return static_cast<int>( nodes.size() - 1 );
 }
 
@@ -181,37 +182,38 @@ bool AccTree::TriangleIntersectAABB( const Triangle& triangle, const AABBox& aab
 	return true;
 }
 
-void AccTree::Build( const int nodeIdx, const int depth, std::vector<Triangle>& triangles ) {
-	if ( triangles.size() <= maxBoxTriangleCount || depth >= maxDepth ) {
-		nodes[nodeIdx].triangles = triangles;
+void AccTree::Build( const int nodeIdx, const int depth, std::vector<int>& triIndices ) {
+	if ( triIndices.size() <= maxBoxTriangleCount || depth >= maxDepth ) {
+		nodes[nodeIdx].triIndices = triIndices;
 		return;
 	}
 
 	auto [child0AABB, child1AABB] = nodes[nodeIdx].aabb.Split( depth % axisCount );
 
-	std::vector<Triangle> child0triangles{};
-	std::vector<Triangle> child1triangles{};
+	std::vector<int> child0triIndices{};
+	std::vector<int> child1triIndices{};
 
 	// If any of the triangles intersect with any child's AABB - add the
 	// triangles to that child's triangles collection.
-	for ( const Triangle& triangle : triangles ) {
+	for ( const int triIdx : triIndices ) {
+		const Triangle& triangle = m_scene.GetTriangles()[triIdx];
 		if ( TriangleIntersectAABB( triangle, child0AABB ) )
-			child0triangles.push_back( triangle );
+			child0triIndices.push_back( triIdx );
 
 		if ( TriangleIntersectAABB( triangle, child1AABB ) )
-			child1triangles.push_back( triangle );
+			child1triIndices.push_back( triIdx );
 	}
 
-	if ( child0triangles.size() > 0 ) {
+	if ( child0triIndices.size() > 0 ) {
 		const int child0Idx = AddNode( child0AABB, -1, -1, {}, m_scene );
 		nodes[nodeIdx].children[0] = child0Idx;
-		Build( child0Idx, depth + 1, child0triangles );
+		Build( child0Idx, depth + 1, child0triIndices );
 	}
 
-	if ( child1triangles.size() > 0 ) {
+	if ( child1triIndices.size() > 0 ) {
 		const int child1Idx = AddNode( child1AABB, -1, -1, {}, m_scene );
 		nodes[nodeIdx].children[1] = child1Idx;
-		Build( child1Idx, depth + 1, child1triangles );
+		Build( child1Idx, depth + 1, child1triIndices );
 	}
 }
 

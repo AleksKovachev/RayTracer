@@ -191,7 +191,7 @@ IntersectionData Render::IntersectRay( const Ray& ray, const float maxT ) const 
         if ( !HasAABBCollision( ray, currNode.aabb ) )
             continue;
 
-        if ( currNode.triangles.size() > 0 ) { // leaf node
+        if ( currNode.triIndices.size() > 0 ) { // leaf node
             currNode.Intersect(
                 ray,
                 maxT,

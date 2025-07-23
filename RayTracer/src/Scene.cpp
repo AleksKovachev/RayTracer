@@ -57,7 +57,7 @@ void Scene::ParseSceneFile() {
 	// Typical 1-10. 1-4 for high perf. 5-10 for fast tree building. 4-8 is okay for GPU rendering.
 	m_accTree.maxBoxTriangleCount = 2; //! Create a setting!
 	int rootIdx = m_accTree.AddNode( m_aabb, -1, -1, {}, *this );
-	m_accTree.Build( rootIdx, 0, m_triangles );
+	m_accTree.Build( rootIdx, 0, m_triIndices );
 }
 
 void Scene::SetSaveFileName( const std::string& saveName ) {
@@ -450,6 +450,7 @@ std::vector<int> Scene::LoadMeshTris(
 
 		m_triangles.emplace_back(v0, v1, v2 );
 		size_t lastTriIdx = m_triangles.size() - 1;
+		m_triIndices.push_back( static_cast<int>( lastTriIdx ) );
 
 		vertexNormals[idx0] += m_triangles[lastTriIdx].GetNormal();
 		vertexNormals[idx1] += m_triangles[lastTriIdx].GetNormal();
