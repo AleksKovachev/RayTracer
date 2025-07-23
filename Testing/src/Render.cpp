@@ -9,10 +9,9 @@
 #include "Render.h"
 #include "Scene.h" // Scene
 #include "Triangle.h" // Triangle
-#include "utils.h" // writeColorToFile, areEqual, isGE, isLE, isLT
+#include "utils.h" // writeColorToFile, areEqual, isGE, isLE, isLT, isGT
 
 #include <algorithm> // round, min, max, swap
-#include <cassert> // assert
 #include <cmath> // sqrtf, ceil
 #include <filesystem> // create_directories
 #include <functional> // ref, cref
@@ -20,7 +19,7 @@
 #include <numbers> // pi_v
 #include <stack> // stack
 #include <thread> // hardware_concurrency
-#include <stdexcept> // out_of_range
+#include <stdexcept> // invalid_argument
 
 
 Render::Render( const Scene& scene )
@@ -261,7 +260,7 @@ void Render::RenderTree( const Bucket& region, ImageBuffer& buff ) {
             hasColor = false;
             Ray ray = camera.GenerateRay( col, row, m_scene.GetSettings() );
             IntersectionData intersectData = IntersectRay( ray );
-            if ( intersectData.material == nullptr )
+            if ( !intersectData.filled)
                 pixelColor = m_scene.GetSettings().BGColor;
             else
                 pixelColor = Shade( ray, intersectData );
@@ -290,6 +289,9 @@ IntersectionData Render::IntersectRay( const Ray& ray, const float maxT ) const 
                     closestIntersection,
                     intersectData
                 );
+                // For shadow rays, one intersection is enough to cast a shadow.
+                if ( ray.type == RayType::Shadow && intersectData.filled )
+                    break;
             }
             else {
                 if ( currNode.children[0] != -1 ) {
@@ -352,8 +354,8 @@ void Render::RenderBucketWorker( std::mutex& bucketMutex, std::queue<Bucket>& bu
         } // Lock released when going out of scope.
 
         if ( gotBucket ) {
-            RenderRegion( bck, buff );
-            //RenderTree( bck, buff );
+            //RenderRegion( bck, buff );
+            RenderTree( bck, buff );
         } else {
             break; // No more buckets. This thread can exit.
         }
@@ -388,45 +390,6 @@ bool Render::HasAABBCollision( const Ray& ray, const AABBox& aabb ) const {
     }
     // t = tMin
     return true;
-}
-
-bool Render::IsInShadow( const Ray& ray, const float distToLight ) const {
-    for ( const Triangle& triangle : m_scene.GetTriangles() ) {
-
-        // Skip shadowing meshes with refractive materials.
-        if ( m_scene.GetMaterials()[triangle.matIdx].type == MaterialType::Refractive )
-            continue;
-
-        // If Ray is parallel - Ignore, it can't be hit.
-        float rayProj = ray.direction.Dot( triangle.GetNormal() );
-        if ( areEqual( rayProj, 0.f ) )
-            continue;
-
-        // If rayProj > 0, ray is pointing towards triangle back face.
-        // If rayProj < 0, ray is pointing towards triangle front face.
-
-        float rayPlaneDist = (triangle.GetVert( 0u ).pos - ray.origin)
-            .Dot( triangle.GetNormal() );
-        float rayPointDist = rayPlaneDist / rayProj; // Ray-to-Point scale factor
-
-        /* Check if: Ray hits behind the hitPoint(negative rayPointDist)
-            *           Ray hits at or very near the hitPoint (self-intersection)
-            *           Ray hits beyond the light source */
-        if ( isLT( rayPointDist, m_scene.GetSettings().shadowBias ) )
-            continue; // This intersection is not valid for shadow casting.
-
-        // Geometry on the other side of the light shouldn't cast shadows here.
-        if ( rayPointDist > distToLight )
-            continue;
-
-        // Ray parametric equation - represent points on a line going through a Ray.
-        FVector3 intersectionPt = ray.origin + (ray.direction * rayPointDist);
-
-        if ( triangle.IsPointInside( intersectionPt ) )
-            return true;
-
-    }
-    return false;
 }
 
 FVector2 Render::CalcBaryCoords( const FVector3& intersectionPt, const Triangle& triangle ) {
@@ -525,7 +488,7 @@ Color Render::GetRenderColor( const IntersectionData& data ) const {
         }
         case TextureType::Invalid:
         default: {
-            assert( false );
+            throw std::invalid_argument( "Unsupported texture type." );
         }
     }
     return Colors::Red; // Should never get here. Placed to silence compiler.
@@ -573,8 +536,9 @@ Color Render::ShadeDiffuse( const IntersectionData& data ) const {
             data.hitPoint + (surfaceNormal * m_scene.GetSettings().shadowBias) };
         Ray shadowRay{ offsetHitPoint, lightDir, -1, RayType::Shadow, false };
 
-        if ( Render::IsInShadow( shadowRay, lightDirLen ) )
-            // If there's something on the way to the light - leave the color as is.
+        // If there's something on the way to the light - leave the color as is.
+        IntersectionData data = IntersectRay( shadowRay, lightDirLen );
+        if ( data.filled )
             continue;
 
         // Cibsuder light Intensity and falloff in the value.
@@ -729,7 +693,7 @@ Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) co
 Color Render::Shade( const Ray& ray, const IntersectionData& data ) const {
     Color pixelColor{ m_scene.GetSettings().BGColor };
 
-    if ( data.material == nullptr ) {
+    if ( data.filled == false ) {
         // The camera ray didn't hit any objects - just the background.
         return pixelColor;
     } else if ( ray.pathDepth >= m_scene.GetSettings().pathDepth ) {
@@ -754,7 +718,7 @@ Color Render::Shade( const Ray& ray, const IntersectionData& data ) const {
         && data.material->type == MaterialType::Refractive ) {
         pixelColor = ShadeRefractive( ray, data );
     } else {
-        assert( false );
+        throw std::invalid_argument( "Unsupported render mode." );
     }
 
     return pixelColor;
@@ -820,8 +784,10 @@ IntersectionData Render::TraceRay( const Ray& ray, const float maxT ) const {
         if ( !triangle.IsPointInside( intersectionPt ) )
             continue;
 
+        intersectData.filled = true;
+
         if ( ray.type == RayType::Shadow )
-            intersectData; //TODO: Not finished! Make it work in place of IsInShadow()
+            return intersectData;
 
         closestIntersectionP = rayPointDist;
         intersectData.faceNormal = triangle.GetNormal();

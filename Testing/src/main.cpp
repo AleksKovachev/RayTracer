@@ -24,11 +24,12 @@
 #include "Scene.h"
 #include "Vectors.h"
 
-// TODO: Finish the interactive rendering
-// TODO: Finish the OBJ file parser
-// TODO: Make the Triangle class hold pointers or indices to the vertices, not their copies.
+// TODO: Finish the interactive rendering.
+// TODO: Finish the OBJ file parser.
+// TODO: Make the Triangle class hold indices to the vertices, not their copies.
 // TODO: Implement reading and applying Normal maps.
-// TODO: Replace IsInShadow() with TraceRay.
+// TODO: Implement GI and antialiasing.
+// TODO: Implement BVH Tree and SAH.
 // TODO: Implement bitmap texture mapping without stretching. 2 types - Fit, which
 //       puts blakc bars around the texture to fit the geometry, and Fill, which
 //       places the texture making it go "out of bounds" but fill the geometry.
@@ -79,7 +80,7 @@ int main() {
     Render render( scene );
 
     double secondsMedian{};
-    int nrRuns{ 1 };
+    int nrRuns{ 10 };
     for ( int i{}; i < nrRuns; ++i ) {
         std::chrono::high_resolution_clock::time_point start{
             std::chrono::high_resolution_clock::now() };

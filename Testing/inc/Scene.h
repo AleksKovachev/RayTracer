@@ -79,7 +79,11 @@ public:
 	const std::vector<Material>& GetOverrideMaterials() const;
 
 	std::vector<int> LoadMeshTris(
-		const rapidjson::Value::ConstArray&, const std::vector<FVector3>&, const int );
+		const rapidjson::Value::ConstArray&,
+		const std::vector<FVector3>&,
+		const std::vector<FVector3>&,
+		const int
+	);
 
 	const AccTree& GetAccTree() const;
 private:

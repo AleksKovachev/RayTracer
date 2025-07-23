@@ -37,12 +37,19 @@ void AccTreeNode::Intersect(
 		bias = m_scene.GetSettings().refractBias;
 
 	for ( const Triangle& triangle : triangles ) {
+		// Skip Refractive materials with Shadow Rays
+		if ( ray.type == RayType::Shadow
+			&& m_scene.GetMaterials()[triangle.matIdx].type == MaterialType::Refractive ) {
+			continue;
+		}
+
 		float rayProj = ray.direction.Dot( triangle.GetNormal() );
 
 		if ( ray.ignoreBackface ) {
 			if ( isGE( rayProj, 0.f ) )
 				continue;
 		} else {
+			// If rayProj > 0, ray points towards triangle back face. < 0 - its back.
 			if ( areEqual( rayProj, 0.f ) )
 				continue;
 		}
@@ -79,8 +86,11 @@ void AccTreeNode::Intersect(
 		if ( !triangle.IsPointInside( intersectionPt ) )
 			continue;
 
+		data.filled = true;
+
+		// For shadow ray it's enough to have a single intersection.
 		if ( ray.type == RayType::Shadow )
-			data; //TODO: Not finished! Make it work in place of IsInShadow()
+			return;
 
 		closestIntersection = rayPointDist;
 		data.faceNormal = triangle.GetNormal();

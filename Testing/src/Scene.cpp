@@ -186,8 +186,13 @@ void Scene::ParseObjectsTag( const rapidjson::Document& doc ) {
 			if ( mesh.HasMember( t_matIdx ) && mesh[t_matIdx].IsInt() )
 				matIdx = mesh[t_matIdx].GetInt();
 
+			std::vector<FVector3> UVs{};
+			if ( mesh.HasMember( t_uvs ) && mesh[t_uvs].IsArray() )
+				UVs = loadUVs( mesh[t_uvs].GetArray() );
+
 			std::vector<FVector3> meshVerts = LoadVertices( mesh[t_vertices].GetArray() );
-			std::vector<int> meshTris = LoadMeshTris( mesh[t_triangles].GetArray(), meshVerts, matIdx );
+			std::vector<int> meshTris = LoadMeshTris(
+				mesh[t_triangles].GetArray(), meshVerts, UVs, matIdx );
 
 			m_meshes.emplace_back( meshVerts, meshTris );
 
@@ -195,7 +200,7 @@ void Scene::ParseObjectsTag( const rapidjson::Document& doc ) {
 				m_meshes[i].SetMaterialIdx( matIdx );
 
 			if ( mesh.HasMember( t_uvs ) && mesh[t_uvs].IsArray() )
-				m_meshes[i].SetTextureUVs( loadUVs( mesh[t_uvs].GetArray() ) );
+				m_meshes[i].SetTextureUVs( UVs );
 		}
 	}
 }
@@ -409,36 +414,74 @@ std::vector<FVector3> loadUVs( const rapidjson::Value::ConstArray& arr ) {
 }
 
 std::vector<int> Scene::LoadMeshTris(
-	const rapidjson::Value::ConstArray& arr, const std::vector<FVector3>& meshVerts, const int matIdx ) {
+	const rapidjson::Value::ConstArray& arr,
+	const std::vector<FVector3>& meshVerts,
+	const std::vector<FVector3>& UVs,
+	const int matIdx
+) { 
 	std::vector<int> tris{};
 	tris.reserve( arr.Size() );
+	size_t vertSize{ meshVerts.size() };
+	size_t trianglesInMesh{ arr.Size() / 3 };
 
-	unsigned triangleCounter{};
+	std::vector<FVector3> vertexNormals( vertSize, { 0.f, 0.f, 0.f } );
+	std::vector<int> vertexNormalCounts( vertSize, 0 );
 
 	for ( unsigned i{}; i < arr.Size(); ++i ) {
 
 		tris.emplace_back( arr[i].GetInt() );
-		triangleCounter++;
 
-		if ( triangleCounter % 3 == 0 ) {
-			Vertex v0, v1, v2;
-			int idx0 = tris[tris.size() - 3];
-			int idx1 = tris[tris.size() - 2];
-			int idx2 = tris[tris.size() - 1];
+		// Wait until 3 new vertices appear to create a triangle.
+		if ( (i + 1) % 3 != 0 )
+			continue;
 
-			v0.origIdx = idx0;
-			v1.origIdx = idx1;
-			v2.origIdx = idx2;
+		Vertex v0, v1, v2;
+		int idx0 = tris[tris.size() - 3];
+		int idx1 = tris[tris.size() - 2];
+		int idx2 = tris[tris.size() - 1];
 
-			v0.pos = meshVerts[idx0];
-			v1.pos = meshVerts[idx1];
-			v2.pos = meshVerts[idx2];
+		v0.origIdx = idx0;
+		v1.origIdx = idx1;
+		v2.origIdx = idx2;
 
-			m_triangles.emplace_back(v0, v1, v2 );
-			if ( matIdx != -1 ) {
-				m_triangles[m_triangles.size() - 1].matIdx = matIdx;
-			}
+		v0.pos = meshVerts[idx0];
+		v1.pos = meshVerts[idx1];
+		v2.pos = meshVerts[idx2];
+
+		if ( !UVs.empty() ) {
+			v0.UVCoords = UVs[idx0];
+			v1.UVCoords = UVs[idx1];
+			v2.UVCoords = UVs[idx2];
 		}
+		v0.normal = v1.normal = v2.normal = {}; // Init normals to 0
+
+		m_triangles.emplace_back(v0, v1, v2 );
+		size_t lastTriIdx = m_triangles.size() - 1;
+
+		vertexNormals[idx0] += m_triangles[lastTriIdx].GetNormal();
+		vertexNormals[idx1] += m_triangles[lastTriIdx].GetNormal();
+		vertexNormals[idx2] += m_triangles[lastTriIdx].GetNormal();
+
+		vertexNormalCounts[idx0]++;
+		vertexNormalCounts[idx1]++;
+		vertexNormalCounts[idx2]++;
+
+		if ( matIdx != -1 ) {
+			m_triangles[lastTriIdx].matIdx = matIdx;
+		}
+	}
+
+	// Normalize all Vertex Normals.
+	for ( size_t i{}; i < vertSize; ++i )
+		if ( vertexNormalCounts[i] > 0 )
+			vertexNormals[i].NormalizeInPlace();
+
+	// Assign vertex normals to all vertices of this mesh.
+	for ( size_t i{}; i < trianglesInMesh; ++i ) {
+		Triangle& tri = m_triangles[m_triangles.size() - trianglesInMesh + i];
+		tri.SetVertexNormal( 0u, vertexNormals[tri.GetVert( 0u ).origIdx] );
+		tri.SetVertexNormal( 1u, vertexNormals[tri.GetVert( 1u ).origIdx] );
+		tri.SetVertexNormal( 2u, vertexNormals[tri.GetVert( 2u ).origIdx] );
 	}
 
 	return tris;

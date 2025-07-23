@@ -16,7 +16,7 @@ class Scene;
 constexpr int InvalidIdx = -1;
 
 
-// Global scene settings
+// Global scene settings.
 struct Settings {
 	unsigned renderWidth;
 	unsigned renderHeight;
@@ -48,15 +48,13 @@ struct Settings {
 };
 
 
-// A Structure that holds data crucial for rendering
+// Data crucial for rendering.
 struct IntersectionData {
+	bool filled{ false };
 	FVector3 hitPoint; // The hit point in 3D world space.
 	FVector3 faceNormal; // The normal vector of the face at the hit point.
-	// The normal in the hit point interpolated by the vertex normals of the triangle.
-	FVector3 interpVertNormal;
-	FVector2 baryCoords; // Where the triangle is hit.
 	const Material* material = nullptr; // The material of the hit object.
-	int objectIdx = InvalidIdx; // Closes object to the ray origin.
+	int objectIdx = InvalidIdx; // Closest object to the ray origin.
 	// Closes triangle of the closes object to the ray origin.
 	int triangleIdx = InvalidIdx;
 

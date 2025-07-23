@@ -85,12 +85,6 @@ private:
     // @return If the ray intersects with the AABB.
     bool HasAABBCollision( const Ray&, const AABBox& ) const;
 
-    // Traces ShadowRay from hit point to light sources.
-    // @param[in] ray: The shadow ray to trace.
-    // @param[in] distToLight: The distance to the light source.
-    // @return Boolean indicating if the given point is in shadow.
-    bool IsInShadow( const Ray&, const float ) const;
-
     // Calculates the Barycentric coordinates of a triangle.
     // @param[in] intersectionPt: The intersection point on the triangle to calculate.
     // @param[in] triangle: The triangle for which the coordinates will be calculated.

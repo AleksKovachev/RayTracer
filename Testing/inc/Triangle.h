@@ -53,7 +53,7 @@ public:
 
     // Assigns value to the normal vector of the vertex with the provided index
     // @param[in] vertIdx: The relative to the triangle vertex index to set.
-    // @param[in] val: The vertext normal vector value to set.
+    // @param[in] val: The vertex normal vector value to set.
     void SetVertexNormal( const unsigned, const FVector3& );
 
     // Checks if a given point is inside the triangle
