@@ -183,11 +183,6 @@ echo ===========================================================================
     <ClCompile Include="src\Vectors.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Test2\Test2.vcxproj">
-      <Project>{a55a915e-2745-43b3-9f25-a80abc30047d}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="inc\AccelerationStructures.h" />
     <ClInclude Include="inc\Bucket.h" />
     <ClInclude Include="inc\Bases.h" />
