@@ -11,6 +11,13 @@ struct FVector2 {
 };
 
 
+// A compact version of the FVector3 class, which only holds values.
+// Used for efficient values passing.
+struct CompactFVector3 {
+    float x, y, z;
+};
+
+
 /* FVector3 structure using floats supporting addition with another FVector3 and
 += addition. Initializes using floats or a Vector2 and a float. */
 class FVector3 {
@@ -71,6 +78,11 @@ public:
     // @return The resulting vector.
     FVector3 operator*( const float& ) const;
 
+    // Scalar division. Divides each vector component by the given scalar.
+    // @param[in] val: The value each component of this vector is being divided by.
+    // @return The resulting vector.
+    FVector3 operator/( const float& ) const;
+
     // Cross product.
     // @param[in] other: The second vector that will be in the cross product calculation.
     // @return The resulting vector.
@@ -101,5 +113,6 @@ private:
     // Calculates the length/magnitude of this vector.
     void CalculateLength();
 };
+
 
 #endif // VECTORS_H

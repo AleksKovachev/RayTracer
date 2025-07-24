@@ -72,6 +72,10 @@ FVector3 FVector3::operator*( const float& val ) const {
 	return { x * val, y * val, z * val };
 }
 
+FVector3 FVector3::operator/( const float& val ) const {
+	return { x / val, y / val, z / val };
+}
+
 float FVector3::GetLength() {
 	if ( !lengthCalculated ) {
 		CalculateLength();
