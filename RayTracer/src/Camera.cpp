@@ -3,7 +3,6 @@
 #include "RenderSettings.h" // Settings
 
 #include <numeric> // gcd
-#include <vector> // vector
 
 
 ImagePlane::ImagePlane( int width, int height, float distFromCamera )

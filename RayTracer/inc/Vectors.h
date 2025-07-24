@@ -1,7 +1,6 @@
 #ifndef VECTORS_H
 #define VECTORS_H
 
-//#include <iostream>
 #include <type_traits> // enable_if_t, is_arithmetic_v
 
 

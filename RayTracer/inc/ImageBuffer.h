@@ -1,7 +1,7 @@
 #ifndef IMAGE_BUFFER_H
 #define IMAGE_BUFFER_H
 
-#include "Colors.h"
+#include "Colors.h" // Color
 
 
 class ImageBuffer {

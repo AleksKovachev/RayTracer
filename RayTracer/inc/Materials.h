@@ -1,10 +1,10 @@
 #ifndef MATERIALS_H
 #define MATERIALS_H
 
-#include <limits> // min
+#include <limits> // quiet_NaN
 #include <string> // string
 
-#include "Colors.h" // Color, Colors::Black
+#include "Colors.h" // Color, Colors::Black, Colors::Red
 
 constexpr float InvalidIOR = std::numeric_limits<float>::quiet_NaN();
 

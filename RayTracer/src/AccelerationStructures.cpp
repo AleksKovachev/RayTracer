@@ -10,22 +10,41 @@
 #include <stdexcept> // out_of_range
 
 
-AccTreeNode::AccTreeNode(
-	const AABBox& aabb,
-	const int leftNodeIdx,
-	const int rightNodeIdx,
-	const std::vector<int>& triIndices_,
-	const Scene& scene
-)
-	: aabb{ aabb },
-	children{ leftNodeIdx, rightNodeIdx },
-	triIndices{ triIndices_ }, m_scene{ scene } {
+AABBox::AABBox()
+	: min{ std::numeric_limits<float>::max(),
+		std::numeric_limits<float>::max(),
+		std::numeric_limits<float>::max() },
+	max{ std::numeric_limits<float>::lowest(),
+		std::numeric_limits<float>::lowest(),
+		std::numeric_limits<float>::lowest() } {
+}
+
+AABBox::AABBox( const FVector3& min, const FVector3& max ) {
+	this->min = min;
+	this->max = max;
+}
+
+std::pair<AABBox, AABBox> AABBox::Split( const int splitAxis ) {
+	// Find the middle point of the AABB.
+	float mid{ (max[splitAxis] - min[splitAxis]) / 2 };
+	float splitPlaneCoord{ min[splitAxis] + mid };
+
+	AABBox A{ min, max };
+	AABBox B{ min, max };
+
+	A.max[splitAxis] = splitPlaneCoord;
+	B.min[splitAxis] = splitPlaneCoord;
+
+	return { A, B };
+}
+
+AccTreeNode::AccTreeNode( const AABBox& aabb, const Scene& scene )
+	: aabb{ aabb }, m_scene{ scene } {
 }
 
 void AccTreeNode::Intersect(
 	const Ray& ray,
 	const float maxT,
-	const std::vector<Material>& materials, // unused for now
 	float& closestIntersection,
 	IntersectionData& data
 ) const {
@@ -105,34 +124,6 @@ void AccTreeNode::Intersect(
 	}
 }
 
-AABBox::AABBox()
-	: min{ std::numeric_limits<float>::max(),
-		std::numeric_limits<float>::max(),
-		std::numeric_limits<float>::max() },
-	max{ std::numeric_limits<float>::lowest(),
-		std::numeric_limits<float>::lowest(),
-		std::numeric_limits<float>::lowest() } {
-}
-
-AABBox::AABBox( const FVector3& min, const FVector3& max ) {
-	this->min = min;
-	this->max = max;
-}
-
-std::pair<AABBox, AABBox> AABBox::Split( const int splitAxis ) {
-	// Find the middle point of the AABB.
-	float mid{ (max[splitAxis] - min[splitAxis]) / 2 };
-	float splitPlaneCoord{ min[splitAxis] + mid };
-
-	AABBox A{ min, max };
-	AABBox B{ min, max };
-
-	A.max[splitAxis] = splitPlaneCoord;
-	B.min[splitAxis] = splitPlaneCoord;
-
-	return { A, B };
-}
-
 AccTree::AccTree( const Scene& scene )
 	: maxDepth{ -1 }, maxBoxTriangleCount{ -1 }, axisCount{ 3 }, m_scene{ scene } {
 }
@@ -149,37 +140,9 @@ AccTree::AccTree(
 	m_scene{ scene } {
 }
 
-int AccTree::AddNode(
-	const AABBox& aabb,
-	const int child0Idx,
-	const int child1Idx,
-	const std::vector<int>& triIndices,
-	const Scene& scene
-) {
-	nodes.emplace_back( aabb, child0Idx, child1Idx, triIndices, scene );
+int AccTree::AddNode( const AABBox& aabb, const Scene& scene ) {
+	nodes.emplace_back( aabb, scene );
 	return static_cast<int>( nodes.size() - 1 );
-}
-
-bool AccTree::TriangleIntersectAABB( const Triangle& triangle, const AABBox& aabb ) {
-	AABBox triangleAABB;
-	for ( int i{}; i < 3; ++i ) {
-		triangleAABB.min.x = std::min( triangleAABB.min.x, triangle.GetVert( i ).pos.x );
-		triangleAABB.min.y = std::min( triangleAABB.min.y, triangle.GetVert( i ).pos.y );
-		triangleAABB.min.z = std::min( triangleAABB.min.z, triangle.GetVert( i ).pos.z );
-
-		triangleAABB.max.x = std::max( triangleAABB.max.x, triangle.GetVert( i ).pos.x );
-		triangleAABB.max.y = std::max( triangleAABB.max.y, triangle.GetVert( i ).pos.y );
-		triangleAABB.max.z = std::max( triangleAABB.max.z, triangle.GetVert( i ).pos.z );
-	}
-
-	for ( int i{}; i < axisCount; ++i ) {
-		if ( triangleAABB.min[i] > aabb.max[i] )
-			return false;
-
-		if ( triangleAABB.max[i] < aabb.min[i] )
-			return false;
-	}
-	return true;
 }
 
 void AccTree::Build( const int nodeIdx, const int depth, std::vector<int>& triIndices ) {
@@ -205,16 +168,44 @@ void AccTree::Build( const int nodeIdx, const int depth, std::vector<int>& triIn
 	}
 
 	if ( child0triIndices.size() > 0 ) {
-		const int child0Idx = AddNode( child0AABB, -1, -1, {}, m_scene );
+		const int child0Idx = AddNode( child0AABB, m_scene );
 		nodes[nodeIdx].children[0] = child0Idx;
 		Build( child0Idx, depth + 1, child0triIndices );
 	}
 
 	if ( child1triIndices.size() > 0 ) {
-		const int child1Idx = AddNode( child1AABB, -1, -1, {}, m_scene );
+		const int child1Idx = AddNode( child1AABB, m_scene );
 		nodes[nodeIdx].children[1] = child1Idx;
 		Build( child1Idx, depth + 1, child1triIndices );
 	}
+}
+
+bool AccTree::TriangleIntersectAABB( const Triangle& triangle, const AABBox& aabb ) {
+	// Construct triangle AABB.
+	AABBox triangleAABB;
+	for ( int i{}; i < 3; ++i ) {
+		triangleAABB.min.x = std::min( triangleAABB.min.x, triangle.GetVert( i ).pos.x );
+		triangleAABB.min.y = std::min( triangleAABB.min.y, triangle.GetVert( i ).pos.y );
+		triangleAABB.min.z = std::min( triangleAABB.min.z, triangle.GetVert( i ).pos.z );
+
+		triangleAABB.max.x = std::max( triangleAABB.max.x, triangle.GetVert( i ).pos.x );
+		triangleAABB.max.y = std::max( triangleAABB.max.y, triangle.GetVert( i ).pos.y );
+		triangleAABB.max.z = std::max( triangleAABB.max.z, triangle.GetVert( i ).pos.z );
+	}
+
+	// Check for intersection with the AABB.
+	for ( int i{}; i < axisCount; ++i ) {
+		if ( triangleAABB.min[i] > aabb.max[i] )
+			return false;
+
+		if ( triangleAABB.max[i] < aabb.min[i] )
+			return false;
+	}
+	return true;
+}
+
+const std::vector<AccTreeNode>& AccTree::GetNodes() const {
+	return nodes;
 }
 
 AccTreeNode& AccTree::operator[]( const int idx ) {

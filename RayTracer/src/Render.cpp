@@ -1,25 +1,25 @@
 #include "AccelerationStructures.h" // AABBox, AccTreeNode
-#include "Bucket.h" // Bucket
 #include "Camera.h" // Camera
 #include "Colors.h" // Color, Colors::Black, Colors::Red
 #include "ImageBuffer.h" // ImageBuffer
 #include "Lights.h" // Light, PointLight
-#include "Materials.h" // MaterialType, Bitmap, TextureType
+#include "Materials.h" // Bitmap, MaterialType, TextureType
 #include "Rays.h" // Ray, RayType
 #include "Render.h"
 #include "Scene.h" // Scene
 #include "Triangle.h" // Triangle
 #include "utils.h" // writeColorToFile, areEqual, isGT
 
-#include <algorithm> // round, min, max, swap
-#include <cmath> // sqrtf, ceil
+#include <algorithm> // max, min, round, swap
+#include <cmath> // abs, ceil, pow, sqrtf
 #include <filesystem> // create_directories
 #include <functional> // ref
-#include <iostream> // cout, flush, cerr
+#include <iostream> // cerr, cout, flush, endl
 #include <numbers> // pi_v
 #include <stack> // stack
-#include <thread> // hardware_concurrency
 #include <stdexcept> // invalid_argument
+#include <thread> // hardware_concurrency
+#include <vector> // vector
 
 
 Render::Render( const Scene& scene )
@@ -177,45 +177,6 @@ void Render::RenderTree( const Bucket& region, ImageBuffer& buff ) {
     }
 }
 
-IntersectionData Render::IntersectRay( const Ray& ray, const float maxT ) const {
-    IntersectionData intersectData{};
-    std::stack<int> nodeIndicesToCheck{};
-    nodeIndicesToCheck.push( 0 ); // 0 is always the root index
-    float closestIntersection{ std::numeric_limits<float>::max() };
-
-    while ( nodeIndicesToCheck.size() > 0 ) {
-        int nodeIdxToCHeck = nodeIndicesToCheck.top();
-        nodeIndicesToCheck.pop();
-        const AccTreeNode& currNode = m_scene.GetAccTree().nodes[nodeIdxToCHeck];
-
-        if ( !HasAABBCollision( ray, currNode.aabb ) )
-            continue;
-
-        if ( currNode.triIndices.size() > 0 ) { // leaf node
-            currNode.Intersect(
-                ray,
-                maxT,
-                m_scene.GetMaterials(),
-                closestIntersection,
-                intersectData
-            );
-            // For shadow rays, one intersection is enough to cast a shadow.
-            if ( ray.type == RayType::Shadow && intersectData.filled )
-                break;
-        }
-        else {
-            if ( currNode.children[0] != -1 ) {
-                nodeIndicesToCheck.push( currNode.children[0] );
-            }
-            if ( currNode.children[1] != -1 ) {
-                nodeIndicesToCheck.push( currNode.children[1] );
-            }
-        }
-    }
-
-    return intersectData;
-}
-
 void Render::RenderCameraMoveAnimation(
     const FVector3& initialPos, const FVector3& moveWith ) {
 
@@ -247,6 +208,41 @@ void Render::RenderRotationAroundObject( const FVector3& initialPos, const FVect
     }
 }
 
+IntersectionData Render::IntersectRay( const Ray& ray, const float maxT ) const {
+    IntersectionData intersectData{};
+    std::stack<int> nodeIndicesToCheck{};
+    nodeIndicesToCheck.push( 0 ); // 0 is always the root index
+    float closestIntersection{ std::numeric_limits<float>::max() };
+
+    while ( nodeIndicesToCheck.size() > 0 ) {
+        int nodeIdxToCHeck = nodeIndicesToCheck.top();
+        nodeIndicesToCheck.pop();
+        const AccTreeNode& currNode = m_scene.GetAccTree().GetNodes()[nodeIdxToCHeck];
+
+        if ( !HasAABBCollision( ray, currNode.aabb ) )
+            continue;
+
+        if ( currNode.triIndices.size() > 0 ) { // leaf node
+            currNode.Intersect(
+                ray,
+                maxT,
+                closestIntersection,
+                intersectData
+            );
+            // For shadow rays, one intersection is enough to cast a shadow.
+            if ( ray.type == RayType::Shadow && intersectData.filled )
+                break;
+        } else {
+            if ( currNode.children[0] != -1 )
+                nodeIndicesToCheck.push( currNode.children[0] );
+            if ( currNode.children[1] != -1 )
+                nodeIndicesToCheck.push( currNode.children[1] );
+        }
+    }
+
+    return intersectData;
+}
+
 void Render::RenderBucketWorker( std::mutex& bucketMutex, std::queue<Bucket>& buckets, ImageBuffer& buff ) {
     while ( true ) {
         Bucket bck;
@@ -262,11 +258,11 @@ void Render::RenderBucketWorker( std::mutex& bucketMutex, std::queue<Bucket>& bu
             }
         } // Lock released when going out of scope.
 
-        if ( gotBucket ) {
+        if ( gotBucket )
             RenderTree( bck, buff );
-        } else {
+        else
             break; // No more buckets. This thread can exit.
-        }
+
     }
 }
 
@@ -352,11 +348,10 @@ Color Render::GetCheckerColor( const IntersectionData& data ) {
     int checkU = static_cast<int>(std::floor( UVW.x / squareSize ));
     int checkV = static_cast<int>(std::floor( UVW.y / squareSize ));
 
-    if ( (checkU + checkV) % 2 == 0 ) {
+    if ( (checkU + checkV) % 2 == 0 )
         return data.material->texture.colorA;
-    } else {
+    else
         return data.material->texture.colorB;
-    }
 }
 
 Color Render::GetBitmapColor( const IntersectionData& data ) {
@@ -493,7 +488,6 @@ Color Render::ShadeReflective( const Ray& ray, const IntersectionData& data ) co
     };
 
     IntersectionData intersectData = IntersectRay( reflectionRay );
-    //! IntersectionData intersectData = TraceRay( reflectionRay );
     Color pixelColor = Shade( reflectionRay, intersectData );
     pixelColor *= data.material->texture.albedo;
 

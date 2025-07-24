@@ -172,9 +172,7 @@ echo ===========================================================================
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\Materials.cpp" />
-    <ClCompile Include="src\Mesh.cpp" />
     <ClCompile Include="src\Render.cpp" />
-    <ClCompile Include="src\RenderSettings.cpp" />
     <ClCompile Include="src\Scene.cpp" />
     <ClCompile Include="src\Triangle.cpp" />
     <ClCompile Include="src\SpaceConversions.cpp" />
@@ -183,14 +181,12 @@ echo ===========================================================================
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\AccelerationStructures.h" />
-    <ClInclude Include="inc\Bucket.h" />
     <ClInclude Include="inc\Bases.h" />
     <ClInclude Include="inc\Camera.h" />
     <ClInclude Include="inc\Colors.h" />
     <ClInclude Include="inc\ImageBuffer.h" />
     <ClInclude Include="inc\Lights.h" />
     <ClInclude Include="inc\Materials.h" />
-    <ClInclude Include="inc\Mesh.h" />
     <ClInclude Include="inc\Rays.h" />
     <ClInclude Include="inc\Render.h" />
     <ClInclude Include="inc\RenderMode.h" />

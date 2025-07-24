@@ -8,7 +8,6 @@
 
 // TODO: Finish the interactive rendering.
 // TODO: Finish the OBJ file parser.
-// TODO: Make the Triangle class hold indices to the vertices, not their copies.
 // TODO: Implement reading and applying Normal maps.
 // TODO: Implement GI and antialiasing.
 // TODO: Implement BVH Tree and SAH.
@@ -49,8 +48,8 @@ int main() {
     //params.camera.Tilt( 15 );
     //params.camera.RotateAroundPoint( {0, 0, -3}, {0, 45, 0});
 
-    //Scene scene( "./rsc/scene1.crtscene" );
-    Scene scene( "./rsc/RefractionBall.crtscene" );
+    Scene scene( "./rsc/scene1.crtscene" );
+    //Scene scene( "./rsc/RefractionBall.crtscene" );
     //Scene scene( "./rsc/TestPlane.obj" );
     scene.SetRenderMode( RenderMode::Material );
     scene.ParseSceneFile();

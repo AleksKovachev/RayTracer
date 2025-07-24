@@ -2,22 +2,27 @@
 #define RENDER_H
 
 #include <fstream> // ofstream, ios::binary
-#include <limits> // numeric_limits<float>::max
-#include <mutex> // mutex
+#include <limits> // <float>::max
+#include <mutex> // mutex, lock_guard
 #include <queue> // queue
 #include <string> // string, to_string
 
 #include "RenderSettings.h" // RenderMode, IntersectionData, Settings
 #include "Vectors.h" // FVector2, FVector3
 
+
 struct AABBox;
-struct Bucket;
 struct Camera;
 class ImageBuffer;
-class Mesh;
 struct Ray;
 class Scene;
 class Triangle;
+
+
+// A simple struct to hold a bucket information.
+struct Bucket {
+    unsigned startX, startY, endX, endY;
+};
 
 
 class Render {

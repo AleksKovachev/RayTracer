@@ -12,7 +12,6 @@
 #include "Colors.h" // Color, Colors::Black
 #include "Lights.h" // Light, PointLight
 #include "Materials.h" // Material, MaterialType, Texture, TextureType
-#include "Mesh.h" // Mesh
 #include "RenderSettings.h" // Settings, RenderMode
 
 
@@ -46,10 +45,6 @@ public:
 	// Gets all the triangles in the scene.
 	// @return A collection of triangles, ready to iterate.
 	const std::vector<Triangle>& GetTriangles() const;
-
-	// Gets all meshes loaded from the scene file.
-	// @return A collection of mesh objects.
-	const std::vector<Mesh>& GetMeshes() const;
 
 	// Get the scene camera.
 	// @return A camera object.
@@ -85,7 +80,6 @@ public:
 	const AccTree& GetAccTree() const;
 private:
 	std::string m_filePath;
-	std::vector<Mesh> m_meshes; // Scene objects
 	Camera m_camera; // Main scene Camera
 	Settings m_settings; // Global scene settings
 	std::vector<Light*> m_lights;
@@ -137,7 +131,7 @@ private:
 	// @param[in] UVs: A collection of UV coordinates for a given mesh.
 	// @param[in] matIdx: The material index for the given mesh.
 	// @return: A collection of the mesh's triangles.
-	std::vector<int> LoadMeshTris(
+	void LoadMesh(
 		const rapidjson::Value::ConstArray&,
 		const std::vector<FVector3>&,
 		const std::vector<FVector3>&,

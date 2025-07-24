@@ -1,7 +1,6 @@
 #include "Triangle.h"
-#include "utils.h" // isLT
+#include "utils.h" // isLE
 
-#include <iostream> // cerr
 #include <stdexcept> // out_of_range
 
 Triangle::Triangle() {
@@ -39,16 +38,17 @@ float Triangle::GetArea() const {
 
 Vertex Triangle::GetVert( const unsigned vertIdx ) const {
     if ( !(vertIdx < vertsInTriangle) )
-        throw std::out_of_range( "Triangle::GetVert: Wrong Vertex Index (out of bounds)" );
+        throw std::out_of_range(
+            "Triangle::GetVert: Wrong Vertex Index (out of bounds)" );
     return verts[vertIdx];
 }
 
 void Triangle::SetVertexNormal( const unsigned vertIdx, const FVector3& val ) {
-    if ( vertIdx < vertsInTriangle ) {
-        verts[vertIdx].normal = val;
-        return;
+    if ( vertIdx >= vertsInTriangle ) {
+        throw std::out_of_range(
+            "Triangle::SetVertexNormal: Wrong Vertex Index (out of bounds)" );
     }
-    std::cerr << "Wrong Vertex Index\n";
+    verts[vertIdx].normal = val;
 }
 
 bool Triangle::IsPointInside( const FVector3& point ) const {

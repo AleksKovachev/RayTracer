@@ -1,6 +1,6 @@
 #include "Bases.h" // Matrix3
 #include "Lights.h" // Light
-#include "Scene.h" // Scene, Mesh
+#include "Scene.h" // Scene
 #include "utils.h" // getRandomColor, areCharsInString
 #include "Vectors.h" // FVector3
 
@@ -53,10 +53,10 @@ void Scene::ParseSceneFile() {
 	// Using SAH eliminates the need for fine tuning maxDepth and maxBoxTriCount.
 	// Default formula: static_cast<int>( 8 + 1.3 * log2f( static_cast<float>( m_triangles.size() ) ) );
 	// Formula without the (1.3 *) part also exists.
-	m_accTree.maxDepth = 10; //! Create a setting!
+	m_accTree.maxDepth = m_settings.accTreeMaxDepth;
 	// Typical 1-10. 1-4 for high perf. 5-10 for fast tree building. 4-8 is okay for GPU rendering.
-	m_accTree.maxBoxTriangleCount = 2; //! Create a setting!
-	int rootIdx = m_accTree.AddNode( m_aabb, -1, -1, {}, *this );
+	m_accTree.maxBoxTriangleCount = m_settings.maxAABBTriangleCount;
+	int rootIdx = m_accTree.AddNode( m_aabb, *this );
 	m_accTree.Build( rootIdx, 0, m_triIndices );
 }
 
@@ -82,10 +82,6 @@ void Scene::SetRenderMode( const RenderMode& renderMode ) {
 
 const std::vector<Triangle>& Scene::GetTriangles() const {
 	return m_triangles;
-}
-
-const std::vector<Mesh>& Scene::GetMeshes() const {
-	return m_meshes;
 }
 
 const Camera& Scene::GetCamera() const {
@@ -175,16 +171,9 @@ void Scene::ParseObjectsTag( const rapidjson::Document& doc ) {
 				UVs = loadUVs( mesh[t_uvs].GetArray() );
 
 			std::vector<FVector3> meshVerts = LoadVertices( mesh[t_vertices].GetArray() );
-			std::vector<int> meshTris = LoadMeshTris(
-				mesh[t_triangles].GetArray(), meshVerts, UVs, matIdx );
+			LoadMesh( mesh[t_triangles].GetArray(), meshVerts, UVs, matIdx );
 
-			m_meshes.emplace_back( meshVerts, meshTris );
 
-			if ( mesh.HasMember( t_matIdx ) && mesh[t_matIdx].IsInt() )
-				m_meshes[i].SetMaterialIdx( matIdx );
-
-			if ( mesh.HasMember( t_uvs ) && mesh[t_uvs].IsArray() )
-				m_meshes[i].SetTextureUVs( UVs );
 		}
 	}
 }
@@ -397,12 +386,12 @@ std::vector<FVector3> Scene::LoadVertices( const rapidjson::Value::ConstArray& a
 	return verts;
 }
 
-std::vector<int> Scene::LoadMeshTris(
+void Scene::LoadMesh(
 	const rapidjson::Value::ConstArray& arr,
 	const std::vector<FVector3>& meshVerts,
 	const std::vector<FVector3>& UVs,
 	const int matIdx
-) { 
+) {
 	std::vector<int> tris{};
 	tris.reserve( arr.Size() );
 	size_t vertSize{ meshVerts.size() };
@@ -487,8 +476,6 @@ std::vector<int> Scene::LoadMeshTris(
 		tri.SetVertexNormal( 1u, vertexNormals[tri.GetVert( 1u ).origIdx] );
 		tri.SetVertexNormal( 2u, vertexNormals[tri.GetVert( 2u ).origIdx] );
 	}
-
-	return tris;
 }
 
 FVector3 Scene::ParseVertexLine( std::istringstream& iss, const std::string& line ) {
@@ -666,17 +653,6 @@ void Scene::ParseObjFile() {
 			triangles.clear();
 			continue;
 		}
-	}
-
-	//! Rework!< Not working at the moment!!!
-	for ( std::vector<int>& prepMesh : meshGroup ) {
-		Mesh mesh( vertices, prepMesh );
-		Material mat;
-		mat.type = MaterialType::Diffuse;
-		mat.texture.albedo = getRandomColor();
-		mat.smoothShading = false;
-		//! mesh.SetMaterial( mat );
-		m_meshes.push_back( mesh );
 	}
 }
 
