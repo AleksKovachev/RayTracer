@@ -39,56 +39,56 @@
 //}
 
 
-int main() {
-    Camera camera{};
+int main( int argc, char* argv[] ) {
+	Camera camera{};
 
-    //params.camera.Dolly( -3 );
-    //params.camera.Pan( 45 );
-    //params.camera.Dolly( 3 );
-    //params.camera.Tilt( 15 );
-    //params.camera.RotateAroundPoint( {0, 0, -3}, {0, 45, 0});
+	//params.camera.Dolly( -3 );
+	//params.camera.Pan( 45 );
+	//params.camera.Dolly( 3 );
+	//params.camera.Tilt( 15 );
+	//params.camera.RotateAroundPoint( {0, 0, -3}, {0, 45, 0});
 
-    Scene scene( "./rsc/scene1.crtscene" );
-    //Scene scene( "./rsc/RefractionBall.crtscene" );
-    //Scene scene( "./rsc/TestPlane.obj" );
-    scene.SetRenderMode( RenderMode::Material );
-    scene.ParseSceneFile();
-    //scene.ParseObjFile();
+	//Scene scene( "./rsc/scene1.crtscene" );
+	Scene scene( "./rsc/RefractionBall.crtscene" );
+	//Scene scene( "./rsc/TestPlane.obj" );
+	scene.SetRenderMode( RenderMode::Material );
+	scene.ParseSceneFile();
+	//scene.ParseObjFile();
 
-    Render render( scene );
+	Render render( scene );
 
-    double secondsMedian{};
-    int nrRuns{ 1 };
-    for ( int i{}; i < nrRuns; ++i ) {
-        std::chrono::high_resolution_clock::time_point start{
-            std::chrono::high_resolution_clock::now() };
+	double secondsMedian{};
+	int nrRuns{ 1 };
+	for ( int i{}; i < nrRuns; ++i ) {
+		std::chrono::high_resolution_clock::time_point start{
+			std::chrono::high_resolution_clock::now() };
 
-        //render.RenderImage();
-        render.RenderBuckets();
+		//render.RenderImage();
+		render.RenderBuckets();
 
-        std::chrono::high_resolution_clock::time_point stop{
-            std::chrono::high_resolution_clock::now() };
+		std::chrono::high_resolution_clock::time_point stop{
+			std::chrono::high_resolution_clock::now() };
 
-        std::chrono::microseconds duration{
-            std::chrono::duration_cast<std::chrono::microseconds>(stop - start) };
-        const double seconds{ duration.count() / 1'000'000.0 };
-        secondsMedian += seconds;
+		std::chrono::microseconds duration{
+			std::chrono::duration_cast<std::chrono::microseconds>(stop - start) };
+		const double seconds{ duration.count() / 1'000'000.0 };
+		secondsMedian += seconds;
 
-        std::cout << "Execution time: " << seconds << " seconds." << std::endl;
-    }
+		std::cout << "Execution time: " << seconds << " seconds." << std::endl;
+	}
 
-    std::cout << "\n\nMean execution time: " << secondsMedian / nrRuns <<
-        " for " << nrRuns << " runs." << std::endl;
+	std::cout << "\n\nMean execution time: " << secondsMedian / nrRuns <<
+		" for " << nrRuns << " runs." << std::endl;
 
-    //renderCameraMoveAnimation( scene, { 0.f, 1.f, 5.f }, { 0.2f, 0.f, 0.f }, 10 );
-    //renderRotationAroundObject( scene, { 0.f, 2.f, 5.f }, 30 );
+	//renderCameraMoveAnimation( scene, { 0.f, 1.f, 5.f }, { 0.2f, 0.f, 0.f }, 10 );
+	//renderRotationAroundObject( scene, { 0.f, 2.f, 5.f }, 30 );
 
-    //renderPyramid( params );
-    //renderRotationAroundPyramid( params );
+	//renderPyramid( params );
+	//renderRotationAroundPyramid( params );
 
-    //renderCameraTruckAnimation( Pyramid( { 0, 0, 0 } ).shape, params );
+	//renderCameraTruckAnimation( Pyramid( { 0, 0, 0 } ).shape, params );
 
-    //interactiveRender( params );
+	//interactiveRender( params );
 
-    return 0;
+	return 0;
 }
