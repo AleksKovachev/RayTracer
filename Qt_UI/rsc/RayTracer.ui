@@ -12,8 +12,14 @@
   </property>
   <property name="minimumSize">
    <size>
-    <width>800</width>
-    <height>600</height>
+    <width>1280</width>
+    <height>720</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>1280</width>
+    <height>720</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -23,10 +29,10 @@
    <widget class="QWidget" name="formLayoutWidget">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>40</y>
-      <width>281</width>
-      <height>351</height>
+      <x>10</x>
+      <y>70</y>
+      <width>282</width>
+      <height>387</height>
      </rect>
     </property>
     <layout class="QFormLayout" name="mainSettings">
@@ -137,13 +143,16 @@
      <item row="2" column="1">
       <widget class="QSpinBox" name="colorDepthSpin">
        <property name="toolTip">
-        <string>Color precision. The higher the color depth - the more color nuances will be produced. Defaults to 8-bit color, which makes each color component have a maximum value of 255, for a total of 16,777,216 colors.</string>
+        <string>Color precision. The higher the color depth - the more color nuances will be produced. Defaults to 8-bit color, which makes each color component have a maximum value of 255, for a total of 16,777,216 colors. Currently not set up.</string>
        </property>
        <property name="wrapping">
         <bool>false</bool>
        </property>
        <property name="frame">
         <bool>false</bool>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
        </property>
        <property name="buttonSymbols">
         <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
@@ -176,7 +185,7 @@
       </widget>
      </item>
      <item row="3" column="1">
-      <widget class="QDoubleSpinBox" name="shadowBianSpin">
+      <widget class="QDoubleSpinBox" name="shadowBiasSpin">
        <property name="toolTip">
         <string>Precision fix for shadow rays. Use for correcting shadow artifacts when rendering diffuse objects.</string>
        </property>
@@ -208,7 +217,7 @@
       </widget>
      </item>
      <item row="4" column="1">
-      <widget class="QDoubleSpinBox" name="refractBianSpin">
+      <widget class="QDoubleSpinBox" name="refractBiasSpin">
        <property name="toolTip">
         <string>Precision fix for refraction rays. Use for correcting refraction artifacts when rendering semi-transparent objects.</string>
        </property>
@@ -230,7 +239,7 @@
       </widget>
      </item>
      <item row="5" column="0">
-      <widget class="QLabel" name="pathDepthLabel_2">
+      <widget class="QLabel" name="pathDepthLabel">
        <property name="toolTip">
         <string>The number of times a ray can be reflected or refracted before it stops calculating.</string>
        </property>
@@ -263,7 +272,7 @@
         <number>100</number>
        </property>
        <property name="value">
-        <number>8</number>
+        <number>5</number>
        </property>
        <property name="displayIntegerBase">
         <number>10</number>
@@ -334,7 +343,7 @@
       </widget>
      </item>
      <item row="7" column="1">
-      <widget class="QSpinBox" name="resHeightSpin_2">
+      <widget class="QSpinBox" name="bucketSizeSpin">
        <property name="toolTip">
         <string>The size of each render bucket. Defaults to 24x24 pixels.</string>
        </property>
@@ -446,7 +455,49 @@
        </property>
       </widget>
      </item>
+     <item row="13" column="1">
+      <widget class="QPushButton" name="ignoreBackfaceBtn">
+       <property name="toolTip">
+        <string>Should the back faces of the triangles be rendered or ignored.</string>
+       </property>
+       <property name="text">
+        <string>Ignore Backface</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+       <property name="flat">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
      <item row="10" column="0">
+      <widget class="QLabel" name="rendNameLabel">
+       <property name="toolTip">
+        <string>The name of the rendered image. If not set, it will use the name of the scene file.</string>
+       </property>
+       <property name="text">
+        <string>Render Name</string>
+       </property>
+      </widget>
+     </item>
+     <item row="10" column="1">
+      <widget class="QLineEdit" name="rendNameEntry">
+       <property name="toolTip">
+        <string>The name of the rendered image. If not set, it will use the name of the scene file.</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="placeholderText">
+        <string>&lt;Default&gt;</string>
+       </property>
+      </widget>
+     </item>
+     <item row="11" column="0">
       <widget class="QLabel" name="colorPreviewLabel">
        <property name="minimumSize">
         <size>
@@ -465,7 +516,7 @@
        </property>
       </widget>
      </item>
-     <item row="10" column="1">
+     <item row="11" column="1">
       <widget class="QToolButton" name="colorPickerBtn">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -473,8 +524,17 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="cursor">
+        <cursorShape>PointingHandCursor</cursorShape>
+       </property>
        <property name="toolTip">
         <string>Click to select a color</string>
+       </property>
+       <property name="autoFillBackground">
+        <bool>false</bool>
+       </property>
+       <property name="styleSheet">
+        <string notr="true"/>
        </property>
        <property name="text">
         <string/>
@@ -491,44 +551,36 @@
        <property name="autoExclusive">
         <bool>false</bool>
        </property>
+       <property name="toolButtonStyle">
+        <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
+       </property>
        <property name="autoRaise">
         <bool>false</bool>
        </property>
-      </widget>
-     </item>
-     <item row="11" column="0">
-      <widget class="QLabel" name="rendNameLabel">
-       <property name="toolTip">
-        <string>The name of the rendered image.</string>
-       </property>
-       <property name="text">
-        <string>Render Name</string>
-       </property>
-      </widget>
-     </item>
-     <item row="11" column="1">
-      <widget class="QLineEdit" name="rendNameEntry">
-       <property name="toolTip">
-        <string>The name of the rendered image.</string>
-       </property>
-       <property name="text">
-        <string>Render_01</string>
+       <property name="arrowType">
+        <enum>Qt::ArrowType::NoArrow</enum>
        </property>
       </widget>
      </item>
      <item row="12" column="1">
-      <widget class="QPushButton" name="ignoreBackfaceBtn">
+      <widget class="QPushButton" name="overrideBGColorBtn">
        <property name="toolTip">
         <string>Should the back faces of the triangles be rendered or ignored.</string>
        </property>
        <property name="text">
-        <string>Ignore Backface</string>
+        <string>Custom Background Color</string>
        </property>
        <property name="checkable">
         <bool>true</bool>
        </property>
        <property name="checked">
-        <bool>true</bool>
+        <bool>false</bool>
+       </property>
+       <property name="default">
+        <bool>false</bool>
+       </property>
+       <property name="flat">
+        <bool>false</bool>
        </property>
       </widget>
      </item>
@@ -544,6 +596,54 @@
      </rect>
     </property>
     <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QPushButton" name="sceneFileBtn">
+       <property name="toolTip">
+        <string>Choose a scene file to be processed and rendered.</string>
+       </property>
+       <property name="text">
+        <string>Scene File...</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="sceneFileEntry">
+       <property name="toolTip">
+        <string>The scene file to be processed and rendered.</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="placeholderText">
+        <string>&lt;Scene File&gt;</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QPushButton" name="renderBtn">
+    <property name="geometry">
+     <rect>
+      <x>1177</x>
+      <y>630</y>
+      <width>71</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Reneder</string>
+    </property>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_2">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>30</y>
+      <width>1241</width>
+      <height>26</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
       <widget class="QPushButton" name="saveDirBtn">
        <property name="toolTip">
@@ -562,34 +662,100 @@
        <property name="text">
         <string>./renders</string>
        </property>
+       <property name="placeholderText">
+        <string/>
+       </property>
       </widget>
      </item>
     </layout>
    </widget>
-   <widget class="QGraphicsView" name="graphicsView">
+   <widget class="QWidget" name="verticalLayoutWidget">
     <property name="geometry">
      <rect>
-      <x>330</x>
-      <y>40</y>
-      <width>920</width>
-      <height>550</height>
+      <x>310</x>
+      <y>70</y>
+      <width>941</width>
+      <height>541</height>
      </rect>
     </property>
-    <property name="frameShape">
-     <enum>QFrame::Shape::Box</enum>
-    </property>
+    <layout class="QVBoxLayout" name="viewportLayout">
+     <item>
+      <widget class="QGraphicsView" name="qViewport">
+       <property name="frameShape">
+        <enum>QFrame::Shape::Box</enum>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </widget>
-   <widget class="QPushButton" name="renderBtn">
+   <widget class="QPushButton" name="openImgBtn">
     <property name="geometry">
      <rect>
-      <x>1177</x>
-      <y>603</y>
-      <width>71</width>
+      <x>310</x>
+      <y>630</y>
+      <width>81</width>
       <height>31</height>
      </rect>
     </property>
     <property name="text">
-     <string>Reneder</string>
+     <string>Open Image</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="zoomResetBtn">
+    <property name="geometry">
+     <rect>
+      <x>1210</x>
+      <y>80</y>
+      <width>31</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset theme="QIcon::ThemeIcon::ViewFullscreen"/>
+    </property>
+    <property name="flat">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="nextImgBtn">
+    <property name="geometry">
+     <rect>
+      <x>780</x>
+      <y>610</y>
+      <width>31</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset theme="QIcon::ThemeIcon::GoNext"/>
+    </property>
+    <property name="flat">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="prevImgBtn">
+    <property name="geometry">
+     <rect>
+      <x>750</x>
+      <y>610</y>
+      <width>31</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset theme="QIcon::ThemeIcon::GoPrevious"/>
+    </property>
+    <property name="flat">
+     <bool>true</bool>
     </property>
    </widget>
   </widget>
@@ -610,13 +776,7 @@
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
-   <widget class="QMenu" name="menuAbout">
-    <property name="title">
-     <string>About...</string>
-    </property>
-   </widget>
    <addaction name="menuMenu"/>
-   <addaction name="menuAbout"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionRender">

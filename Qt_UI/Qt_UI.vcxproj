@@ -127,14 +127,14 @@
       <ConformanceMode>true</ConformanceMode>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>inc;C:\Qt\6.8.0\msvc2022_64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>inc;../RayTracer/inc;C:\Qt\6.8.0\msvc2022_64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Qt\6.8.0\msvc2022_64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Qt6Cored.lib;Qt6Guid.lib;Qt6Widgetsd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Qt6Cored.lib;Qt6Guid.lib;Qt6Widgetsd.lib;Qt6Concurrentd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -147,17 +147,18 @@
       <ConformanceMode>true</ConformanceMode>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>inc;C:\Qt\6.8.0\msvc2022_64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../RayTracer/inc;inc;C:\Qt\6.8.0\msvc2022_64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Qt\6.8.0\msvc2022_64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Qt6Core.lib;Qt6Gui.lib;Qt6Widgets.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Qt6Core.lib;Qt6Gui.lib;Qt6Widgets.lib;Qt6Concurrent.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <QtMoc Include="inc\ImageViewer.h" />
     <ClInclude Include="inc\UI_Main.h" />
     <QtMoc Include="inc\UI_MainWindow.h" />
   </ItemGroup>
@@ -165,10 +166,31 @@
     <QtUic Include="rsc\RayTracer.ui">
       <FileType>Document</FileType>
     </QtUic>
+    <QtUic Include="rsc\RayTracer_responsive.ui" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\RayTracer\src\AccelerationStructures.cpp" />
+    <ClCompile Include="..\RayTracer\src\Bases.cpp" />
+    <ClCompile Include="..\RayTracer\src\Camera.cpp" />
+    <ClCompile Include="..\RayTracer\src\Colors.cpp" />
+    <ClCompile Include="..\RayTracer\src\ImageBuffer.cpp" />
+    <ClCompile Include="..\RayTracer\src\Materials.cpp" />
+    <ClCompile Include="..\RayTracer\src\Render.cpp" />
+    <ClCompile Include="..\RayTracer\src\Scene.cpp" />
+    <ClCompile Include="..\RayTracer\src\SpaceConversions.cpp" />
+    <ClCompile Include="..\RayTracer\src\Triangle.cpp" />
+    <ClCompile Include="..\RayTracer\src\utils.cpp" />
+    <ClCompile Include="..\RayTracer\src\Vectors.cpp" />
+    <ClCompile Include="src\ImageViewer.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\moc_UI_MainWindow.cpp" />
+    <ClCompile Include="src\UI_MainWindow.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtRcc Include="rsc\Resources.qrc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="rsc\icons\RayTracing.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(QtMsBuild)\qt.targets" Condition="Exists('$(QtMsBuild)\qt.targets')" />

@@ -1,7 +1,7 @@
 #include "Bases.h" // Matrix3
 #include "Lights.h" // Light
 #include "Scene.h" // Scene
-#include "utils.h" // getRandomColor, areCharsInString
+#include "utils.h" // getRandomColor
 #include "Vectors.h" // FVector3
 
 #define STB_IMAGE_IMPLEMENTATION // Only needed in a single .cpp file.
@@ -21,12 +21,14 @@ Matrix3 loadMatrix3( const rapidjson::Value::ConstArray& arr );
 std::vector<FVector3> loadUVs( const rapidjson::Value::ConstArray& arr );
 
 
+Scene::Scene() : m_accTree{ *this } {}
+
 Scene::Scene( const std::string& sceneFilePath )
 	: m_filePath{ sceneFilePath }, m_aabb{}, m_accTree{ *this } {
 	// Create a path of the save file name string
 	std::filesystem::path path( m_filePath );
 	// Get a string representation of absolute path to save file name
-	m_settings.saveName = path.stem().string();
+	settings.SetSaveFileName( path.stem().string() );
 }
 
 Scene::~Scene() {
@@ -53,31 +55,11 @@ void Scene::ParseSceneFile() {
 	// Using SAH eliminates the need for fine tuning maxDepth and maxBoxTriCount.
 	// Default formula: static_cast<int>( 8 + 1.3 * log2f( static_cast<float>( m_triangles.size() ) ) );
 	// Formula without the (1.3 *) part also exists.
-	m_accTree.maxDepth = m_settings.accTreeMaxDepth;
+	m_accTree.maxDepth = settings.accTreeMaxDepth;
 	// Typical 1-10. 1-4 for high perf. 5-10 for fast tree building. 4-8 is okay for GPU rendering.
-	m_accTree.maxBoxTriangleCount = m_settings.maxAABBTriangleCount;
+	m_accTree.maxBoxTriangleCount = settings.maxAABBTriangleCount;
 	int rootIdx = m_accTree.AddNode( m_aabb, *this );
 	m_accTree.Build( rootIdx, 0, m_triIndices );
-}
-
-void Scene::SetSaveFileName( const std::string& saveName ) {
-	if ( areCharsInString( saveName ) )
-		std::exit( 1 );
-
-	m_settings.saveName = saveName;
-}
-
-void Scene::SetRenderResolution( const int width, const int height ) {
-	m_settings.renderWidth = width;
-	m_settings.renderHeight = height;
-}
-
-const RenderMode& Scene::GetRenderMode() const {
-	return m_settings.renderMode;
-}
-
-void Scene::SetRenderMode( const RenderMode& renderMode ) {
-	m_settings.renderMode = renderMode;
 }
 
 const std::vector<Triangle>& Scene::GetTriangles() const {
@@ -86,10 +68,6 @@ const std::vector<Triangle>& Scene::GetTriangles() const {
 
 const Camera& Scene::GetCamera() const {
 	return m_camera;
-}
-
-const Settings& Scene::GetSettings() const {
-	return m_settings;
 }
 
 const std::vector<Light*>& Scene::GetLights() const {
@@ -110,21 +88,22 @@ void Scene::ParseSettingsTag(const rapidjson::Document& doc) {
 	char t_bucketSize[]{ "bucket_size" };
 
 	if ( doc.HasMember( t_settings ) && doc[t_settings].IsObject() ) {
-		const rapidjson::Value& settings{doc[t_settings]};
-		assert( settings.HasMember( t_bgColor ) && settings[t_bgColor].IsArray() );
-		m_settings.BGColor = loadVector3<Color>( settings[t_bgColor].GetArray() );
+		const rapidjson::Value& settings_{doc[t_settings]};
+		assert( settings_.HasMember( t_bgColor ) && settings_[t_bgColor].IsArray() );
+		if ( !settings.overrideBGColor )
+			settings.BGColor = loadVector3<Color>( settings_[t_bgColor].GetArray() );
 
-		assert( settings.HasMember( t_imgSettings ) && settings[t_imgSettings].IsObject() );
-		const rapidjson::Value& imgSettings{settings[t_imgSettings]};
+		assert( settings_.HasMember( t_imgSettings ) && settings_[t_imgSettings].IsObject() );
+		const rapidjson::Value& imgSettings{ settings_[t_imgSettings]};
 
 		assert( imgSettings.HasMember( t_width ) && imgSettings[t_width].IsInt() );
-		m_settings.renderWidth = imgSettings[t_width].GetUint();
+		settings.renderWidth = imgSettings[t_width].GetUint();
 
 		assert( imgSettings.HasMember( t_height ) && imgSettings[t_height].IsInt() );
-		m_settings.renderHeight = imgSettings[t_height].GetUint();
+		settings.renderHeight = imgSettings[t_height].GetUint();
 
 		if ( imgSettings.HasMember( t_bucketSize ) && imgSettings[t_bucketSize].IsInt() ) {
-			m_settings.bucketSize = imgSettings[t_bucketSize].GetUint();
+			settings.bucketSize = imgSettings[t_bucketSize].GetUint();
 		}
 	}
 }
@@ -403,7 +382,7 @@ void Scene::LoadMesh(
 	// Create an override material for this mesh.
 	Material overrideMat{};
 	unsigned overrideMatIdx{};
-	if ( m_settings.renderMode == RenderMode::RandomMeshColor ) {
+	if ( settings.renderMode == RenderMode::RandomMeshColor ) {
 		overrideMat.texture.albedo = getRandomColor();
 		m_overrideMaterials.push_back( overrideMat );
 		overrideMatIdx = static_cast<unsigned>(m_overrideMaterials.size()) - 1;
@@ -454,10 +433,10 @@ void Scene::LoadMesh(
 		}
 
 		// Assign the override material index to each triangle
-		if ( m_settings.renderMode == RenderMode::RandomMeshColor )
+		if ( settings.renderMode == RenderMode::RandomMeshColor )
 			m_triangles[lastTriIdx].overrideMatIdx = overrideMatIdx;
 
-		if ( m_settings.renderMode == RenderMode::RandomTriangleColor ) {
+		if ( settings.renderMode == RenderMode::RandomTriangleColor ) {
 			m_triangleColors.push_back( getRandomColor() );
 			m_triangles[lastTriIdx].colorIdx = static_cast<unsigned>(
 				m_triangleColors.size() ) - 1;
@@ -583,9 +562,9 @@ void Scene::ParseObjFile() {
 	*/
 
 	// Prepare scene settings missing in obj file
-	m_settings.renderWidth = 1920;
-	m_settings.renderHeight = 1080;
-	m_settings.BGColor = Colors::Black;
+	settings.renderWidth = 1920;
+	settings.renderHeight = 1080;
+	settings.BGColor = Colors::Black;
 	m_camera.Dolly( 3 );
 	//m_camera.RotateAroundPoint( { 0.f, 0.f, 6.f }, { 90.f, 0.f, 0.f } );
 	//PointLight* ptLight = new PointLight{ {2.f, 3.f, 2.f}, 170 };
@@ -670,4 +649,8 @@ const std::vector<Color>& Scene::GetTriangleColors() const {
 
 const AccTree& Scene::GetAccTree() const {
 	return m_accTree;
+}
+
+void Scene::SetRenderScene( const std::string& filePath ) {
+	m_filePath = filePath;
 }

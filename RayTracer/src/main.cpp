@@ -48,10 +48,10 @@ int main( int argc, char* argv[] ) {
 	//params.camera.Tilt( 15 );
 	//params.camera.RotateAroundPoint( {0, 0, -3}, {0, 45, 0});
 
-	//Scene scene( "./rsc/scene1.crtscene" );
-	Scene scene( "./rsc/RefractionBall.crtscene" );
+	Scene scene( "./rsc/scene1.crtscene" );
+	//Scene scene( "./rsc/RefractionBall.crtscene" );
 	//Scene scene( "./rsc/TestPlane.obj" );
-	scene.SetRenderMode( RenderMode::Material );
+	scene.settings.renderMode = RenderMode::Material;
 	scene.ParseSceneFile();
 	//scene.ParseObjFile();
 
@@ -63,8 +63,8 @@ int main( int argc, char* argv[] ) {
 		std::chrono::high_resolution_clock::time_point start{
 			std::chrono::high_resolution_clock::now() };
 
-		//render.RenderImage();
-		render.RenderBuckets();
+		render.RenderImage();
+		//render.RenderBuckets();
 
 		std::chrono::high_resolution_clock::time_point stop{
 			std::chrono::high_resolution_clock::now() };

@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>icons/RayTracing.png</file>
+    </qresource>
+</RCC>
