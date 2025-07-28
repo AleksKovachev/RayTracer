@@ -2,7 +2,7 @@
 #define SHAPES_H
 
 #include "Colors.h" // Color
-#include "Vectors.h" // FVector3
+#include "Vectors.h" // CompactFVector3, FVector3
 
 constexpr int vertsInTriangle{ 3 };
 
@@ -59,6 +59,8 @@ public:
     // @param[in] point: 3D world space coordinates of the point to check.
     // @return If the point is inside this triangle.
     bool IsPointInside( const FVector3& ) const;
+
+    CompactFVector3 GetCentroid() const;
 private:
     /* v0, v1, v2 are the indices of this array. The order matters
     for cross product and Triangle normal vector calculation. */

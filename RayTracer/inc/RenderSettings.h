@@ -21,8 +21,6 @@ struct Settings {
 	unsigned renderWidth{};
 	unsigned renderHeight{};
 	unsigned colorDepth{ 8u };
-	// The maximum color component for the scene (color-depth).
-	int maxColorComp{ (1 << colorDepth) - 1 };
 	Color BGColor{};
 	std::string saveDir{ "renders" };
 	std::string saveName{};
