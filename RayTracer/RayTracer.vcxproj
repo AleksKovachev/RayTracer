@@ -161,14 +161,7 @@ echo ===========================================================================
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\CircleGenerator.cpp" />
-    <ClCompile Include="src\MultiCircleGenerator.cpp" />
-    <ClCompile Include="src\PureRandomRectPPM.cpp" />
-    <ClCompile Include="src\RandomCirclesTrianglesPPM.cpp" />
-    <ClCompile Include="src\RandomRectPPM.cpp" />
-    <ClCompile Include="src\SquareGenerator.cpp" />
-    <ClCompile Include="src\Voronoi + Perturbed noise + ModifiedManhattanDistance + Manhattan + Squared.cpp" />
-    <ClCompile Include="src\Voronoi.cpp" />
+    <ClCompile Include="src\CameraRay2Colors.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="config\config.ini" />
