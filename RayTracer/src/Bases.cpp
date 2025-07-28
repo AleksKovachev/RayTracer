@@ -2,16 +2,8 @@
 #include "utils.h" // areEqual
 
 #include <cmath> // sinf, cosf
-#include <numbers> // pi
+#include <numbers> // pi_v
 
-// Multiplication with a Matrix3, assuming this is a column-major vector
-FVector3 operator*( const FVector3& vec, const Matrix3& mat ) {
-    return {
-        vec.x * mat.m[0][0] + vec.y * mat.m[1][0] + vec.z * mat.m[2][0],
-        vec.x * mat.m[0][1] + vec.y * mat.m[1][1] + vec.z * mat.m[2][1],
-        vec.x * mat.m[0][2] + vec.y * mat.m[1][2] + vec.z * mat.m[2][2]
-    };
-}
 
 Matrix3::Matrix3() {
     m[0][0] = 1; m[0][1] = 0; m[0][2] = 0;
@@ -19,7 +11,7 @@ Matrix3::Matrix3() {
     m[2][0] = 0; m[2][1] = 0; m[2][2] = 1;
 }
 
-Matrix3::Matrix3( std::initializer_list<std::initializer_list<float>> values ) {
+Matrix3::Matrix3( const std::initializer_list<std::initializer_list<float>>& values ) {
     int i{};
     for ( const auto& row : values ) {
         int j = 0;
@@ -54,9 +46,17 @@ Matrix3& Matrix3::operator*=( const Matrix3& other ) {
     return *this;
 }
 
-Obj::Obj() : m_position{ 0.f, 0.f, 0.f }, m_rotation{ 0.f, 0.f, 0.f } {}
+FVector3 operator*( const FVector3& vec, const Matrix3& mat ) {
+    return {
+        vec.x * mat.m[0][0] + vec.y * mat.m[1][0] + vec.z * mat.m[2][0],
+        vec.x * mat.m[0][1] + vec.y * mat.m[1][1] + vec.z * mat.m[2][1],
+        vec.x * mat.m[0][2] + vec.y * mat.m[1][2] + vec.z * mat.m[2][2]
+    };
+}
 
-Obj::Obj( FVector3 pos ) : m_position{ pos }, m_rotation{ 0.f, 0.f, 0.f } {}
+Obj::Obj() : m_position{ 0.f, 0.f, 0.f } {}
+
+Obj::Obj( const FVector3& pos ) : m_position{ pos } {}
 
 FVector3 Obj::ApplyRotation( const FVector3& direction ) const {
     return direction * m_orientation;
@@ -118,7 +118,7 @@ FVector3 Obj::GetForwardVector() const {
 }
 
 Matrix3 Obj::GetXRotMatrix( const float deg ) const {
-    const float rad{ static_cast<float>(deg * (std::numbers::pi / 180.f)) };
+    const float rad{ deg * (std::numbers::pi_v<float> / 180.f) };
     float cosR{ cosf( rad ) };
     float sinR{ sinf( rad ) };
     return { {{1.f, 0.f, 0.f},
@@ -127,7 +127,7 @@ Matrix3 Obj::GetXRotMatrix( const float deg ) const {
 }
 
 Matrix3 Obj::GetYRotMatrix( const float deg ) const {
-    const float rad{ static_cast<float>(deg * (std::numbers::pi / 180.f)) };
+    const float rad{ deg * (std::numbers::pi_v<float> / 180.f) };
     float cosR{ cosf( rad ) };
     float sinR{ sinf( rad ) };
     return { {{cosR, 0.f, -sinR},
@@ -136,7 +136,7 @@ Matrix3 Obj::GetYRotMatrix( const float deg ) const {
 }
 
 Matrix3 Obj::GetZRotMatrix( const float deg ) const {
-    const float rad{ static_cast<float>(deg * (std::numbers::pi / 180.f)) };
+    const float rad{ deg * (std::numbers::pi_v<float> / 180.f) };
     float cosR{ cosf( rad ) };
     float sinR{ sinf( rad ) };
     return { {{cosR, sinR, 0.f},

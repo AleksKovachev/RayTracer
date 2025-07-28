@@ -1,100 +1,512 @@
-#include "Camera.h"
-#include "Colors.h" // Color
-#include "DebugObjects.h" // getGround
+#include "Camera.h" // Camera
+#include "Colors.h" // Color, ColorMode, Colors::Black
+#include "Lights.h" // Light, PointLight
 #include "Mesh.h" // PreparedMesh
+#include "Rays.h" // Ray, RayType
 #include "Render.h"
-#include "RenderSettings.h" // RenderData
+#include "RenderSettings.h" // RenderMode, IntersectionData, Settings
 #include "Scene.h" // Scene, Mesh
-#include "Triangle.h"
-#include "utils.h" // writeColorToFile
-#include <Vectors.h> // FVector3
+#include "Triangle.h" // Triangle
+#include "utils.h" // writeColorToFile, areEqual, isGreaterEqualThan, isLessEqualThan
+#include "Vectors.h" // FVector2, FVector3
 
-#include <filesystem>
-#include <fstream>
-#include <string>
+#include <algorithm> // round, min, max, swap
+#include <cassert> // assert
+#include <cmath> // sqrtf
+#include <filesystem> // create_directories
+#include <fstream> // ofstream, std::ios::binary
+#include <iostream> // cout, flush
+#include <limits> // std::numeric_limits<float>::max
+#include <numbers> // pi_v
+#include <string> // string, to_string
 
-// TODO: Convert functions to a Render class. Global access to memebrs...
-std::vector<PreparedMesh> calculateMeshes( const std::vector<Mesh>& meshes, const ColorMode colorMode ) {
-    std::vector<PreparedMesh> outGeometry;
-    unsigned counter{};
 
-    for ( const Mesh& mesh : meshes ) {
-        outGeometry.emplace_back();
-        outGeometry[counter++].PrepMesh( mesh, colorMode );
+Render::Render( const Scene& scene )
+    : m_scene{ scene },
+    m_overrideCamera{ nullptr },
+    m_overrideSaveName{ nullptr },
+    m_frames { 1 } {
+}
+
+Render::Render( const Scene& scene, Camera& overrideCamera )
+    : m_scene{ scene },
+    m_overrideCamera{ &overrideCamera },
+    m_overrideSaveName{ nullptr },
+    m_frames{ 1 } {
+}
+
+Render::Render( const Scene& scene, Camera& overrideCamera, const std::string& overrideSaveName )
+    : m_scene{ scene },
+    m_overrideCamera{ &overrideCamera },
+    m_overrideSaveName{ &overrideSaveName },
+    m_frames{ 1 } {
+}
+
+Render::~Render() {
+    delete m_overrideCamera;
+    delete m_overrideSaveName;
+}
+
+bool Render::IsInShadow( const Ray& ray, const float distToLight ) const {
+    for ( const PreparedMesh& mesh : m_scene.GetPreparedMeshes() ) {
+
+        // Skip shadowing meshes with refractive materials.
+        if ( mesh.m_material.type == MaterialType::Refractive )
+            continue;
+
+        for ( const Triangle& triangle : mesh.m_triangles ) {
+            // If Ray is parallel - Ignore, it can't be hit.
+            float rayProj = ray.direction.Dot( triangle.GetNormal() );
+            if ( areEqual( rayProj, 0.f ) )
+                continue;
+
+            // If rayProj > 0, ray is pointing towards triangle back face.
+            // If rayProj < 0, ray is pointing towards triangle front face.
+
+            float rayPlaneDist = (triangle.GetVert( 0u ).pos - ray.origin)
+                .Dot( triangle.GetNormal() );
+            float rayPointDist = rayPlaneDist / rayProj; // Ray-to-Point scale factor
+
+            /* Check if: Ray hits behind the hitPoint(negative rayPointDist)
+             *           Ray hits at or very near the hitPoint (self-intersection)
+             *           Ray hits beyond the light source */
+            if ( isLessThan( rayPointDist, m_scene.GetSettings().shadowBias ) )
+                continue; // This intersection is not valid for shadow casting.
+
+            // Geometry on the other side of the light shouldn't cast shadows here.
+            if ( rayPointDist > distToLight )
+                continue;
+
+            // Ray parametric equation - represent points on a line going through a Ray.
+            FVector3 intersectionPt = ray.origin + (ray.direction * rayPointDist);
+
+            if ( triangle.IsPointInside( intersectionPt ) )
+                return true;
+        }
+    }
+    return false;
+}
+
+Color Render::ShadeConstant( const IntersectionData& data ) const {
+    switch ( m_scene.GetSettings().colorMode ) {
+
+        case ColorMode::RandomTriangleColor: {
+            return data.triangle.color;
+        }
+        case (ColorMode::LoadedMaterial):
+        case (ColorMode::RandomMeshColor): {
+            return data.material->albedo;
+        }
     }
 
-    return outGeometry;
+    // Should never get here.
+    return Colors::Black;
 }
 
-std::ofstream prepareScene( const Scene& scene, const std::string* overrideSaveName ) {
-    const int& width{ scene.GetSettings().renderWidth };
-    const int& height{ scene.GetSettings().renderHeight };
-    const std::string& saveDir{ scene.GetSettings().saveDir };
-    const std::string& saveName{
-        (overrideSaveName == nullptr ? scene.GetSettings().saveName : *overrideSaveName) };
-
-    std::filesystem::create_directories( saveDir );
-    std::ofstream ppmFileStream( saveDir + "/" + saveName + ".ppm", std::ios::binary );
-    ppmFileStream << "P6\n";
-    ppmFileStream << width << " " << height << "\n";
-    ppmFileStream << scene.GetSettings().maxColorComp << "\n";
-
-    return ppmFileStream;
+FVector2 calculateBarycentricCoords( const FVector3& intersectionPt, const Triangle& triangle ) {
+    const FVector3 v0p = intersectionPt - triangle.GetVert( 0u ).pos;
+    const FVector3 v0v2 = triangle.GetVert( 2u ).pos - triangle.GetVert( 0u ).pos;
+    const FVector3 v0v1 = triangle.GetVert( 1u ).pos - triangle.GetVert( 0u ).pos;
+    const float U = (v0p * v0v2).GetLength() / (triangle.GetArea() * 2);
+    const float V = (v0v1 * v0p).GetLength() / (triangle.GetArea() * 2);
+    return { U, V };
 }
 
-void render( const Scene& scene, const Camera* overrideCamera, const std::string* overrideSaveName ) {
-    const int& width{ scene.GetSettings().renderWidth };
-    const int& height{ scene.GetSettings().renderHeight };
-    const Camera& camera{ ( overrideCamera == nullptr ? scene.GetCamera() : *overrideCamera ) };
-    std::ofstream ppmFileStream = prepareScene( scene, overrideSaveName );
+Color Render::ShadeBary( const IntersectionData& data ) const {
+    const FVector2 UV = calculateBarycentricCoords( data.hitPoint, data.triangle );
+    return { UV.x, UV.y, 0.f }; // Display Barycentric Coordinates.
+}
 
-    std::vector<PreparedMesh> meshes{
-        calculateMeshes( scene.GetMeshes(), scene.GetSettings().colorMode ) };
 
-    //!? Add ground for debugging
-    //std::vector<Triangle> ground{ getGround() };
-    //meshes.begin()->second.insert( meshes.end(), ground.begin(), ground.end() );
+FVector3 calcHitNormal( const FVector3& intersectionPt, const Triangle& triangle ) {
+    const FVector2 UV{ calculateBarycentricCoords( intersectionPt, triangle ) };
+    return (triangle.GetVert( 1u ).normal * UV.x
+        + triangle.GetVert( 2u ).normal * UV.y
+        + triangle.GetVert( 0u ).normal * (1 - UV.x - UV.y)).Normalize();
+}
+
+Color Render::ShadeDiffuse( const IntersectionData& data ) const {
+    FVector3 hitNormal{};
+    float R{};
+    float G{};
+    float B{};
+    Color pixelColor{};
+    Color renderColor{};
+
+    if ( data.material->smoothShading )
+        hitNormal = calcHitNormal( data.hitPoint, data.triangle );
+
+    const FVector3& surfaceNormal = (data.material->smoothShading ? hitNormal : data.faceNormal );
+
+    for ( const Light* light : m_scene.GetLights() ) {
+        //! If Scene lights get more types, replace static_cast with dynamic to check light type.
+        const PointLight* ptLight = static_cast<const PointLight*>(light);
+
+        // Compute Light Direction.
+        FVector3 lightDir = ptLight->GetPosition() - data.hitPoint;
+
+        // Compute distance from intersection point to light source (sphere radius).
+        float lightDirLen = lightDir.GetLength();
+
+        // Normalize vector.
+        lightDir.NormalizeInPlace();
+
+        // Avoid 0-division after falloff calculation.
+        if ( areEqual( lightDirLen, 0.f ) )
+            continue;
+
+        // Negative numbers are 0 in color. Positive numbers above 1 are clipped.
+        // Calculate the Cosine Law.
+        float cosLaw = std::max( 0.f, lightDir.Dot( surfaceNormal ) );
+        if ( areEqual( cosLaw, 0.f ) )
+            continue;
+
+        // Compute sphere area.
+        float falloff = 4 * std::numbers::pi_v<float> * lightDirLen * lightDirLen;
+
+        /* Offset the hitPoint slightly along the normal to avoid self-intersection
+         * Another common technique is to check rayPointDist > EPSILON */
+        const FVector3 offsetHitPoint{
+            data.hitPoint + (surfaceNormal * m_scene.GetSettings().shadowBias ) };
+        Ray shadowRay{ offsetHitPoint, lightDir, -1, RayType::Shadow, false };
+
+        if ( Render::IsInShadow( shadowRay, lightDirLen ) )
+            // If there's something on the way to the light - leave the color as is.
+            continue;
+
+        // Cibsuder light Intensity and falloff in the value.
+        cosLaw *= ptLight->GetIntensity() / falloff;
+
+        //! Clamp here to make 1.0 the max intensity!
+        // cosLaw = std::min( 1.f, cosLaw );
+
+        R += cosLaw;
+    }
+
+    if ( areEqual( R, 0.f ) )
+        return Colors::Black;
+
+    G = B = R;
+
+    renderColor = m_scene.GetSettings().colorMode == ColorMode::RandomTriangleColor
+        ? data.triangle.color : data.material->albedo;
+
+    // multiply by normalized albedo
+    const int& maxComp = m_scene.GetSettings().maxColorComp;
+    R *= static_cast<float>(renderColor.r) / maxComp;
+    G *= static_cast<float>(renderColor.g) / maxComp;
+    B *= static_cast<float>(renderColor.b) / maxComp;
+
+    // Clamp here to make everything > 1.0 clip back to 1.0!
+    pixelColor.r = static_cast<int>(round( R * maxComp ));
+    pixelColor.g = static_cast<int>(round( G * maxComp ));
+    pixelColor.b = static_cast<int>(round( B * maxComp ));
+
+    return pixelColor;
+}
+
+Color Render::ShadeReflective( const Ray& ray, const IntersectionData& data ) const {
+    FVector3 useNormal{ data.material->smoothShading ?
+        calcHitNormal( data.hitPoint, data.triangle ) : data.faceNormal
+    };
+
+    // R = 2 * dot(A, N) * N = N * dot(A, N) * 2
+    FVector3 reflectionDir = ray.direction - (
+        useNormal * ray.direction.Dot( useNormal ) * 2);
+
+    // If current ray has no support for depth - construct a fresh one.
+    int reflectDepth = ray.pathDepth < 0 ? 0 : ray.pathDepth;
+
+    Ray reflectionRay{
+        data.hitPoint,
+        reflectionDir.Normalize(),
+        reflectDepth + 1,
+        RayType::Reflective,
+        false
+    };
+
+    IntersectionData intersectData = TraceRay( reflectionRay );
+    Color pixelColor = Shade( reflectionRay, intersectData );
+    pixelColor *= data.material->albedo;
+
+    return pixelColor;
+}
+
+Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) const {
+    /* Namings used:
+    * dotIN: dot product of incident ray with surface normal.
+    * cosIN: cosine of the incident ray with the surface normal.
+    * sinRnN: sine between the refraction ray and the negative surface normal.
+    */
+
+    FVector3 useNormal{ data.material->smoothShading ?
+        calcHitNormal( data.hitPoint, data.triangle ) : data.faceNormal
+    };
+
+    float ior1{ 1.f }; // air, hard-coded for now
+    float ior2{ data.material->ior };
+    float dotIN = ray.direction.Dot( useNormal );
+
+    // Check if the incident ray enters or leaves the object.
+    if ( dotIN > 0 ) {
+        // Leaves - swap IOR values and use inverse normal.
+        useNormal = -useNormal;
+        dotIN = -dotIN;
+        std::swap( ior1, ior2 );
+    }
+
+    // If current ray has no support for depth - construct a fresh one.
+    int pathDepth = ray.pathDepth < 0 ? 0 : ray.pathDepth;
+
+    /* Compute the cosine between the incident ray and the normal vector.
+    * cos(I, N) = -dot(I, N) = dot(I, -N). */
+    float cosIN = -dotIN; //!? cos(A)
+
+    float eta{ ior1 / ior2 };
+
+    Color refractionColor{};
+    // Default to 100% reflection for Total Internal Reflection (TIR)
+    float fresnel = 1.f;
+
+    // Calculate sin ^ 2(theta_t) using Snell's Law: n1 * sin(theta_i) = n2 * sin(theta_t)
+    // sin^2(theta_t) = (n1/n2)^2 * sin^2(theta_i) = (n1/n2)^2 * (1 - cos^2(theta_i))
+    //float sin2ThetaT = eta * eta * (1.f - (cosIN * cosIN));
+
+    // Check if TIR occurs and don't calculate refraction if it does.
+    //if ( sin2ThetaT < 1.f ) {
+
+    if ( std::sqrtf( 1.f - cosIN * cosIN) <= ior2 / ior1 ) {
+        /* Using Snell's Law, find sin(R, -N), R - refraction ray.
+         * sin(R, -N) = (sqrt(1 - cos^2(I, N)) * ior1) / ior2 */
+        float sinRnN{ (sqrtf( 1.f - (cosIN * cosIN) ) * ior1) / ior2 }; //!? sin(B)
+        float cosRnN{ std::sqrtf( 1.0f - (sinRnN * sinRnN) ) }; //!? cos(B)
+
+        // Compute the Refraction Ray direction.
+        FVector3 A = -useNormal * cosRnN;
+        FVector3 C = (ray.direction + (useNormal * cosIN)).Normalize();
+        FVector3 B = C * sinRnN;
+
+        // Generate Refraction Ray.
+        Ray refractionRay{
+            data.hitPoint + (-useNormal * m_scene.GetSettings().refractBias),
+            (A + B).Normalize(),
+            //((ray.direction * eta) + (useNormal * (eta * cosIN - cosRnN))).Normalize(),
+            pathDepth + 1,
+            RayType::Refractive,
+            false
+        };
+
+        // Trace Refraction Ray.
+        IntersectionData refractData{ TraceRay( refractionRay ) };
+        //return Shade( refractionRay, refractData );
+        refractionColor = Shade( refractionRay, refractData );
+
+        // Calculate Fresnel reflection factor using Schlick's Approximation.
+        //! float R0 = std::pow( (ior1 - ior2) / (ior1 + ior2), 2.0f );
+        // Use the cosine of the angle *inside* the denser material for the Fresnel term.
+        // If ray was entering (original dotIN <= 0), use cosIN.
+        // If ray was exiting (original dotIN > 0), use cosRnN.
+        //! float cosRnN = std::sqrtf( 1.f - ratioIORs * ratioIORs * (1.f - (cosIN * cosIN)) );
+        //! float cosTermForFresnel = (dotIN > 0) ? cosRnN : cosIN;
+        //! reflectionFactor = R0 + (1.0f - R0) * std::pow( (1.0f - cosTermForFresnel), 5.0f );
+
+        fresnel = 0.5f * std::pow( (1.0f + dotIN), 5.f);
+    }
+
+    // Generate Reflection Ray.
+    Ray reflectionRay{
+        data.hitPoint + (useNormal * m_scene.GetSettings().refractBias),
+        ray.direction - (useNormal * ray.direction.Dot( useNormal ) * 2.f),
+        pathDepth + 1,
+        RayType::Reflective,
+        false
+    };
+    reflectionRay.direction.NormalizeInPlace();
+
+    // Generate Reflection Ray.
+    IntersectionData reflectData{ TraceRay( reflectionRay ) };
+    Color reflectionColor = Shade( reflectionRay, reflectData );
+
+    return reflectionColor * fresnel + refractionColor * (1.f - fresnel);
+}
+
+Color Render::Shade( const Ray& ray, const IntersectionData& data ) const {
+    Color pixelColor{ m_scene.GetSettings().BGColor };
+
+    if ( data.material == nullptr ) {
+        // The camera ray didn't hit any objects - just the background.
+        return pixelColor;
+    }
+    else if ( ray.pathDepth >= m_scene.GetSettings().pathDepth ) {
+        return pixelColor; // or  Colors::Black
+    }
+    else if ( m_scene.GetRenderMode() == RenderMode::ObjectColor ) {
+        pixelColor = ShadeConstant( data );
+    }
+    else if ( m_scene.GetRenderMode() == RenderMode::Barycentric ) {
+        pixelColor = ShadeBary( data );
+    }
+    else if ( m_scene.GetRenderMode() == RenderMode::Material
+        && data.material->type == MaterialType::Diffuse ) {
+        pixelColor = ShadeDiffuse( data );
+    }
+    else if ( m_scene.GetRenderMode() == RenderMode::Material
+        && data.material->type == MaterialType::Reflective ) {
+        //pixelColor = ShadeDiffuse( data );
+        pixelColor = ShadeReflective( ray, data );
+    }
+    else if ( m_scene.GetRenderMode() == RenderMode::Material
+        && data.material->type == MaterialType::Refractive ) {
+        //pixelColor = ShadeDiffuse( data );
+        pixelColor = ShadeRefractive( ray, data );
+    }
+    else {
+        assert( false );
+    }
+
+    return pixelColor;
+    }
+
+IntersectionData Render::TraceRay( const Ray& ray, const float maxT ) const {
+    IntersectionData intersectData{};
+    float closestIntersectionP{ std::numeric_limits<float>::max() };
+    float bias{ 0.f }; //! Default value currently only used for reflection!
+
+    if ( ray.type == RayType::Shadow )
+        bias = m_scene.GetSettings().shadowBias;
+    else if (ray.type == RayType::Refractive )
+        bias = m_scene.GetSettings().refractBias;
+
+    for ( const PreparedMesh& mesh : m_scene.GetPreparedMeshes() ) {
+        for ( const Triangle& triangle : mesh.m_triangles ) {
+            // rayProj = 0 -> Ray is parallel to surface - Ignore, it can't hit.
+            // rayProj > 0 -> back-face
+            // rayProj < 0 -> front-face
+            float rayProj = ray.direction.Dot( triangle.GetNormal() );
+
+            if ( ray.ignoreBackface ) {
+                if ( isGreaterEqualThan( rayProj, 0.f ) )
+                    continue;
+            }
+            else {
+                if ( areEqual( rayProj, 0.f ) )
+                    continue;
+}
+
+            float rayPlaneDist = (triangle.GetVert( 0u ).pos - ray.origin)
+                .Dot( triangle.GetNormal() );
+
+            // Ray-to-Point scale factor for unit vector to reach the Point (t).
+            float rayPointDist = rayPlaneDist / rayProj;
+
+            if ( ray.ignoreBackface ) {
+                if ( isGreaterEqualThan( rayPlaneDist, 0.f ) )
+                    // Ray is not towards Triangle's plane.
+                    continue;
+            }
+            else {
+                /* Check if: Ray hits behind the hitPoint(negative rayPointDist)
+                 *           Ray hits at or very near the hitPoint (self-intersection)
+                 *           Ray hits beyond the light source */
+                if ( isLessThan( rayPointDist, bias ) )
+                    continue; // This intersection is not valid for shadow casting.
+}
+
+            /* With shadow rays, maxT is the distance to the light source.
+             * Geometry on the other side of the light shouldn't cast shadows here.
+             * Currently maxT is only used for light distance. In the future it
+             * will be used for other optimizations as well. */
+            if ( rayPointDist > maxT || isLessEqualThan( rayPointDist, 0.f ) )
+                continue;
+
+            // Ray parametric equation - represent points on a line going through a Ray.
+            FVector3 intersectionPt = ray.origin + (ray.direction * rayPointDist);
+
+            // Ignore intersection if a closer one to the Camera has already been found.
+            if ( rayPointDist > closestIntersectionP )
+                continue;
+
+            // If the Plane intersection point is not inside the triangle - don't render it.
+            if ( !triangle.IsPointInside( intersectionPt ) )
+                continue;
+
+            if ( ray.type == RayType::Shadow )
+                intersectData; //TODO: Not finished! Make it work in place of IsInShadow()
+
+            closestIntersectionP = rayPointDist;
+            intersectData.faceNormal = triangle.GetNormal();
+            intersectData.hitPoint = intersectionPt;
+            intersectData.material = &mesh.m_material;
+            intersectData.triangle = triangle;
+        }
+    }
+    return intersectData;
+}
+
+void Render::RenderImage() {
+    const int& width{ m_scene.GetSettings().renderWidth };
+    const int& height{ m_scene.GetSettings().renderHeight };
+    const Camera& camera{
+        m_overrideCamera == nullptr ? m_scene.GetCamera() : *m_overrideCamera };
+    std::ofstream ppmFileStream = PrepareScene();
 
     for ( int y{}; y < height; ++y ) {
         for ( int x{}; x < width; ++x ) {
-            FVector3 ray = camera.GenerateRay( x, y );
-            Color pixelColor = camera.GetTriangleIntersection(
-                ray, meshes, scene, scene.GetReflectionDepth(), camera.GetLocation() );
-            writeColorToFile( ppmFileStream, pixelColor );
+            Ray ray = camera.GenerateRay( x, y, m_scene.GetSettings() );
+            IntersectionData intersectData = TraceRay( ray );
+            Color pixelColor = Shade( ray, intersectData);
+            writeColorToFile( ppmFileStream, Color(std::clamp(pixelColor.r, 0, 255), std::clamp( pixelColor.g, 0, 255 ), std::clamp( pixelColor.b, 0, 255 ) ));
         }
-        std::cout << "\rLine: " << y + 1 << " / " << height << std::flush;
+        std::cout << "\rLine: " << y + 1 << " / " << height << "  |  "
+            << (static_cast<float>(y + 1) / height) * 100 << "%          " << std::flush;
     }
 
     ppmFileStream.close();
 }
 
-void renderCameraMoveAnimation(
-    Scene& scene, const FVector3& initialPos, const FVector3& moveWith, const int frames ) {
+void Render::RenderCameraMoveAnimation(
+    const FVector3& initialPos, const FVector3& moveWith ) {
 
     Camera camera{};
+    m_overrideCamera = &camera;
     camera.Move( initialPos );
     std::string saveName;
 
-    for ( int i{}; i < frames; ++i ) {
+    for ( int frame{}; frame < m_frames; ++frame ) {
         camera.Move( moveWith );
-        saveName = "Move" + std::to_string( i );
-        render( scene, &camera, &saveName );
+        saveName = "Move" + std::to_string( frame );
+        RenderImage();
     }
 }
 
-void renderRotationAroundObject(
-    const Scene& scene, const FVector3& initialPos, const int frames ) {
-
+void Render::RenderRotationAroundObject( const FVector3& initialPos, const FVector3& rot ) {
     Camera camera{};
-    int frame{};
+    m_overrideCamera = &camera;
     std::string saveName;
 
     camera.Move( initialPos );
     float distToObject{ initialPos.z };
 
-    for ( int frame{}; frame < frames; ++frame ) {
-        camera.RotateAroundPoint( { 0.f, 0.f, distToObject }, { 0.f, frame * 10.f, 0.f } );
+    for ( int frame{}; frame < m_frames; ++frame ) {
+        camera.RotateAroundPoint(
+            { 0.f, 0.f, distToObject }, { frame * rot.x, frame * rot.y, frame * rot.z } );
         saveName = "Orbit" + std::to_string( frame + 1 );
-        render( scene, &camera, &saveName );
+        RenderImage();
     }
+    }
+
+std::ofstream Render::PrepareScene() {
+    const Settings& settings{ m_scene.GetSettings() };
+
+    const std::string& saveDir{ settings.saveDir };
+    const std::string& saveName{
+        (m_overrideSaveName == nullptr ? settings.saveName : *m_overrideSaveName) };
+
+    std::filesystem::create_directories( saveDir );
+    std::ofstream ppmFileStream( saveDir + "/" + saveName + ".ppm", std::ios::binary );
+    ppmFileStream << "P6\n";
+    ppmFileStream << settings.renderWidth << " " << settings.renderHeight << "\n";
+    ppmFileStream << settings.maxColorComp << "\n";
+
+    return ppmFileStream;
 }

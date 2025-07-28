@@ -1,13 +1,16 @@
+#include "Bases.h" // Matrix3
 #include "Lights.h" // Light
 #include "Scene.h" // Scene, Mesh
-#include "utils.h" // getRandomColor
+#include "utils.h" // getRandomColor, areCharsInString
+#include "Vectors.h" // FVector3
 
-#include "rapidjson/istreamwrapper.h"
+#include "rapidjson/istreamwrapper.h" // IStreamWrapper
 
 #include <algorithm> // find
 #include <cassert> // assert
 #include <fstream> // ifstream
 #include <filesystem> // path
+#include <iostream> // cerr
 #include <sstream> // istringstream
 
 
@@ -18,10 +21,10 @@ std::vector<FVector3> loadMeshVerts( const rapidjson::Value::ConstArray& arr );
 std::vector<int> loadMeshTris( const rapidjson::Value::ConstArray& arr );
 
 
-Scene::Scene( const std::string& sceneFileName )
-	: m_fileName{ sceneFileName } {
+Scene::Scene( const std::string& sceneFilePath )
+	: m_filePath{ sceneFilePath } {
 	// Create a path of the save file name string
-	std::filesystem::path path( m_fileName );
+	std::filesystem::path path( m_filePath );
 	// Get a string representation of absolute path to save file name
 	m_settings.saveName = path.stem().string();
 }
@@ -32,7 +35,7 @@ Scene::~Scene() {
 }
 
 void Scene::ParseSceneFile() {
-	std::ifstream ifs( m_fileName );
+	std::ifstream ifs( m_filePath );
 	assert( ifs.is_open() );
 
 	rapidjson::IStreamWrapper isw( ifs );
@@ -46,10 +49,14 @@ void Scene::ParseSceneFile() {
 	ParseLightsTag( doc );
 	ParseMaterialsTag( doc );
 
+	unsigned counter{};
 	for ( Mesh& mesh : m_meshes ) {
 		Material mat{};
 		mat.albedo = getRandomColor();
 		mesh.SetMaterialOverride( mat );
+
+		m_rdyMeshes.emplace_back();
+		m_rdyMeshes[counter++].PrepMesh( mesh, m_settings.colorMode );
 	}
 }
 
@@ -77,10 +84,25 @@ void Scene::SetRenderMode( const RenderMode& renderMode ) {
 	m_settings.renderMode = renderMode;
 }
 
-unsigned Scene::GetReflectionDepth() const {
-	return m_settings.reflectionDepth;
+const std::vector<PreparedMesh>& Scene::GetPreparedMeshes() const {
+	return m_rdyMeshes;
 }
 
+const std::vector<Mesh>& Scene::GetMeshes() const {
+	return m_meshes;
+}
+
+const Camera& Scene::GetCamera() const {
+	return m_camera;
+}
+
+const Settings& Scene::GetSettings() const {
+	return m_settings;
+}
+
+const std::vector<Light*>& Scene::GetLights() const {
+	return m_lights;
+}
 
 void Scene::ParseSettingsTag(const rapidjson::Document& doc) {
 	// JSON Tags to look for
@@ -106,7 +128,6 @@ void Scene::ParseSettingsTag(const rapidjson::Document& doc) {
 	}
 }
 
-
 void Scene::ParseCameraTag( const rapidjson::Document& doc ) {
 	// JSON Tags to look for
 	char t_camera[]{ "camera" };
@@ -122,7 +143,6 @@ void Scene::ParseCameraTag( const rapidjson::Document& doc ) {
 		m_camera.m_position = loadVector3<FVector3>( camera[t_position].GetArray() );
 	}
 }
-
 
 void Scene::ParseObjectsTag( const rapidjson::Document& doc ) {
 	// JSON Tags to look for
@@ -179,6 +199,7 @@ void Scene::ParseMaterialsTag( const rapidjson::Document& doc ) {
 	char t_type[]{ "type" };
 	char t_albedo[]{ "albedo" };
 	char t_smShading[]{ "smooth_shading" };
+	char t_ior[]{ "ior" };
 
 	if ( doc.HasMember( t_materials ) && doc[t_materials].IsArray() ) {
 		const rapidjson::Value::ConstArray& matsArr = doc[t_materials].GetArray();
@@ -187,7 +208,6 @@ void Scene::ParseMaterialsTag( const rapidjson::Document& doc ) {
 			assert( matsArr[i].IsObject() );
 			const rapidjson::Value& material{ matsArr[i] };
 			assert( material.HasMember( t_type ) && material[t_type].IsString() );
-			assert( material.HasMember( t_albedo ) && material[t_albedo].IsArray() );
 			assert( material.HasMember( t_smShading ) && material[t_smShading].IsBool() );
 
 			Material mat;
@@ -197,11 +217,27 @@ void Scene::ParseMaterialsTag( const rapidjson::Document& doc ) {
 				mat.type = MaterialType::Diffuse;
 			else if ( matTypeStr == "reflective" )
 				mat.type = MaterialType::Reflective;
+			else if ( matTypeStr == "refractive" ) {
+				mat.type = MaterialType::Refractive;
+			}
+			else if ( matTypeStr == "constant" )
+				mat.type = MaterialType::Constant;
 
-			mat.albedo = loadVector3<Color>( material[t_albedo].GetArray() );
 			mat.smoothShading = material[t_smShading].GetBool();
 
-			m_meshes[i].SetMaterial(mat);
+			// Assign a value for the IOR if there is one.
+			if ( material.HasMember( t_ior ) && material[t_ior].IsDouble() )
+				mat.ior = static_cast<float>(material[t_ior].GetDouble());
+
+			// Assign a value for the albedo if there is one.
+			if ( material.HasMember( t_albedo ) && material[t_albedo].IsArray())
+				mat.albedo = loadVector3<Color>( material[t_albedo].GetArray() );
+
+			for ( Mesh& mesh : m_meshes ) {
+				if ( mesh.GetMaterialIdx() == i ) {
+					mesh.SetMaterial( mat );
+				}
+			}
 		}
 	}
 }
@@ -214,14 +250,12 @@ T loadVector3( const rapidjson::Value::ConstArray& arr ) {
 		static_cast<float>(arr[2].GetDouble()) };
 }
 
-
 Matrix3 loadMatrix3( const rapidjson::Value::ConstArray& arr ) {
 	assert( arr.Size() == 9 );
 	return { FVector3{ arr[0].GetDouble(), arr[1].GetDouble(), arr[2].GetDouble() },
 		FVector3{ arr[3].GetDouble(), arr[4].GetDouble(), arr[5].GetDouble() },
 		FVector3{ arr[6].GetDouble(), arr[7].GetDouble(), arr[8].GetDouble() } };
 }
-
 
 std::vector<FVector3> loadMeshVerts( const rapidjson::Value::ConstArray& arr ) {
 	std::vector<FVector3> verts{};
@@ -234,7 +268,6 @@ std::vector<FVector3> loadMeshVerts( const rapidjson::Value::ConstArray& arr ) {
 	return verts;
 }
 
-
 std::vector<int> loadMeshTris( const rapidjson::Value::ConstArray& arr ) {
 	std::vector<int> tris{};
 
@@ -244,8 +277,7 @@ std::vector<int> loadMeshTris( const rapidjson::Value::ConstArray& arr ) {
 	return tris;
 }
 
-
-FVector3 Scene::parseVertexLine( std::istringstream& iss, const std::string& line ) {
+FVector3 Scene::ParseVertexLine( std::istringstream& iss, const std::string& line ) {
 	float val1, val2, val3;
 
 	if ( !(iss >> val1 >> val2 >> val3) )
@@ -255,7 +287,7 @@ FVector3 Scene::parseVertexLine( std::istringstream& iss, const std::string& lin
 	return { val1, val3, val2 }; // Swap val2 and val3 to convert to right-handed
 }
 
-void Scene::parsePolygonLine( std::istringstream& iss, const std::string& line, std::vector<int>& tris ) {
+void Scene::ParsePolygonLine( std::istringstream& iss, const std::string& line, std::vector<int>& tris ) {
 	/* Face tag info:
 	* Faces can hold information in one of 4 formats:
 	* f 1 2 3 => face with only 'v' indices
@@ -293,7 +325,7 @@ void Scene::parsePolygonLine( std::istringstream& iss, const std::string& line, 
 	}
 }
 
-void Scene::checkNewObject(
+void Scene::CheckNewObject(
 	const std::string& tag,
 	size_t objCount,
 	std::vector<std::vector<int>>& meshGroup
@@ -371,7 +403,7 @@ void Scene::ParseObjFile() {
 	m_lights.push_back( ptLight5 );
 	m_lights.push_back( ptLight6 );
 
-	std::ifstream file( m_fileName );
+	std::ifstream file( m_filePath );
 	assert( file.is_open() );
 
 	std::string line;
@@ -398,8 +430,8 @@ void Scene::ParseObjFile() {
 
 		// Parse vertices
 		if ( tag == "v" ) {
-			vertices.push_back( parseVertexLine( iss, line ) );
-			checkNewObject( "v", objCount, meshGroup );
+			vertices.push_back( ParseVertexLine( iss, line ) );
+			CheckNewObject( "v", objCount, meshGroup );
 			continue;
 		}
 
@@ -410,8 +442,8 @@ void Scene::ParseObjFile() {
 			// If it's 4 - use fan triangulation - 123, 134 for convex polygons
 			// If it's > 4 -> don't support as there's no time for
 			// implementation of ear-clipping algorithm :(
-			checkNewObject( "f", objCount, meshGroup );
-			parsePolygonLine( iss, line, triangles );
+			CheckNewObject( "f", objCount, meshGroup );
+			ParsePolygonLine( iss, line, triangles );
 			meshGroup[objCount].insert(
 				meshGroup[objCount].end(),
 				triangles.begin(),
@@ -432,5 +464,4 @@ void Scene::ParseObjFile() {
 		mesh.SetMaterial( mat );
 		m_meshes.push_back( mesh );
 	}
-
 }

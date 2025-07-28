@@ -9,28 +9,67 @@ struct Color {
     int g;
     int b;
 
-    Color( int in_r = 0, int in_g = 0, int in_b = 0 );
-    Color( float in_r, float in_g, float in_b );
+    // @param[in] in_r: The red color value as an integer. Defaults to 0.
+    // @param[in] in_g: The green color value as an integer. Defaults to 0.
+    // @param[in] in_b: The blue color value as an integer. Defaults to 0.
+    Color( const int in_r = 0, const int in_g = 0, const int in_b = 0 );
+    // @param[in] in_r: The red color value as a normalized float [0.0, 1.0].
+    // @param[in] in_g: The green color value as a normalized float [0.0, 1.0].
+    // @param[in] in_b: The blue color value as a normalized float [0.0, 1.0].
+    Color( const float, const float, const float );
 
+    // Get the color's max(r, g, b) value.
+    // @return An integer value of the max component.
     int GetMaxComponent();
 
-    // Copy assignment
-    Color& operator=( const Color& other );
+    // Copy assignment.
+    // @param[in] The color to copy.
+    // @return The copied color.
+    Color& operator=( const Color& );
 
-    bool operator==( const Color& other );
-    Color operator/( const int val );
-    Color operator-( const Color& other );
-    Color& operator+=( const Color& other );
-    Color& operator-=( const Color& other );
-    Color& operator*=( const Color& other );
-    Color& operator/=( const int val );
+    // Compares two colors.
+    // @param[in] other: The color this one is being compared to.
+    // @return If the colors are identical.
+    bool operator==( const Color& ) const;
+    // Divides each color component by a given value.
+    // @param[in] val: The value by which each component is divided.
+    // @return The resulting color.
+    Color operator/( const int ) const;
+    // Multiplies each color component by a given value.
+    // @param[in] val: The value by which each component is multiplied.
+    // @return The resulting color.
+    Color operator*( const float ) const;
+    // Subtracts a color from this one.
+    // @param[in] other: The color that's beeing subtracted.
+    // @return The resulting color.
+    Color operator-( const Color& ) const;
+    // Adds a color to this one.
+    // @param[in] other: The color that's beeing added.
+    // @return The resulting color.
+    Color operator+( const Color& ) const;
+    // In-place addition of two colors.
+    // @param[in] other: The color that's beeing added to this one.
+    // @return This color, modified to the resulting addition.
+    Color& operator+=( const Color& );
+    // In-place subtraction of two colors.
+    // @param[in] other: The color that's beeing subtracted from this one.
+    // @return This color, modified to the resulting subtraction.
+    Color& operator-=( const Color& );
+    // In-place multiplication of two colors.
+    // @param[in] other: The color that's beeing multiplied by this one.
+    // @return This color, modified to the resulting multiplication.
+    Color& operator*=( const Color& );
+    // In-place division of a color by a value.
+    // @param[in] val: The value this color is beeing divided by.
+    // @return This color, modified to the resulting division.
+    Color& operator/=( const int );
 };
 
 
 enum class ColorMode {
-    LoadedMaterial,
-    RandomMeshColor,
-    RandomTriangleColor
+    LoadedMaterial, // Use the color from the mesh' material.
+    RandomMeshColor, // Use a random color for each mesh.
+    RandomTriangleColor // Use a random color for each triangle in the scene.
 };
 
 

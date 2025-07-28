@@ -1,10 +1,11 @@
 #include "utils.h"
 
-#include <cassert>
-#include <cmath>
-#include <fstream>
-#include <iostream>
-#include <string>
+#include <algorithm> // max
+#include <cassert> // assert
+#include <cctype> // isspace
+#include <fstream> // ifstream, ofstream
+#include <iostream> // cerr
+#include <string> // string, getline, npos, stof
 
 
 int getInt( const int min, const int max ) {
@@ -83,7 +84,8 @@ iniData readConfig() {
                 initialValue = line.substr( pos + 1 );
                 // Remove any comments after the value
                 commentStartIdx = initialValue.find( '#' );
-                valueNoComment = (commentStartIdx != std::string::npos) ? initialValue.substr( 0, commentStartIdx ) : initialValue;
+                valueNoComment = (commentStartIdx != std::string::npos) ?
+                    initialValue.substr( 0, commentStartIdx ) : initialValue;
                 if ( valueNoComment != initialValue ) {
                     for ( char ch : valueNoComment ) {
                         if ( !std::isspace( static_cast<unsigned char>(ch) ) ) {
@@ -111,29 +113,24 @@ iniData readConfig() {
     return values;
 }
 
-bool areCharsInString( const std::string& str, const std::vector<char>* passedChars ) {
-    if ( !str.size() )
+bool areCharsInString( const std::string& str, const std::unordered_set<char>* passedCharsPtr ) {
+    if ( str.empty() )
         return false;
 
-    std::vector<char> chars{};
+    const std::unordered_set<char>* charsSetPtr = passedCharsPtr;
 
-    if ( passedChars == nullptr ) {
-        std::vector<char> forbiddenChars{ '<', '>', ':', '"', '/', '\\', '|', '?', '*' };
+    std::unordered_set<char> forbiddenChars;
+    if ( passedCharsPtr == nullptr ) {
+        forbiddenChars = { '<', '>', ':', '"', '/', '\\', '|', '?', '*' };
         forbiddenChars.reserve( 41 );
-        for ( int i{}; i < 32; ++i )
-            forbiddenChars.emplace_back( static_cast<char>(i) );
-        chars = forbiddenChars;
-    } else {
-        chars = *passedChars;
+        for ( char c{}; c < 32; ++c )
+            forbiddenChars.insert( c );
+        charsSetPtr = &forbiddenChars;
     }
 
-    for ( const char chStr : str ) {
-        for ( const char chVec : chars ) {
-            if ( chStr == chVec )
-                return false;
-        }
-    }
+    for ( const char chStr : str )
+        if ( charsSetPtr->count( chStr ) )
+            return true;
 
-
-    return true;
+    return false;
 }

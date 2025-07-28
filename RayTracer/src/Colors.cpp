@@ -1,15 +1,17 @@
 #include "Colors.h"
 
-#include <algorithm> // round
+#include <algorithm> // clamp, roundf
 #include <iostream> // ostream
 #include <iomanip> // setw
 
-Color::Color( int in_r, int in_g, int in_b ) : r{ in_r }, g{ in_g }, b{ in_b } {}
+Color::Color( const int in_r, const int in_g, const int in_b )
+    : r{ in_r }, g{ in_g }, b{ in_b } {
+}
 
-Color::Color( float in_r, float in_g, float in_b )
-    : r{ static_cast<int>(round( in_r * 255.f )) },
-    g{ static_cast<int>(round( in_g * 255.f )) },
-    b{ static_cast<int>(round( in_b * 255.f )) } {
+Color::Color( const float in_r, const float in_g, const float in_b )
+    : r{ static_cast<int>(roundf( in_r * 255.f )) },
+    g{ static_cast<int>(roundf( in_g * 255.f )) },
+    b{ static_cast<int>(roundf( in_b * 255.f )) } {
 }
 
 int Color::GetMaxComponent() {
@@ -28,11 +30,11 @@ Color& Color::operator=( const Color& other ) {
     return *this;
 }
 
-bool Color::operator==( const Color& other ) {
+bool Color::operator==( const Color& other ) const {
     return r == other.r && g == other.g && b == other.b;
 }
 
-Color Color::operator/( const int val ) {
+Color Color::operator/( const int val ) const {
     return {
         static_cast<int>(roundf( static_cast<float>(r) / val )),
         static_cast<int>(roundf( static_cast<float>(g) / val )),
@@ -40,11 +42,27 @@ Color Color::operator/( const int val ) {
     };
 }
 
-Color Color::operator-( const Color& other ) {
+Color Color::operator*( const float val ) const {
+    return {
+        static_cast<int>(roundf( static_cast<float>(r) * val )),
+        static_cast<int>(roundf( static_cast<float>(g) * val )),
+        static_cast<int>(roundf( static_cast<float>(b) * val ))
+    };
+}
+
+Color Color::operator-( const Color& other ) const {
     return {
         std::clamp( r - other.r, 0, 255 ),
         std::clamp( g - other.g, 0, 255 ),
         std::clamp( b - other.b, 0, 255 )
+    };
+}
+
+Color Color::operator+( const Color& other ) const {
+    return {
+        std::clamp( r + other.r, 0, 255 ),
+        std::clamp( g + other.g, 0, 255 ),
+        std::clamp( b + other.b, 0, 255 )
     };
 }
 

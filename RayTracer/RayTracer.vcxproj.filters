@@ -101,6 +101,9 @@
     <ClInclude Include="inc\Materials.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="inc\Rays.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="config\config.ini" />

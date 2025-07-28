@@ -187,6 +187,7 @@ echo ===========================================================================
     <ClInclude Include="inc\Lights.h" />
     <ClInclude Include="inc\Materials.h" />
     <ClInclude Include="inc\Mesh.h" />
+    <ClInclude Include="inc\Rays.h" />
     <ClInclude Include="inc\Render.h" />
     <ClInclude Include="inc\RenderSettings.h" />
     <ClInclude Include="inc\Scene.h" />
