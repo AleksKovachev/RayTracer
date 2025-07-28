@@ -9,7 +9,7 @@ Vector2 Vector2::operator+( const Vector2& val ) const {
 	return Vector2( x + val.x, y + val.y );
 }
 
-FVector2 FVector2::operator+( const double val ) const {
+FVector2 FVector2::operator+( const float val ) const {
 	return FVector2( x + val, y + val );
 }
 
@@ -29,7 +29,7 @@ Vector3& Vector3::operator+=( const Vector3& other ) {
 }
 
 void FVector3::init() {
-	calculateLength();
+	CalculateLength();
 }
 
 FVector3 FVector3::operator+( const FVector3& other ) const {
@@ -38,6 +38,10 @@ FVector3 FVector3::operator+( const FVector3& other ) const {
 
 FVector3 FVector3::operator-( const FVector3& other ) const {
 	return { x - other.x, y - other.y, z - other.z };
+}
+
+FVector3 FVector3::operator-() const {
+	return *this * -1;
 }
 
 FVector3& FVector3::operator+=( const FVector3& other ) {
@@ -55,31 +59,36 @@ FVector3 FVector3::operator*( const FVector3& other ) const {
 }
 
 // Scalar multiplication
-FVector3 FVector3::operator*( const double& other ) const {
+FVector3 FVector3::operator*( const float& other ) const {
 	return { x * other, y * other, z * other };
 }
 
 
-double FVector3::getLength() const {
+float FVector3::GetLength() const {
 	return length;
 }
 
-double FVector3::dot( const FVector3& other ) const {
+float FVector3::Dot( const FVector3& other ) const {
 	return (x * other.x) + (y * other.y) + (z * other.z);
 }
 
 FVector3 FVector3::normalize() {
-	return { x / length, y / length, z / length };
+	if ( length > 0.f )
+		return { x / length, y / length, z / length };
+	return { 0.f, 0.f, 0.f };
 }
 
-void FVector3::normalizeInPlace() {
-	double vecLen{ sqrt( x * x + y * y + z * z ) };
-	x /= vecLen;
-	y /= vecLen;
-	z /= vecLen;
+void FVector3::NormalizeInPlace() {
+	if ( length > 0.f ) {
+		x /= length;
+		y /= length;
+		z /= length;
+		return;
+	}
+	x = y = z = 0.f;
 }
 
-void FVector3::calculateLength() {
+void FVector3::CalculateLength() {
 	length = sqrt( x * x + y * y + z * z );
 }
 

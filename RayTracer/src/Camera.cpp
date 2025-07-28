@@ -1,82 +1,113 @@
 #include "Camera.h"
 #include "SpaceConversions.h"
 #include "Vectors.h"
+#include "utils.h"
 
+#include <cmath>
+#include <numeric>
 #include <vector>
 
-Camera::Camera( ImagePlane imgPlane, FVector3 direction, FVector3 pos )
-    : Obj( pos ), m_imgPlane{ imgPlane }, m_direction{ direction } {
-    m_children.reserve( 1 );
-    m_children.push_back( m_imgPlane );
-}
+//? Currently is moving relatively? Check!!! Fix MoveRel if needed - moveAbs.
+void Camera::Move( const FVector3& relPos ) {
+    const FVector3 moveDirInWorldSpace{ relPos * m_orientation };
 
-void Camera::move( const FVector3& abs_pos ) {
     std::vector<FVector3> childrenRelPos;
     childrenRelPos.reserve( m_children.size() );
 
-    for ( Obj& child : m_children )
-        childrenRelPos.push_back( m_position + child.m_position );
+    for ( Obj* child : m_children )
+        childrenRelPos.push_back( m_position + child->GetLocation() );
+        //childrenRelPos.push_back( child->getLocation() - m_location );
 
-    m_position = abs_pos;
-
+    m_position += moveDirInWorldSpace;
     for ( size_t i{}; i < m_children.size(); ++i )
-        m_children[i].m_position = abs_pos + childrenRelPos[i];
+        m_children[i]->Move( relPos + childrenRelPos[i] );
 }
 
-void Camera::moveRel( const FVector3& rel_pos ) {
-    m_position += rel_pos;
-
-    for ( Obj& child : m_children ) {
-        child.m_position += rel_pos;
-    }
+void Camera::init() {
+    int gcd = std::gcd( static_cast<int>(m_imgPlane.resolution.x), static_cast<int>(m_imgPlane.resolution.y) );
+    m_aspectRatio = { m_imgPlane.resolution.x / gcd, m_imgPlane.resolution.y / gcd };
 }
 
-FVector3 Camera::generateRay( const int x, const int y ) const {
-    FVector2 ndcCoords{};
-    FVector2 screenCoords{};
-    FVector2 fixedAspectRatio{};
-    ndcCoords = ray2NDC( x, y, m_imgPlane );
-    screenCoords = NDC2ScreenSpace( ndcCoords );
-    fixedAspectRatio = getFixedAspectRatio( screenCoords, m_imgPlane );
-    return FVector3{ fixedAspectRatio, m_imgPlane.m_position.z }.normalize();
+void Camera::MoveAbs( const FVector3& absPos ) {
+    m_position = absPos;
+
+    // TODO Handle children movement
 }
 
-Color Camera::getTriangleIntersection(
+FVector3 Camera::GenerateRay( const int x, const int y ) const {
+    FVector2 ndcCoords = ray2NDC( x, y, m_imgPlane );
+    FVector2 screenCoords = NDC2ScreenSpace( ndcCoords );
+    FVector2 fixedAspectRatio = getFixedAspectRatio( screenCoords, m_imgPlane );
+    FVector3 rayDirection = FVector3{ fixedAspectRatio, -1.f * m_imgPlane.distanceFromCamera };
+    return ApplyRotation( rayDirection ).normalize();
+}
+
+void Camera::Dolly( float val ) {
+    Move( { m_position.x, m_position.y, val } );
+}
+
+void Camera::Truck( float val ) {
+    Move( { val, m_position.y, m_position.z } );
+}
+
+void Camera::Pedestal( float val ) {
+    Move( { m_position.x, val, m_position.z } );
+}
+
+void Camera::Pan( const float deg ) {
+    Rotate( 0.f, deg, 0.f );
+}
+
+void Camera::Tilt( const float deg ) {
+    Rotate( deg, 0.f, 0.f );
+}
+
+void Camera::Roll( const float deg ) {
+    Rotate( 0.f, 0.f, deg );
+}
+
+void Camera::RotateAroundPoint( const FVector3& dist, const FVector3& angle ) {
+    Move( dist );
+    Rotate( angle );
+    Move( -dist );
+}
+
+Color Camera::GetTriangleIntersection(
     const FVector3 ray,
     const std::vector<Triangle>& triangles,
     const Camera& camera
 ) const {
     Color blackBG{ 0, 0, 0 };
     Color& pixelColor{ blackBG };
-    double rayProj{};
-    double rayPlaneDist{};
-    double rayPointDist{}; // Ray-to-Point scale factor
-    FVector3 intersectionPt{};
-    double intersectionPLen{ std::numeric_limits<double>::max() };
-    double closestIntersectionP{ std::numeric_limits<double>::max() };
+    float closestIntersectionP{ std::numeric_limits<float>::max() };
 
     for ( const Triangle& triangle : triangles ) {
         // Ignore if Ray is parallel or hits triangle back.
-        rayProj = ray.dot( triangle.getNormal() );
-        if ( rayProj >= 0.0 )
+        float rayProj = ray.Dot( triangle.GetNormal() );
+        if ( isGreaterEqualThan(rayProj, 0.f ) )
             continue;
-        rayPlaneDist = triangle.getVert( 0 ).dot( triangle.getNormal() );
 
+        float rayPlaneDist = (triangle.GetVert( 0 ) - camera.m_position).Dot( triangle.GetNormal() );
         // Ray is not towards Triangle's plane
-        if ( rayPlaneDist >= 0 )
+        if ( isGreaterEqualThan(rayPlaneDist, 0.f) )
             continue; // rayPlaneDist > 0 -> Back-face culling
 
-        rayPointDist = (abs( rayPlaneDist ) * ray.getLength()) / abs( rayProj ); // t
+        /* Check if rayPlaneDist direction is needed or length
+        * abs(rayPlaneDist) should be multiplied by Ray length, but is
+        * ommited as Rays are unit Vectors so their length is always 1 */
+        float rayPointDist = rayPlaneDist / rayProj; // Ray-to-Point scale factor
+        //? Creates floating triangles if parallel check is ==, ray-towards-tri is >=.
+        //? float rayPointDist = abs( rayPlaneDist ) / abs( rayProj );
 
         // Ray parametric equation - represent points on a line going through a Ray.
-        intersectionPt = camera.m_position + (ray * rayPointDist);
-        intersectionPLen = intersectionPt.getLength();
+        FVector3 intersectionPt = camera.m_position + (ray * rayPointDist);
+        float intersectionPLen = intersectionPt.GetLength();
 
         // Ignore intersection if a closer one to the Camera has already been found
         if ( intersectionPLen > closestIntersectionP )
             continue;
 
-        if ( triangle.isPointInside( intersectionPt ) ) {
+        if ( triangle.IsPointInside( intersectionPt ) ) {
             closestIntersectionP = intersectionPLen;
             pixelColor = triangle.color;
         }

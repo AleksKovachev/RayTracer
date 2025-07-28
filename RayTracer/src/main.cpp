@@ -2,17 +2,18 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
-#include <iomanip>
 #include <iostream>
+#include <iomanip>
 #include <limits>
 #include <map>
 #include <memory>
 #include <random>
 #include <set>
-#include <sstream>
 #include <stack>
 #include <string>
+#include <sstream>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -35,20 +36,27 @@ struct Params {
     std::string fileName;
     Camera camera;
 
-    int getMaxColorComp( const int colorDepth ) const {
-        return static_cast<int>( pow( 2, colorDepth ) - 1 );
-    }
-
     Params( const int width, const int height, const Camera& camera, const std::string& fileName, int colorDepth = 8 )
         : width{ width }, height{ height }, camera{ camera }, fileName{
         fileName
-        }, maxColorComp{ getMaxColorComp( colorDepth ) } {
+        }, maxColorComp{ (1 << colorDepth) - 1 } {
     }
 };
 
+void writeColorToFile( std::ofstream& stream, const Color& pixelColor ) {
+    unsigned char r = static_cast<unsigned char>(pixelColor.r);
+    unsigned char g = static_cast<unsigned char>(pixelColor.g);
+    unsigned char b = static_cast<unsigned char>(pixelColor.b);
+    stream.write( reinterpret_cast<const char*>(&r), 1 );
+    stream.write( reinterpret_cast<const char*>(&g), 1 );
+    stream.write( reinterpret_cast<const char*>(&b), 1 );
+}
+
 void render( const std::vector<Triangle>& triangles, const Params& params ) {
-    std::ofstream ppmFileStream( params.fileName + ".ppm", std::ios::out | std::ios::binary );
-    ppmFileStream << "P3\n";
+    std::string saveDir{ "renders" };
+    std::filesystem::create_directories( saveDir );
+    std::ofstream ppmFileStream( saveDir + "/" + params.fileName + ".ppm", std::ios::binary);
+    ppmFileStream << "P6\n";
     ppmFileStream << params.width << " " << params.height << "\n";
     ppmFileStream << params.maxColorComp << "\n";
 
@@ -58,38 +66,129 @@ void render( const std::vector<Triangle>& triangles, const Params& params ) {
 
     for ( int y{}; y < params.height; ++y ) {
         for ( int x{}; x < params.width; ++x ) {
-            ray = params.camera.generateRay( x, y );
-            pixelColor = params.camera.getTriangleIntersection( ray, triangles, params.camera );
-
-            ppmFileStream << pixelColor << "  ";
+            ray = params.camera.GenerateRay( x, y );
+            pixelColor = params.camera.GetTriangleIntersection( ray, triangles, params.camera );
+            writeColorToFile( ppmFileStream, pixelColor );
         }
-        ppmFileStream << "\n";
         std::cout << "\rLine: " << y + 1 << " / " << params.height << std::flush;
     }
- 
+
     ppmFileStream.close();
 }
 
-int main() {
-    Camera camera{};
-    Params params{ 1920, 1080, camera, "renders/Pyramid" };
-    // Lecture Triangle
-    Triangle triangle1{ {-1.75, -1.75, -3}, {1.75, -1.75, -3}, {0, 1.75, -3} };
-    triangle1.color = Color( getInt( 0, 255 ), getInt( 0, 255 ), getInt( 0, 255 ) );
-
-    // Made-up Traingle
-    Triangle triangle2{ {-2.31, -2.35, -4.3}, {5.03, -0.93, -5.2}, {1.87, 3.17, -3.8} };
-    triangle2.color = Color( getInt( 0, 255 ), getInt( 0, 255 ), getInt( 0, 255 ) );
+void renderOverlappingTriangles( Params& params ) {
+    params.fileName = "Triangles";
 
     // Two Triangles overlapping
     std::vector<Triangle> tris;
     tris.reserve( 2 );
+
+    // Lecture Triangle
+    Triangle triangle1{ {-1.75f, -1.75f, -3.f}, {1.75f, -1.75f, -3.f}, {0.f, 1.75f, -3.f} };
+    triangle1.color = Color( 255, 0, 0 );
+
+    // Made-up Traingle
+    Triangle triangle2{ {-2.31f, -2.35f, -4.3f}, {5.03f, -0.93f, -5.2f}, {1.87f, 3.17f, -3.8f} };
+    triangle2.color = Color( 0, 255, 0 );
+
     tris.push_back( triangle1 );
     tris.push_back( triangle2 );
 
-    std::vector<Triangle> pyramid{ getPyramid() };
+    render( tris, params );
+}
 
-    render( pyramid, params);
+void renderCameraTruckAnimation( std::vector<Triangle> shape, Params& params ) {
+    for ( int i{}; i < 30; ++i ) {
+        FVector3 camCurrLoc = params.camera.GetLocation();
+        camCurrLoc.x -= 0.2f;
+        params.camera.Move( camCurrLoc );
+        params.fileName = "Truck" + std::to_string( i );
+        render( shape, params );
+    }
+}
+
+void renderPyramid( Params& params ) {
+    params.fileName = "Pyramid";
+
+    Pyramid pyramid{ { 0, 0, 0 } };
+    std::vector<Triangle> ground{getGround()};
+    //pyramid.shape.insert( pyramid.shape.end(), ground.begin(), ground.end() );
+    params.camera.m_imgPlane.distanceFromCamera = 10.f; // Change FoV
+
+    FVector3 location{ pyramid.GetLocation() };
+    location.y = 1.f;
+    //pyramid.Move( location );
+    params.camera.Move( { 0.f, 100.f, 0.f } );
+    params.camera.Rotate( { 90.f, 0.f, 0.f } );
+
+    render( pyramid.shape, params );
+}
+
+void renderRotationAroundPyramid( Params& params ) {
+    Pyramid pyramid{ {0.f, 0.f, 0.f } };
+
+    int frame{};
+
+    float cameraDist{ 5.f };
+    params.camera.Move( { 0.f, 2.f, cameraDist } ); // Set initial position
+
+    do {
+        params.camera.Move( { 0.f, 0.f, -cameraDist } );
+        params.camera.Rotate( { 0.f, frame * 10.f, 0.f } );
+        params.camera.Move( { 0.f, 0.f, cameraDist } );
+
+        params.fileName = "PyramidTurntable" + std::to_string( frame + 1 );
+        render( pyramid.shape, params );
+        ++frame;
+    } while ( frame < 30 );
+}
+
+void interactiveRender(Params& params) {
+    iniData interactiveData;
+
+    while ( true ) {
+        interactiveData = readConfig();
+
+        renderPyramid( params );
+    }
+}
+
+
+int main() {
+    Camera camera{};
+    Params params{ 1920, 1080, camera, "Test" };
+
+    //! Task 1 - pan Camera by 30 deg
+    //params.camera.Pan( 30.f );
+    //renderOverlappingTriangles( params );
+
+    //! Task 2 - Generate image, where Camera not at 0, Triangle is visible.
+    //params.camera.Dolly( 5.f );
+    //params.camera.Truck( 5.f );
+    //params.camera.Pedestal( 2.f );
+    //renderOverlappingTriangles( params );
+
+    //! Task 3 - Generate an image that combines Camera movements
+    //params.camera.Dolly( 2.f );
+    //params.camera.Pedestal( 4.f );
+    //params.camera.Tilt( 30.f ); //? Tilts down. Shouldn't it be up?
+    //params.camera.Pan( 15.f );
+    //renderOverlappingTriangles( params );
+
+    //! Task 4 - Implement a function combining moves
+    // params.camera.RotateAroundPoint( { 0.f, 0.f, 5.f }, { 0.f, 10.f, 0.f } );
+
+    //! Task5 - Generate short video with animated Camera.
+    //renderRotationAroundPyramid( params );
+
+    //renderOverlappingTriangles( params );
+
+    //renderPyramid( params );
+    //renderRotationAroundPyramid( params );
+
+    //renderCameraTruckAnimation( Pyramid( { 0, 0, 0 } ).shape, params );
+
+    //interactiveRender( params );
 
     return 0;
 }

@@ -11,19 +11,19 @@ struct Vector2 {
     Vector2 operator+( const Vector2& val ) const;
 };
 
-/* FVector2 structure using doubles supporting addition with another FVector2 and
-a scalar. Initializes using doubles or a Vector2. */
+/* FVector2 structure using floats supporting addition with another FVector2 and
+a scalar. Initializes using floats or a Vector2. */
 struct FVector2 {
-    double x, y;
+    float x, y;
 
-    FVector2( double in_x = 0, double in_y = 0 )
+    FVector2( float in_x = 0.f, float in_y = 0.f )
         : x{ in_x }, y{ in_y } {
     }
     FVector2( Vector2 vec )
-        : x{ static_cast<double>(vec.x) }, y{ static_cast<double>(vec.y) } {
+        : x{ static_cast<float>(vec.x) }, y{ static_cast<float>(vec.y) } {
     }
 
-    FVector2 operator+( const double val ) const;
+    FVector2 operator+( const float val ) const;
     FVector2 operator+( const FVector2& val ) const;
 };
 
@@ -35,33 +35,34 @@ struct Vector3 {
     Vector3& operator+=( const Vector3& other );
 };
 
-/* FVector3 structure using doubles supporting addition with another FVector3 and
-+= addition. Initializes using doubles or a Vector2 and a double. */
-struct FVector3 {
-    double x, y, z;
+/* FVector3 structure using floats supporting addition with another FVector3 and
++= addition. Initializes using floats or a Vector2 and a float. */
+class FVector3 {
+public:
+    float x, y, z;
 
-    FVector3() : x{ 0.0 }, y{ 0.0 }, z{ 0.0 } { init(); };
+    FVector3() : x{ 0.f }, y{ 0.f }, z{ 0.f } { init(); };
 
-    // Make c-tor accept any combination of int/double values
+    // Make c-tor accept any combination of int/float values
     template <typename T1, typename T2, typename T3,
         typename = std::enable_if_t<
-        std::is_arithmetic_v<T1> && 
-        std::is_arithmetic_v<T2> && 
+        std::is_arithmetic_v<T1> &&
+        std::is_arithmetic_v<T2> &&
         std::is_arithmetic_v<T3>>>
     FVector3( T1 in_x, T2 in_y, T3 in_z )
-        : x{ static_cast<double>(in_x) },
-        y{ static_cast<double>(in_y) },
-        z{ static_cast<double>(in_z) } {
+        : x{ static_cast<float>(in_x) },
+        y{ static_cast<float>(in_y) },
+        z{ static_cast<float>(in_z) } {
         init();
     }
-    FVector3( const FVector2& vec, double in_z )
+    FVector3( const FVector2& vec, float in_z )
         : x{ vec.x }, y{ vec.y }, z{ in_z } {
         init();
     }
     FVector3( const Vector3& vec )
-        : x{ static_cast<double>(vec.x) },
-        y{ static_cast<double>(vec.y) },
-        z{ static_cast<double>(vec.z) } {
+        : x{ static_cast<float>(vec.x) },
+        y{ static_cast<float>(vec.y) },
+        z{ static_cast<float>(vec.z) } {
         init();
     }
 
@@ -69,25 +70,26 @@ struct FVector3 {
 
     FVector3 operator+( const FVector3& other ) const;
     FVector3 operator-( const FVector3& other ) const;
+    FVector3 operator-() const;
     FVector3& operator+=( const FVector3& other );
     // Scalar multiplication
-    FVector3 operator*( const double& other ) const;
+    FVector3 operator*( const float& other ) const;
     // Cross product
     FVector3 operator*( const FVector3& other ) const;
 
-    // Returns vector length
-    double getLength() const;
+    // Returns vector length/magnitude
+    float GetLength() const;
     // Dot product with given vector
-    double dot( const FVector3& other ) const;
+    float Dot( const FVector3& other ) const;
     // Returns normalized version of this vector
     FVector3 normalize();
     // Normalizes this vector in-place
-    void normalizeInPlace();
+    void NormalizeInPlace();
 private:
-    double length;
+    float length;
 
-    // Calculates the length of this vector
-    void calculateLength();
+    // Calculates the length/magnitude of this vector
+    void CalculateLength();
 };
 
 // Easy printing of a Vector2
