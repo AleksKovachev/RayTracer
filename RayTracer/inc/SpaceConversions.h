@@ -24,10 +24,10 @@ FVector2 NDC2ScreenSpace( const FVector2& coords );
 FVector2 ScreenSpace2NDC( const FVector2& coords );
 
 // Convert Screem Space to NDC (NDC to NSC) [0.0, 1.0] for a single value
-double ScreenSpace2NDC( double val );
+float ScreenSpace2NDC( float val );
 
 // Convert Screem Space to NDC (NDC to NSC) [0.0, 1.0] for a single value, inverting it
-double ScreenSpace2NDCInvert( double val );
+float ScreenSpace2NDCInvert( float val );
 
 // Apply aspect ratio correction to an FVector2 (pixel).
 FVector2 getFixedAspectRatio( const FVector2& vec, const ImagePlane& imgPlane );
