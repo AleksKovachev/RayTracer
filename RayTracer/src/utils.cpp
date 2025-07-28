@@ -1,5 +1,6 @@
 #include "utils.h"
 
+#include <cassert>
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -56,10 +57,7 @@ iniData readConfig() {
     std::ifstream file( "./config/config.ini" );
     iniData values;
 
-    if ( !file.is_open() ) {
-        std::cerr << "Failed to open configuration file!\n";
-        std::exit( 1 );
-    }
+    assert( file.is_open() );
 
     std::string line;
     std::string varName;

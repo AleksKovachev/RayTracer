@@ -40,20 +40,22 @@ public:
     FVector3 operator-( const FVector3& other ) const;
     FVector3 operator-() const;
     FVector3& operator+=( const FVector3& other );
+    bool operator==( const FVector3& other );
     // Scalar multiplication
     FVector3 operator*( const float& other ) const;
     // Cross product
     FVector3 operator*( const FVector3& other ) const;
 
     // Returns vector length/magnitude
-    float GetLength() const;
+    float GetLength();
     // Dot product with given vector
     float Dot( const FVector3& other ) const;
     // Returns normalized version of this vector
-    FVector3 normalize();
+    FVector3 Normalize() const;
     // Normalizes this vector in-place
     void NormalizeInPlace();
 private:
+    bool lengthCalculated;
     float length;
 
     // Calculates the length/magnitude of this vector

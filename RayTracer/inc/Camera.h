@@ -6,7 +6,7 @@
 #include "Bases.h" // Obj
 #include "Colors.h" // Color, Colors::Black
 #include "Mesh.h" // PreparedMesh
-#include "RenderSettings.h" // IntersectionData
+#include "RenderSettings.h" // IntersectionData, RenderMode
 #include "Triangle.h"
 #include "Vectors.h" // FVector3
 
@@ -67,13 +67,20 @@ struct Camera : public Obj {
     void RotateAroundPoint( const FVector3& dist, const FVector3& angle );
 
     // Traces ShadowRay from hit point to light sources.
-    static bool IsInShadow( const FVector3& ray, const IntersectionData& data, const FVector3& triN );
+    static bool IsInShadow(
+        const FVector3& ray,
+        const IntersectionData& data,
+        const FVector3& triN,
+        const float distToLight
+    );
 
     // Returns the color of the Triangle closest to the camera ray
     Color GetTriangleIntersection(
         const FVector3& ray,
         const std::vector<PreparedMesh>& meshes,
-        const Scene& scene
+        const Scene& scene,
+        const unsigned reflectionDepth,
+        const FVector3& rayOrigin
     ) const;
 
 private:

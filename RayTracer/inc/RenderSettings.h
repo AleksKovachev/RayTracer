@@ -10,6 +10,14 @@ struct Color;
 class Scene;
 class FVector3;
 
+// Enum for choosing render style
+enum class RenderMode {
+	ObjectColor,
+	ShadedFlat,
+	ShadedSmooth,
+	Barycentric
+};
+
 // Global scene settings
 struct Settings {
 	int renderWidth;
@@ -19,6 +27,9 @@ struct Settings {
 	std::string saveDir;
 	std::string saveName;
 	ColorMode colorMode;
+	float shadowBias;
+	unsigned reflectionDepth;
+	RenderMode renderMode;
 
 	Settings( const int colorDepth = 8 );
 };
