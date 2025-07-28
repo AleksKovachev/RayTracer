@@ -365,7 +365,7 @@ Color Render::Shade( const Ray& ray, const IntersectionData& data ) const {
     }
 
     return pixelColor;
-}
+    }
 
 IntersectionData Render::TraceRay( const Ray& ray, const float maxT ) const {
     IntersectionData intersectData{};
@@ -391,7 +391,7 @@ IntersectionData Render::TraceRay( const Ray& ray, const float maxT ) const {
             else {
                 if ( areEqual( rayProj, 0.f ) )
                     continue;
-            }
+}
 
             float rayPlaneDist = (triangle.GetVert( 0u ).pos - ray.origin)
                 .Dot( triangle.GetNormal() );
@@ -410,7 +410,7 @@ IntersectionData Render::TraceRay( const Ray& ray, const float maxT ) const {
                  *           Ray hits beyond the light source */
                 if ( isLessThan( rayPointDist, bias ) )
                     continue; // This intersection is not valid for shadow casting.
-            }
+}
 
             /* With shadow rays, maxT is the distance to the light source.
              * Geometry on the other side of the light shouldn't cast shadows here.
@@ -493,7 +493,7 @@ void Render::RenderRotationAroundObject( const FVector3& initialPos, const FVect
         saveName = "Orbit" + std::to_string( frame + 1 );
         RenderImage();
     }
-}
+    }
 
 std::ofstream Render::PrepareScene() {
     const Settings& settings{ m_scene.GetSettings() };

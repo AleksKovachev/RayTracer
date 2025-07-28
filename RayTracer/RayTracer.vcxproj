@@ -162,6 +162,9 @@ echo ===========================================================================
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="config\config.ini" />
+  </ItemGroup>
+  <ItemGroup>
     <ClCompile Include="src\Bases.cpp" />
     <ClCompile Include="src\Colors.cpp" />
     <ClCompile Include="src\DebugObjects.cpp" />
@@ -193,9 +196,6 @@ echo ===========================================================================
     <ClInclude Include="inc\SpaceConversions.h" />
     <ClInclude Include="inc\utils.h" />
     <ClInclude Include="inc\Vectors.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="config\config.ini" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

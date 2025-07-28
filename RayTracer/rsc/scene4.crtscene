@@ -23,7 +23,11 @@
 	
 	"lights": [
 		{
+<<<<<<<< HEAD:RayTracer/rsc/scene4.crtscene
 			"intensity": 100,
+========
+			"intensity": 40,
+>>>>>>>> main:RayTracer/rsc/scene2.crtscene
 			"position": [
 				0, 1.3, -2
 			]
@@ -83,7 +87,7 @@
 				1, 0, 0
 			],
 			"smooth_shading": true
-		}
+		}			
 	],
 	
 	"objects": [
@@ -592,7 +596,7 @@
 				3, 2, 1
 			]
 		},
-		{
+		{		
 			"material_index": 3,		
 			"vertices": [
 				1.5, -1.5, -1.5,
@@ -646,7 +650,7 @@
 			"triangles": [
 				0, 2, 1,
 				1, 2, 3
-			]
+			]			
 		}
 	]
 }

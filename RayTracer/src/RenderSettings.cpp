@@ -6,3 +6,4 @@ Settings::Settings( const int colorDepth )
 	shadowBias{ 0.1f /* Higher values create artifacts */ }, refractBias{ 0.001f },
 	renderMode{ RenderMode::Material }, pathDepth{ 5 }, ignoreBackface{ true } {
 }
+

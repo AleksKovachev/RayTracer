@@ -83,7 +83,7 @@
 				1, 0, 0
 			],
 			"smooth_shading": true
-		}
+		}			
 	],
 	
 	"objects": [
@@ -194,7 +194,7 @@
 			"triangles": [
 				0, 2, 1,
 				1, 2, 3
-			]
+			]			
 		}
 	]
 }
