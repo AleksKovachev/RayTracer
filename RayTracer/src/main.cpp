@@ -1,32 +1,33 @@
-#include <iostream>
-#include <string>
-#include <vector>
-#include <memory>
-#include <map>
-#include <set>
-#include <unordered_map>
-#include <unordered_set>
-#include <cstring>
-#include "sstream"
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
-#include <stack>
-#include <iomanip>
-#include <fstream>
-#include <algorithm>
-#include <random>
-#include <limits>
+#include <cstring>
 #include <filesystem>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <limits>
+#include <map>
+#include <memory>
+#include <random>
+#include <set>
+#include <stack>
+#include <sstream>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 #include "Bases.h"
 #include "Camera.h"
+#include "DebugObjects.h"
 #include "Render.h"
 #include "Scene.h"
-#include "DebugObjects.h"
 #include "SpaceConversions.h"
 #include "Triangle.h"
-#include "Vectors.h"
 #include "utils.h"
+#include "Vectors.h"
+
 
 //void interactiveRender(Params& params) {
 //    iniData interactiveData;
