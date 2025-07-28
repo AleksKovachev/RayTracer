@@ -3,68 +3,56 @@
 
 #include <string> // string
 
-#include "Colors.h" // Color, ColorMode
-#include "Mesh.h" // PreparedMesh
+#include "Colors.h" // Color
+#include "RenderMode.h" // RenderMode
+#include "Triangle.h" // Triangle
 #include "Vectors.h" // FVector2, FVector3
 
-enum class ColorMode;
 struct Color;
 class FVector3;
 struct Material;
 class Scene;
-class Triangle;
 
 constexpr int InvalidIdx = -1;
 
-// Enum for choosing render style
-enum class RenderMode {
-	// Render the object with its override material. Either mesh or triangle color.
-	ObjectColor,
-	Barycentric, // Render object visualizing the Barycentric coordinates.
-	Normals, // Render object using normal vectors as colors.
-	ShadedNormals, // Render object using normal vectors as colors (with shading).
-	Material // Render the object with its material.
-};
 
-// Global scene settings
+// Global scene settings.
 struct Settings {
-	unsigned renderWidth;
-	unsigned renderHeight;
-	int maxColorComp; // The maximum color component for the scene (color-depth).
-	Color BGColor;
-	std::string saveDir;
-	std::string saveName;
-	ColorMode colorMode;
+	unsigned renderWidth{};
+	unsigned renderHeight{};
+	unsigned colorDepth{ 8u };
+	// The maximum color component for the scene (color-depth).
+	int maxColorComp{ (1 << colorDepth) - 1 };
+	Color BGColor{};
+	std::string saveDir{ "renders" };
+	std::string saveName{};
 	// Define a small epsilon to avoid self - intersection artifacts. Often
 	// 1e-3 - 1e-5 is used for ray origins. Smaller value if scene scale is
 	// tiny. A good approach is to have an adaptive shadow bias, based on the
 	// size of the Triangle hit or the size of the object. Another common
 	// technique is to use dot product of the ray direction and the surface
 	// Normal. If the light ray is nearly parallel - the bias shuold be higher.
-	float shadowBias;
+	float shadowBias{ 0.1f };
 	// Correction value to compensate floating point errors in refraction calculations.
-	float refractBias;
+	float refractBias{ 0.001f };
 	// The maximum number of ray bounces. If exceeded - ray returns BG color.
-	int pathDepth;
-	RenderMode renderMode;
+	int pathDepth{ 5 };
+	RenderMode renderMode{ RenderMode::Material };
 	// Whether the camera rays should hit or ignore the triangle's backfaces.
-	bool ignoreBackface;
-	unsigned bucketSize; // Bucket size for bucket rendering. Defaults to 24.
-
-	// @param[in] colorDepth: The color's bit depth. Defaults to 8-bit colors.
-	Settings( const int colorDepth = 8 );
+	bool ignoreBackface{ true };
+	unsigned bucketSize{ 24u }; // Bucket size for bucket rendering. Defaults to 24.
+	unsigned accTreeMaxDepth{ 15u }; // Maximum depth for building acceleration tree.
+	// Maximum number of triangles to store in an AccTree node.
+	unsigned maxAABBTriangleCount{ 10u };
 };
 
 
-// A Structure that holds data crucial for rendering
+// Data crucial for rendering.
 struct IntersectionData {
+	bool filled{ false };
 	FVector3 hitPoint; // The hit point in 3D world space.
 	FVector3 faceNormal; // The normal vector of the face at the hit point.
-	// The normal in the hit point interpolated by the vertex normals of the triangle.
-	FVector3 interpVertNormal;
-	FVector2 baryCoords; // Where the triangle is hit.
 	const Material* material = nullptr; // The material of the hit object.
-	int objectIdx = InvalidIdx; // Closes object to the ray origin.
 	// Closes triangle of the closes object to the ray origin.
 	int triangleIdx = InvalidIdx;
 

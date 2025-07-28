@@ -7,17 +7,19 @@
 constexpr int vertsInTriangle{ 3 };
 
 struct Vertex {
-    FVector3 pos;
-    FVector3 normal; // Normal vector of the vertex.
-    FVector3 UVCoords;
-    int origIdx; // Index of this vertex in the scene file.
+    FVector3 pos{};
+    FVector3 normal{}; // Normal vector of the vertex.
+    FVector3 UVCoords{};
+    int origIdx{}; // Index of this vertex in the scene file.
 };
 
 
 // Triangle class with position vertices.
 class Triangle {
 public:
-    Color color;
+    unsigned matIdx;
+    unsigned overrideMatIdx;
+    unsigned colorIdx;
 
     Triangle();
     // @param[in] vert0: The first triplet vertex position.
@@ -29,7 +31,7 @@ public:
     // @param[in] vet2: The last remaining vertex.
     Triangle( const Vertex&, const Vertex&, const Vertex& );
 
-    // Calculates Edges, Normal Vector and Area.
+    // Calculates Normal Vector and Area.
     // @param[in] vert0: The first triplet vertex position.
     // @param[in] vert1: The next counter-cloackwise vertex position.
     // @param[in] vet2: The last remaining vertex position.
@@ -50,7 +52,7 @@ public:
 
     // Assigns value to the normal vector of the vertex with the provided index
     // @param[in] vertIdx: The relative to the triangle vertex index to set.
-    // @param[in] val: The vertext normal vector value to set.
+    // @param[in] val: The vertex normal vector value to set.
     void SetVertexNormal( const unsigned, const FVector3& );
 
     // Checks if a given point is inside the triangle
@@ -61,7 +63,6 @@ private:
     /* v0, v1, v2 are the indices of this array. The order matters
     for cross product and Triangle normal vector calculation. */
     Vertex verts[vertsInTriangle];
-    FVector3 edges[vertsInTriangle];
     FVector3 normal;
     float area;
 
@@ -69,6 +70,10 @@ private:
     void CalculateNormal();
     // Calculates the area of this triangle.
     void CalculateArea();
+
+    //edge0 = vert1 - vert0;
+    //edge1 = vert2 - vert1;
+    //edge2 = vert0 - vert2;
 };
 
 #endif // SHAPES_H

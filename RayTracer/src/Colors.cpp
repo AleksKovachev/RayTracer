@@ -78,3 +78,7 @@ Color& Color::operator+=( const Color& other ) {
     b += other.b;
     return *this;
 }
+
+namespace Colors {
+    const Color& Grey = Gray;
+}

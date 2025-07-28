@@ -5,9 +5,10 @@
 ImageBuffer::ImageBuffer( const unsigned width, const unsigned height )
     : m_width( width ), m_height( height ) {
     // Allocates memory for the image buffer and initializes it.
-    data = new Color[width * height];
+    unsigned totalPixels{ width * height };
+    data = new Color[totalPixels];
 
-    for ( unsigned i{}; i < width * height; ++i ) {
+    for ( unsigned i{}; i < totalPixels; ++i ) {
         data[i] = Color{};
     }
 }
@@ -28,12 +29,12 @@ Color* ImageBuffer::operator[]( const unsigned idx ) {
     if ( idx >= m_height ) {
         throw std::out_of_range( "Row index out of bounds." );
     }
-    return data + (idx * m_width);
+    return data + (static_cast<size_t>(idx) * m_width);
 }
 
 const Color* ImageBuffer::operator[]( const unsigned idx) const {
     if ( idx >= m_height ) {
         throw std::out_of_range( "Row index out of bounds." );
     }
-    return data + (idx * m_width);
+    return data + (static_cast<size_t>(idx) * m_width);
 }

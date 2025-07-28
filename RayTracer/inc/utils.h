@@ -44,31 +44,31 @@ bool areEqual( const float a, const float b, const float epsilon = 1e-9f );
 // @param[in] epsilon: An error range, within which "a" is considered less than "b".
 // Defaults to 1e-9.f.
 // @return Boolean indication if "a" is less than "b" within the epsilon range.
-bool isLessThan( const float a, const float b, const float epsilon = 1e-9f );
+bool isLT( const float a, const float b, const float epsilon = 1e-9f );
 
-// Check if float value A is greater than B with an epsilon range of error
+// Check if float value A is greater than B with an epsilon range of error.
 // @param[in] a: The first number that will be compared.
 // @param[in] b: The second number that will be compared.
 // @param[in] epsilon: An error range, within which "a" is considered greater than "b".
 // Defaults to 1e-9.f.
 // @return Boolean indication if "a" is greater than "b" within the epsilon range.
-bool isGreaterThan( const float a, const float b, const float epsilon = 1e-9f );
+bool isGT( const float a, const float b, const float epsilon = 1e-9f );
 
-// Check if float value A is less than or equal to B with an epsilon range of error
+// Check if float value A is less than or equal to B with an epsilon range of error.
 // @param[in] a: The first number that will be compared.
 // @param[in] b: The second number that will be compared.
 // @param[in] epsilon: An error range, within which "a" is considered to be
 // less than or equal to "b". Defaults to 1e-9.f.
 // @return Boolean indication if "a" is less than or equal to "b" within the epsilon range.
-bool isLessEqualThan( const float a, const float b, const float epsilon = 1e-9f );
+bool isLE( const float a, const float b, const float epsilon = 1e-9f );
 
-// Check if float value A is greater than or equal to B with an epsilon range of error
+// Check if float value A is greater than or equal to B with an epsilon range of error.
 // @param[in] a: The first number that will be compared.
 // @param[in] b: The second number that will be compared.
 // @param[in] epsilon: An error range, within which "a" is considered to be
 // greater than or equal to "b". Defaults to 1e-9.f.
 // @return Boolean indication if "a" is greater than or equal to "b" within the epsilon range.
-bool isGreaterEqualThan( const float a, const float b, const float epsilon = 1e-9f );
+bool isGE( const float a, const float b, const float epsilon = 1e-9f );
 
 // Relative Comparison for floats that vary greatly in magnitude.
 // @param[in] a: The first number that will be compared.

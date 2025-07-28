@@ -1,9 +1,8 @@
-#include "Colors.h" // Colors::Black, Colors::Red
 #include "Materials.h"
 
 #include "stb_image.h" // stbi_image_free
 
-#include <iostream> // cerr, endl
+#include <cstring> // memcpy
 
 constexpr const char* INVALID = "<INVALID>";
 
@@ -43,7 +42,9 @@ Material::Material()
 	ior{ InvalidIOR } {
 }
 
-Material::Material( const MaterialType& matType, const Texture& texture, const bool smShading )
+Material::Material(
+	const MaterialType& matType, const Texture& texture, const bool smShading
+)
 	: type{ matType },
 	texName{ GenerateDefaultName( NameType::Texture ) },
 	texture{ texture },

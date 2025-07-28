@@ -1,11 +1,11 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include <vector>
+#include <vector> // vector
 
 #include "Bases.h" // Obj
 #include "Rays.h" // Ray, RayType
-#include "Vectors.h" // FVector3
+#include "Vectors.h" // FVector2, Vector3
 
 class Scene;
 struct Settings;

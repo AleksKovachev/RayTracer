@@ -78,16 +78,10 @@ struct Color {
 };
 
 
-enum class ColorMode {
-    LoadedMaterial, // Use the color from the mesh' material.
-    RandomMeshColor, // Use a random color for each mesh.
-    RandomTriangleColor // Use a random color for each triangle in the scene.
-};
-
-
 namespace Colors {
     const Color Black{ 0.f, 0.f, 0.f };
     const Color White{ 1.f, 1.f, 1.f };
+    const Color Gray{ 0.75f, 0.75f, 0.75f };
     const Color Red{ 1.f, 0.f, 0.f };
     const Color Green{ 0.f, 1.f, 0.f };
     const Color Blue{ 0.f, 0.f, 1.f };
@@ -100,6 +94,8 @@ namespace Colors {
     const Color LightMagenta{ 1.f, 0.5f, 1.f }; // Pink
     const Color LightBlue{ 0.5f, 0.5f, 1.f };
     const Color LightRed{ 1.f, 0.5f, 0.5f };
+
+    extern const Color& Grey;
 }
 
 #endif // COLORS_H

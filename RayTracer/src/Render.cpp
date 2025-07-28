@@ -1,27 +1,25 @@
-#include "Bucket.h" // Bucket
+#include "AccelerationStructures.h" // AABBox, AccTreeNode
 #include "Camera.h" // Camera
-#include "Colors.h" // Color, ColorMode, Colors::Black, Colors::Red
+#include "Colors.h" // Color, Colors::Black, Colors::Red
 #include "ImageBuffer.h" // ImageBuffer
 #include "Lights.h" // Light, PointLight
-#include "Materials.h" // MaterialType, Bitmap, TextureType
-#include "Mesh.h" // PreparedMesh
+#include "Materials.h" // Bitmap, MaterialType, TextureType
 #include "Rays.h" // Ray, RayType
 #include "Render.h"
-#include "RenderSettings.h" // RenderMode, IntersectionData, Settings
-#include "Scene.h" // Scene, Mesh
+#include "Scene.h" // Scene
 #include "Triangle.h" // Triangle
-#include "utils.h" // writeColorToFile, areEqual, isGreaterEqualThan, isLessEqualThan, isLessThan
+#include "utils.h" // writeColorToFile, areEqual, isGT
 
-#include <algorithm> // round, min, max, swap
-#include <cassert> // assert
-#include <cmath> // sqrtf, ceil
+#include <algorithm> // max, min, round, swap
+#include <cmath> // abs, ceil, pow, sqrtf
 #include <filesystem> // create_directories
-#include <functional> // ref, cref
-#include <iostream> // cout, flush, cerr
+#include <functional> // ref
+#include <iostream> // cerr, cout, flush, endl
 #include <numbers> // pi_v
-#include <string> // string, to_string
+#include <stack> // stack
+#include <stdexcept> // invalid_argument
 #include <thread> // hardware_concurrency
-#include <stdexcept> // runtime_error
+#include <vector> // vector
 
 
 Render::Render( const Scene& scene )
@@ -56,16 +54,17 @@ void Render::RenderImage() {
     const Camera& camera{
         m_overrideCamera == nullptr ? m_scene.GetCamera() : *m_overrideCamera };
     std::ofstream ppmFileStream = PrepareScene();
+    const AABBox& aabb{ m_scene.GetAABB() };
     Color pixelColor{};
 
     for ( unsigned y{}; y < height; ++y ) {
         for ( unsigned x{}; x < width; ++x ) {
             Ray ray = camera.GenerateRay( x, y, m_scene.GetSettings() );
-            if ( !HasAABBCollision( ray ) ) {
+            if ( !HasAABBCollision( ray, aabb ) ) {
                 pixelColor = m_scene.GetSettings().BGColor;
             }
             else {
-                IntersectionData intersectData = TraceRay( ray );
+                IntersectionData intersectData = IntersectRay( ray );
                 pixelColor = Shade( ray, intersectData );
             }
             writeColorToFile( ppmFileStream, pixelColor, m_scene.GetSettings().maxColorComp );
@@ -74,74 +73,6 @@ void Render::RenderImage() {
             << (static_cast<float>(y + 1) / height) * 100 << "%          " << std::flush;
     }
 
-    ppmFileStream.close();
-}
-
-void Render::RenderParallel() {
-    unsigned threadCount{ std::thread::hardware_concurrency() };
-
-    if ( threadCount == 0u ) {
-        std::cerr << "Warning: Could not detect number of hardware threads."
-            "Falling back to 1.\n";
-        threadCount = 1u;
-        RenderImage();
-        return;
-    }
-
-    const unsigned& width = m_scene.GetSettings().renderWidth;
-    const unsigned& height = m_scene.GetSettings().renderHeight;
-    const Camera& camera{
-        m_overrideCamera == nullptr ? m_scene.GetCamera() : *m_overrideCamera };
-    std::ofstream ppmFileStream = PrepareScene();
-
-    ImageBuffer buff{ width, height };
-
-    // Calculate number of rows and columns of regions based on number of threads.
-    unsigned rows{ static_cast<unsigned>( std::sqrt( threadCount ) ) };
-    unsigned cols{ static_cast<unsigned>(std::ceil( static_cast<double>( threadCount ) / rows )) };
-    unsigned regionWidth = static_cast<int>(std::ceil( static_cast<double>(width) / cols ));
-    unsigned regionHeight = static_cast<int>(std::ceil( static_cast<double>(height) / rows ));
-
-    std::vector<std::thread> threads{};
-    threads.reserve( threadCount );
-
-    for ( unsigned int i{}; i < threadCount; ++i ) {
-        // Calculate start and end pixels for current region.
-        Bucket region;
-        region.startX = ( i % cols ) * regionWidth;
-        region.startY = ( i / cols ) * regionHeight;
-        region.endX = region.startX + regionWidth;
-        region.endY = region.startY + regionHeight;
-
-        // Clamp end coordinates to image boundaries.
-        if ( region.endX > width )
-            region.endX = width;
-        if ( region.endY > height )
-            region.endY = height;
-
-        // Skip region if the it's empty due to rounding or small image.
-        if ( region.startX >= region.endX || region.startY >= region.endY )
-            continue;
-
-        threads.emplace_back(
-            &Render::RenderRegion,
-            this,
-            std::cref( region ),
-            std::ref( buff )
-        );
-    }
-
-    for ( std::thread& t : threads ) {
-        if ( t.joinable() ) {
-            t.join();
-        }
-    }
-
-    for ( unsigned row{}; row < height; ++row ) {
-        for ( unsigned col{}; col < width; ++col ) {
-            writeColorToFile( ppmFileStream, buff[row][col], m_scene.GetSettings().maxColorComp);
-        }
-    }
     ppmFileStream.close();
 }
 
@@ -186,8 +117,10 @@ void Render::RenderBuckets() {
             unsigned endY = startY + bucketSize;
 
             // Clamp end coordinates to image boundaries.
-            if ( endX > width ) endX = width;
-            if ( endY > height ) endY = height;
+            if ( endX > width )
+                endX = width;
+            if ( endY > height )
+                endY = height;
 
             // Only add valid buckets.
             if ( startX < endX && startY < endY ) {
@@ -223,21 +156,22 @@ void Render::RenderBuckets() {
     ppmFileStream.close();
 }
 
-void Render::RenderRegion( const Bucket& region, ImageBuffer& buff ) {
+void Render::RenderTree( const Bucket& region, ImageBuffer& buff ) {
     const Camera& camera{
         m_overrideCamera == nullptr ? m_scene.GetCamera() : *m_overrideCamera };
-    Color pixelColor{};
+    Color pixelColor{ m_scene.GetSettings().BGColor };
 
-    for ( unsigned row{ region.startY}; row < region.endY; ++row ) {
-        for ( unsigned col{ region.startX}; col < region.endX; ++col ) {
+    std::stack<int> nodeIndicesToCheck{};
+    nodeIndicesToCheck.push( 0 ); // 0 is always the root index
+
+    for ( unsigned row{ region.startY }; row < region.endY; ++row ) {
+        for ( unsigned col{ region.startX }; col < region.endX; ++col ) {
             Ray ray = camera.GenerateRay( col, row, m_scene.GetSettings() );
-            if ( !HasAABBCollision( ray ) ) {
+            IntersectionData intersectData = IntersectRay( ray );
+            if ( !intersectData.filled)
                 pixelColor = m_scene.GetSettings().BGColor;
-            }
-            else {
-                IntersectionData intersectData = TraceRay( ray );
+            else
                 pixelColor = Shade( ray, intersectData );
-            }
             buff[row][col] = pixelColor;
         }
     }
@@ -274,6 +208,41 @@ void Render::RenderRotationAroundObject( const FVector3& initialPos, const FVect
     }
 }
 
+IntersectionData Render::IntersectRay( const Ray& ray, const float maxT ) const {
+    IntersectionData intersectData{};
+    std::stack<int> nodeIndicesToCheck{};
+    nodeIndicesToCheck.push( 0 ); // 0 is always the root index
+    float closestIntersection{ std::numeric_limits<float>::max() };
+
+    while ( nodeIndicesToCheck.size() > 0 ) {
+        int nodeIdxToCHeck = nodeIndicesToCheck.top();
+        nodeIndicesToCheck.pop();
+        const AccTreeNode& currNode = m_scene.GetAccTree().GetNodes()[nodeIdxToCHeck];
+
+        if ( !HasAABBCollision( ray, currNode.aabb ) )
+            continue;
+
+        if ( currNode.triIndices.size() > 0 ) { // leaf node
+            currNode.Intersect(
+                ray,
+                maxT,
+                closestIntersection,
+                intersectData
+            );
+            // For shadow rays, one intersection is enough to cast a shadow.
+            if ( ray.type == RayType::Shadow && intersectData.filled )
+                break;
+        } else {
+            if ( currNode.children[0] != -1 )
+                nodeIndicesToCheck.push( currNode.children[0] );
+            if ( currNode.children[1] != -1 )
+                nodeIndicesToCheck.push( currNode.children[1] );
+        }
+    }
+
+    return intersectData;
+}
+
 void Render::RenderBucketWorker( std::mutex& bucketMutex, std::queue<Bucket>& buckets, ImageBuffer& buff ) {
     while ( true ) {
         Bucket bck;
@@ -289,115 +258,42 @@ void Render::RenderBucketWorker( std::mutex& bucketMutex, std::queue<Bucket>& bu
             }
         } // Lock released when going out of scope.
 
-        if ( gotBucket ) {
-            RenderRegion( bck, buff );
-        } else {
+        if ( gotBucket )
+            RenderTree( bck, buff );
+        else
             break; // No more buckets. This thread can exit.
-        }
+
     }
 }
 
-bool Render::HasAABBCollision( const Ray& ray ) const {
-    const FVector3& AABBmax{ m_scene.GetAABBmax() };
-    const FVector3& AABBmin{ m_scene.GetAABBmin() };
-
-    float tMin{ 0.f }; // The closes intersection point along the ray must be positive.
-    float tMax{ std::numeric_limits<float>::max() };
+bool Render::HasAABBCollision( const Ray& ray, const AABBox& aabb ) const {
+    float tMin{ 0.f }; // entry, the closes intersection point along the ray must be positive.
+    float tMax{ std::numeric_limits<float>::max() }; // exit
 
     for ( int i{}; i < 3; ++i ) {
-        float rayOriginComponent;
-        float rayDirComponent;
-        float AABBminComponent;
-        float AABBmaxComponent;
 
-        if ( i == 0 ) {
-            rayOriginComponent = ray.origin.x;
-            rayDirComponent = ray.direction.x;
-            AABBminComponent = AABBmin.x;
-            AABBmaxComponent = AABBmax.x;
-        } else if ( i == 1 ) {
-            rayOriginComponent = ray.origin.y;
-            rayDirComponent = ray.direction.y;
-            AABBminComponent = AABBmin.y;
-            AABBmaxComponent = AABBmax.y;
-        } else if ( i == 2 ) {
-            rayOriginComponent = ray.origin.z;
-            rayDirComponent = ray.direction.z;
-            AABBminComponent = AABBmin.z;
-            AABBmaxComponent = AABBmax.z;
+        if ( areEqual( std::abs( ray.direction[i] ), 0.f ) ) { // parallel
+            if ( ray.origin[i] < aabb.min[i] || ray.origin[i] > aabb.max[i] ) {
+                return false; // Ray is outside the axis slab.
+            }
+            // Parallel and inside. tMin/tMax = -/+inf.
         }
 
-        float t0 = (AABBminComponent - rayOriginComponent) / rayDirComponent;
-        float t1 = (AABBmaxComponent - rayOriginComponent) / rayDirComponent;
+        float t0 = (aabb.min[i] - ray.origin[i]) / ray.direction[i];
+        float t1 = (aabb.max[i] - ray.origin[i]) / ray.direction[i];
 
         // Ensure t0 always holds the smaller of the 2 intersections.
-        if ( isGreaterThan( t0, t1 ) )
+        if ( isGT( t0, t1 ) )
             std::swap( t0, t1 );
-
         tMin = std::max( tMin, t0 );
         tMax = std::min( tMax, t1 );
 
         // If at any point tMin is greater than tMax, there's no intersection.
-        if ( tMin > tMax )
+        if ( isGT( tMin, tMax ) )
             return false;
     }
+    // t = tMin
     return true;
-}
-
-bool Render::IsInShadow( const Ray& ray, const float distToLight ) const {
-    for ( const PreparedMesh& mesh : m_scene.GetPreparedMeshes() ) {
-
-        // Skip shadowing meshes with refractive materials.
-        if ( mesh.m_material.type == MaterialType::Refractive )
-            continue;
-
-        for ( const Triangle& triangle : mesh.m_triangles ) {
-            // If Ray is parallel - Ignore, it can't be hit.
-            float rayProj = ray.direction.Dot( triangle.GetNormal() );
-            if ( areEqual( rayProj, 0.f ) )
-                continue;
-
-            // If rayProj > 0, ray is pointing towards triangle back face.
-            // If rayProj < 0, ray is pointing towards triangle front face.
-
-            float rayPlaneDist = (triangle.GetVert( 0u ).pos - ray.origin)
-                .Dot( triangle.GetNormal() );
-            float rayPointDist = rayPlaneDist / rayProj; // Ray-to-Point scale factor
-
-            /* Check if: Ray hits behind the hitPoint(negative rayPointDist)
-             *           Ray hits at or very near the hitPoint (self-intersection)
-             *           Ray hits beyond the light source */
-            if ( isLessThan( rayPointDist, m_scene.GetSettings().shadowBias ) )
-                continue; // This intersection is not valid for shadow casting.
-
-            // Geometry on the other side of the light shouldn't cast shadows here.
-            if ( rayPointDist > distToLight )
-                continue;
-
-            // Ray parametric equation - represent points on a line going through a Ray.
-            FVector3 intersectionPt = ray.origin + (ray.direction * rayPointDist);
-
-            if ( triangle.IsPointInside( intersectionPt ) )
-                return true;
-        }
-    }
-    return false;
-}
-
-Color Render::ShadeConstant( const IntersectionData& data ) const {
-    switch ( m_scene.GetSettings().colorMode ) {
-
-        case ColorMode::RandomTriangleColor: {
-            return data.triangle.color;
-        }
-        case (ColorMode::LoadedMaterial):
-        case (ColorMode::RandomMeshColor): {
-            return data.material->texture.albedo;
-        }
-    }
-
-    // Should never get here.
-    return Colors::Black;
 }
 
 FVector2 Render::CalcBaryCoords( const FVector3& intersectionPt, const Triangle& triangle ) {
@@ -452,11 +348,10 @@ Color Render::GetCheckerColor( const IntersectionData& data ) {
     int checkU = static_cast<int>(std::floor( UVW.x / squareSize ));
     int checkV = static_cast<int>(std::floor( UVW.y / squareSize ));
 
-    if ( (checkU + checkV) % 2 == 0 ) {
+    if ( (checkU + checkV) % 2 == 0 )
         return data.material->texture.colorA;
-    } else {
+    else
         return data.material->texture.colorB;
-    }
 }
 
 Color Render::GetBitmapColor( const IntersectionData& data ) {
@@ -491,11 +386,13 @@ Color Render::GetRenderColor( const IntersectionData& data ) const {
             return GetBitmapColor( data );
         }
         case TextureType::SolidColor: {
-            return m_scene.GetSettings().colorMode == ColorMode::RandomTriangleColor
-                ? data.triangle.color : data.material->texture.albedo;
+            return m_scene.GetSettings().renderMode == RenderMode::RandomTriangleColor
+                ? m_scene.GetTriangleColors()[data.triangle.colorIdx]
+                : data.material->texture.albedo;
         }
+        case TextureType::Invalid:
         default: {
-            assert( false );
+            throw std::invalid_argument( "Unsupported texture type." );
         }
     }
     return Colors::Red; // Should never get here. Placed to silence compiler.
@@ -543,8 +440,9 @@ Color Render::ShadeDiffuse( const IntersectionData& data ) const {
             data.hitPoint + (surfaceNormal * m_scene.GetSettings().shadowBias) };
         Ray shadowRay{ offsetHitPoint, lightDir, -1, RayType::Shadow, false };
 
-        if ( Render::IsInShadow( shadowRay, lightDirLen ) )
-            // If there's something on the way to the light - leave the color as is.
+        // If there's something on the way to the light - leave the color as is.
+        IntersectionData data = IntersectRay( shadowRay, lightDirLen );
+        if ( data.filled )
             continue;
 
         // Cibsuder light Intensity and falloff in the value.
@@ -589,7 +487,7 @@ Color Render::ShadeReflective( const Ray& ray, const IntersectionData& data ) co
         false
     };
 
-    IntersectionData intersectData = TraceRay( reflectionRay );
+    IntersectionData intersectData = IntersectRay( reflectionRay );
     Color pixelColor = Shade( reflectionRay, intersectData );
     pixelColor *= data.material->texture.albedo;
 
@@ -597,13 +495,16 @@ Color Render::ShadeReflective( const Ray& ray, const IntersectionData& data ) co
 }
 
 float Render::CalcFresnelSchlickApprox( const float ior1, const float ior2, const float dotIN ) {
-    float ratioIORs{ ior1 / ior2 };
+    // More info: https://en.wikipedia.org/wiki/Schlick%27s_approximation
+    // More info: https://en.wikipedia.org/wiki/Fresnel_equations
+    // Calculations at: https://webs.optics.arizona.edu/gsmith/FresnelCalculator.html
+    float eta{ ior1 / ior2 };
     float cosIN = -dotIN; // cos(A)
     float R0 = std::pow( (ior1 - ior2) / (ior1 + ior2), 2.0f );
     // Use the cosine of the angle *inside* the denser material for the Fresnel term.
     // If ray was entering (original dotIN <= 0), use cosIN.
     // If ray was exiting (original dotIN > 0), use cosRnN.
-    float cosRnN = std::sqrtf( 1.f - ratioIORs * ratioIORs * (1.f - (cosIN * cosIN)) );
+    float cosRnN = std::sqrtf( 1.f - eta * eta * (1.f - (cosIN * cosIN)) );
     float cosTermForFresnel = (dotIN > 0) ? cosRnN : cosIN;
     return R0 + (1.0f - R0) * std::pow( (1.0f - cosTermForFresnel), 5.0f );
 }
@@ -669,7 +570,7 @@ Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) co
         };
 
         // Trace Refraction Ray.
-        IntersectionData refractData{ TraceRay( refractionRay ) };
+        IntersectionData refractData{ IntersectRay( refractionRay ) };
         refractionColor = Shade( refractionRay, refractData );
 
         //fresnel = CalcFresnelSchlickApprox( ior1, ior2, dotIN );
@@ -687,7 +588,7 @@ Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) co
     reflectionRay.direction.NormalizeInPlace();
 
     // Generate Reflection Ray.
-    IntersectionData reflectData{ TraceRay( reflectionRay ) };
+    IntersectionData reflectData{ IntersectRay( reflectionRay ) };
     Color reflectionColor = Shade( reflectionRay, reflectData );
 
     return reflectionColor * fresnel + refractionColor * (1.f - fresnel);
@@ -696,7 +597,7 @@ Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) co
 Color Render::Shade( const Ray& ray, const IntersectionData& data ) const {
     Color pixelColor{ m_scene.GetSettings().BGColor };
 
-    if ( data.material == nullptr ) {
+    if ( data.filled == false ) {
         // The camera ray didn't hit any objects - just the background.
         return pixelColor;
     } else if ( ray.pathDepth >= m_scene.GetSettings().pathDepth ) {
@@ -707,97 +608,24 @@ Color Render::Shade( const Ray& ray, const IntersectionData& data ) const {
         pixelColor = ShadeNormals( data );
     } else if ( m_scene.GetRenderMode() == RenderMode::ShadedNormals ) {
         pixelColor = ShadeDiffuse( data );
-    } else if ( m_scene.GetRenderMode() == RenderMode::ObjectColor ) {
-        pixelColor = ShadeConstant( data );
+    } else if ( m_scene.GetRenderMode() == RenderMode::RandomTriangleColor ) {
+        pixelColor = m_scene.GetTriangleColors()[data.triangle.colorIdx];
+    } else if ( m_scene.GetRenderMode() == RenderMode::RandomMeshColor ) {
+        pixelColor = data.material->texture.albedo;
     } else if ( m_scene.GetRenderMode() == RenderMode::Material
         && data.material->type == MaterialType::Diffuse ) {
         pixelColor = ShadeDiffuse( data );
     } else if ( m_scene.GetRenderMode() == RenderMode::Material
         && data.material->type == MaterialType::Reflective ) {
-        //pixelColor = ShadeDiffuse( data );
         pixelColor = ShadeReflective( ray, data );
     } else if ( m_scene.GetRenderMode() == RenderMode::Material
         && data.material->type == MaterialType::Refractive ) {
-        //pixelColor = ShadeDiffuse( data );
         pixelColor = ShadeRefractive( ray, data );
     } else {
-        assert( false );
+        throw std::invalid_argument( "Unsupported render mode." );
     }
 
     return pixelColor;
-}
-
-IntersectionData Render::TraceRay( const Ray& ray, const float maxT ) const {
-    IntersectionData intersectData{};
-    float closestIntersectionP{ std::numeric_limits<float>::max() };
-    float bias{ 0.f }; //! Currently used for reflection!
-    if ( ray.type == RayType::Shadow )
-        bias = m_scene.GetSettings().shadowBias;
-    else if ( ray.type == RayType::Refractive )
-        bias = m_scene.GetSettings().refractBias;
-
-    for ( const PreparedMesh& mesh : m_scene.GetPreparedMeshes() ) {
-        for ( const Triangle& triangle : mesh.m_triangles ) {
-            // rayProj = 0 -> Ray is parallel to surface - Ignore, it can't hit.
-            // rayProj > 0 -> back-face
-            // rayProj < 0 -> front-face
-            float rayProj = ray.direction.Dot( triangle.GetNormal() );
-
-            if ( ray.ignoreBackface ) {
-                if ( isGreaterEqualThan( rayProj, 0.f ) )
-                    continue;
-            } else {
-                if ( areEqual( rayProj, 0.f ) )
-                    continue;
-            }
-
-            float rayPlaneDist = (triangle.GetVert( 0u ).pos - ray.origin)
-                .Dot( triangle.GetNormal() );
-
-            // Ray-to-Point scale factor for unit vector to reach the Point (t).
-            float rayPointDist = rayPlaneDist / rayProj;
-
-            if ( ray.ignoreBackface ) {
-                if ( isGreaterEqualThan( rayPlaneDist, 0.f ) )
-                    // Ray is not towards Triangle's plane.
-                    continue;
-            } else {
-                /* Check if: Ray hits behind the hitPoint(negative rayPointDist)
-                 *           Ray hits at or very near the hitPoint (self-intersection)
-                 *           Ray hits beyond the light source */
-                if ( isLessThan( rayPointDist, bias ) )
-                    continue; // This intersection is not valid for shadow casting.
-            }
-
-            /* With shadow rays, maxT is the distance to the light source.
-             * Geometry on the other side of the light shouldn't cast shadows here.
-             * Currently maxT is only used for light distance. In the future it
-             * will be used for other optimizations as well. */
-            if ( rayPointDist > maxT || isLessEqualThan( rayPointDist, 0.f ) )
-                continue;
-
-            // Ray parametric equation - represent points on a line going through a Ray.
-            FVector3 intersectionPt = ray.origin + (ray.direction * rayPointDist);
-
-            // Ignore intersection if a closer one to the Camera has already been found.
-            if ( rayPointDist > closestIntersectionP )
-                continue;
-
-            // If the Plane intersection point is not inside the triangle - don't render it.
-            if ( !triangle.IsPointInside( intersectionPt ) )
-                continue;
-
-            if ( ray.type == RayType::Shadow )
-                intersectData; //TODO: Not finished! Make it work in place of IsInShadow()
-
-            closestIntersectionP = rayPointDist;
-            intersectData.faceNormal = triangle.GetNormal();
-            intersectData.hitPoint = intersectionPt;
-            intersectData.material = &mesh.m_material;
-            intersectData.triangle = triangle;
-        }
-    }
-    return intersectData;
 }
 
 std::ofstream Render::PrepareScene() {

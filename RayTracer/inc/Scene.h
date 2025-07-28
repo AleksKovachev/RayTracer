@@ -7,11 +7,11 @@
 
 #include "rapidjson/document.h" // Document, Value, Value::ConstArray
 
+#include "AccelerationStructures.h" // AABBox, AccTree
 #include "Camera.h" // Camera
-#include "Colors.h" // Color, ColorMode, Colors::Black
+#include "Colors.h" // Color, Colors::Black
 #include "Lights.h" // Light, PointLight
 #include "Materials.h" // Material, MaterialType, Texture, TextureType
-#include "Mesh.h" // Mesh, PreparedMesh
 #include "RenderSettings.h" // Settings, RenderMode
 
 
@@ -22,18 +22,14 @@ public:
 
 	~Scene();
 
-	// Parse the scene file to get all data
+	// Parse the scene file to get all data.
 	void ParseSceneFile();
 
-	// Override the name of the saved file
+	// Override the name of the saved file.
 	// @param[in] saveName: The new name for the rendered image.
 	void SetSaveFileName( const std::string& );
 
-	// Set a render color mode
-	// @param[in] colorMode: The color mode to use for the rendered image.
-	void SetColorMode( const ColorMode );
-
-	// Set render resolutions
+	// Set render resolutions.
 	// @param[in] width: The width of the rendered image in pixels.
 	// @param[in] height: The height of the rendered image in pixels.
 	void SetRenderResolution( const int, const int );
@@ -46,13 +42,9 @@ public:
 	// @param[in] renderMode: The render mode to use for the final image.
 	void SetRenderMode( const RenderMode& );
 
-	// Gets all the prepared meshes in the scene.
-	// @return A collection of prepared meshes, ready to iterate.
-	const std::vector<PreparedMesh>& GetPreparedMeshes() const;
-
-	// Gets all meshes loaded from the scene file.
-	// @return A collection of mesh objects.
-	const std::vector<Mesh>& GetMeshes() const;
+	// Gets all the triangles in the scene.
+	// @return A collection of triangles, ready to iterate.
+	const std::vector<Triangle>& GetTriangles() const;
 
 	// Get the scene camera.
 	// @return A camera object.
@@ -66,26 +58,40 @@ public:
 	// @return A collection of all light objects in the scene.
 	const std::vector<Light*>& GetLights() const;
 
-	// A getter function for the axis aligned bounding box min.
-	// @return The value as an FVector3 object.
-	const FVector3& GetAABBmin() const;
+	// A getter function for the axis aligned bounding box.
+	// @return The AABB object.
+	const AABBox& GetAABB() const;
 
-	// A getter function for the axis aligned bounding box max.
-	// @return The value as an FVector3 object.
-	const FVector3& GetAABBmax() const;
-
-	// Parse an obj file and load all relevant data
+	// Parse an obj file and load all relevant data.
 	void ParseObjFile();
+
+	// Get all scene materials.
+	// @reutrn A collection of all scene materials.
+	const std::vector<Material>& GetMaterials() const;
+
+	// Get all scene override materials.
+	// @reutrn A collection of all scene override materials.
+	const std::vector<Material>& GetOverrideMaterials() const;
+
+	// Get all triangle colors in the scene. Only filled if RandomTriangleColor used.
+	// @return A collection of color objects.
+	const std::vector<Color>& GetTriangleColors() const;
+
+	const AccTree& GetAccTree() const;
 private:
 	std::string m_filePath;
-	std::vector<Mesh> m_meshes; // Scene objects
-	std::vector<PreparedMesh> m_rdyMeshes;
 	Camera m_camera; // Main scene Camera
 	Settings m_settings; // Global scene settings
 	std::vector<Light*> m_lights;
 	std::vector<Texture> m_textures; // Texture objects
-	FVector3 m_AABBmin;
-	FVector3 m_AABBmax;
+	std::vector<Material> m_materials;
+	std::vector<Material> m_overrideMaterials;
+	std::vector<Color> m_triangleColors;
+
+	AABBox m_aabb; // AABB for the whole scene
+	AccTree m_accTree;
+	std::vector<Triangle> m_triangles; // All scene triangles
+	std::vector<int> m_triIndices; // Indices of all scene triangles
 
 // crtscene file parsing (json)
 private:
@@ -117,6 +123,20 @@ private:
 	// @param[in] arr: The array to traverse.
 	// @return A collection of FVector3 objects representing the vertices.
 	std::vector<FVector3> LoadVertices( const rapidjson::Value::ConstArray& );
+
+	// Loads all triangles of a given mesh. Computes and loads vertex normals
+	// and UV coordinates, and assigns triangle color and override mesh material.
+	// @param[in] arr: The array to traverse.
+	// @param[in] meshVerts: A collection of vertex positions for a given mesh.
+	// @param[in] UVs: A collection of UV coordinates for a given mesh.
+	// @param[in] matIdx: The material index for the given mesh.
+	// @return: A collection of the mesh's triangles.
+	void LoadMesh(
+		const rapidjson::Value::ConstArray&,
+		const std::vector<FVector3>&,
+		const std::vector<FVector3>&,
+		const int
+	);
 
 // Obj file parsing
 private:

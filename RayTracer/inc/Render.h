@@ -2,21 +2,27 @@
 #define RENDER_H
 
 #include <fstream> // ofstream, ios::binary
-#include <limits> // numeric_limits<float>::max
-#include <mutex> // mutex
+#include <limits> // <float>::max
+#include <mutex> // mutex, lock_guard
 #include <queue> // queue
 #include <string> // string, to_string
 
-#include "RenderSettings.h" // IntersectionData
+#include "RenderSettings.h" // RenderMode, IntersectionData, Settings
 #include "Vectors.h" // FVector2, FVector3
 
-struct Bucket;
+
+struct AABBox;
 struct Camera;
 class ImageBuffer;
-class Mesh;
 struct Ray;
 class Scene;
 class Triangle;
+
+
+// A simple struct to hold a bucket information.
+struct Bucket {
+    unsigned startX, startY, endX, endY;
+};
 
 
 class Render {
@@ -39,16 +45,13 @@ public:
     // Renders a single image with a single thread.
     void RenderImage();
 
-    // Renders a single image with multiple threads, each rendering a separate region.
-    void RenderParallel();
-
     // Renders a single image with multiple threads, taking buckets from a pool.
     void RenderBuckets();
 
-    // Renders a single region of pixels.
+    // Used for bucket rendering, but uses acceleration tree traversal.
     // @param[in] region: A structure holding the start and end positions for the region to render.
     // @param[in] buff: The buffer where the rendered colors will be stored.
-    void RenderRegion( const Bucket&, ImageBuffer& );
+    void RenderTree( const Bucket&, ImageBuffer& );
 
     // Renders a camera movement animation around the scene.
     // @param[in] initialPos: The initial camera position.
@@ -74,19 +77,10 @@ private:
     void RenderBucketWorker( std::mutex&, std::queue<Bucket>&, ImageBuffer& );
 
     // Checks if the current ray intersects the scene's axis aligned bounding box.
-    // @param[in-out] ray: The ray to be checked.
-    bool HasAABBCollision( const Ray& ) const;
-
-    // Traces ShadowRay from hit point to light sources.
-    // @param[in] ray: The shadow ray to trace.
-    // @param[in] distToLight: The distance to the light source.
-    // @return Boolean indicating if the given point is in shadow.
-    bool IsInShadow( const Ray&, const float ) const;
-
-    // Gets the color of the hit mesh or triangle, depending on color mode.
-    // @param[in] data: The intersection data needed for getting the color.
-    // @return The color to render.
-    Color ShadeConstant( const IntersectionData& ) const;
+    // @param[in] ray: The ray to be checked.
+    // @param[in] aabb: The AABB to check if the ray has intersection with.
+    // @return If the ray intersects with the AABB.
+    bool HasAABBCollision( const Ray&, const AABBox& ) const;
 
     // Calculates the Barycentric coordinates of a triangle.
     // @param[in] intersectionPt: The intersection point on the triangle to calculate.
@@ -159,11 +153,11 @@ private:
     // @return A color to render for the current pixel after all calculations.
     Color Shade( const Ray&, const IntersectionData& ) const;
 
-    // Traces a ray and checks if it hits any mesh triangle.
+    // Traces a ray and checks if it hits any mesh triangle, using acceleration trees.
     // @param[in] ray: The ray to trace.
     // @param[in] maxT: A value beyon which calculations should be cut. Used for shadow rays.
     // @return Intersection data used for further color calculations.
-    IntersectionData TraceRay(
+    IntersectionData IntersectRay(
         const Ray& ray, const float maxT = std::numeric_limits<float>::max() ) const;
 
     // Prepares a .PPM file to be filled in with color data.

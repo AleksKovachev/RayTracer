@@ -1,6 +1,7 @@
 #include "Vectors.h"
 
 #include <cmath> // sqrt
+#include <stdexcept> // out_of_range
 
 
 FVector3::FVector3() : x{ 0.f }, y{ 0.f }, z{ 0.f } {
@@ -32,7 +33,7 @@ FVector3& FVector3::operator+=( const FVector3& other ) {
 	return *this;
 }
 
-bool FVector3::operator==( const FVector3& other ) {
+bool FVector3::operator==( const FVector3& other ) const {
 	return x == other.x && y == other.y && z == other.z;
 }
 
@@ -41,6 +42,29 @@ FVector3 FVector3::operator*( const FVector3& other ) const {
 	return { y * other.z - z * other.y,
 			 z * other.x - x * other.z,
 			 x * other.y - y * other.x };
+}
+
+float& FVector3::operator[]( const int idx ) {
+	if ( idx < 0 || idx > 2 )
+		throw std::out_of_range( "Index out of bounds." );
+
+	if ( idx == 0 )
+		return x;
+	else if ( idx == 1 )
+		return y;
+	else
+		return z;
+}
+const float& FVector3::operator[]( const int idx ) const {
+	if ( idx < 0 || idx > 2 )
+		throw std::out_of_range( "Index out of bounds." );
+
+	if ( idx == 0 )
+		return x;
+	else if ( idx == 1 )
+		return y;
+	else
+		return z;
 }
 
 // Scalar multiplication
@@ -82,5 +106,5 @@ void FVector3::NormalizeInPlace() {
 }
 
 void FVector3::CalculateLength() {
-	length = sqrt( x * x + y * y + z * z );
+	length = std::sqrt( x * x + y * y + z * z );
 }

@@ -8,7 +8,6 @@
 #include <limits> // numeric_limits<float>::max
 #include <numbers> // pi
 #include <numeric> // gcd
-#include <vector> // vector
 
 
 ImagePlane::ImagePlane( int width, int height, float distFromCamera )

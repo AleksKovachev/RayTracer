@@ -42,9 +42,6 @@
     <ClCompile Include="src\Render.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\DebugObjects.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\RenderSettings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -58,6 +55,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ImageBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\AccelerationStructures.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -78,9 +78,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="inc\utils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\DebugObjects.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="inc\Scene.h">
@@ -111,6 +108,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="inc\Bucket.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\AccelerationStructures.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\RenderMode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
