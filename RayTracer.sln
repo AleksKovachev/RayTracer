@@ -5,7 +5,7 @@ VisualStudioVersion = 17.6.33723.286
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RayTracer", "RayTracer\RayTracer.vcxproj", "{D40B06A9-D55A-4358-B3C3-5030863BC28B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Qt_UI", "Qt_UI\Qt_UI.vcxproj", "{FA1058CB-FD4A-4027-BEB4-2CFBDF8EFA3F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RayTracer_UI", "RayTracer_UI\RayTracer_UI.vcxproj", "{FA1058CB-FD4A-4027-BEB4-2CFBDF8EFA3F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

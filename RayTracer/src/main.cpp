@@ -14,6 +14,8 @@
 // TODO: Implement bitmap texture mapping without stretching. 2 types - Fit, which
 //       puts black bars around the texture to fit the geometry, and Fill, which
 //       places the texture making it go "out of bounds" but fill the geometry.
+// TODO: Make each bucket in bucket rendering save the rendered image to see the
+//       progress. Make it as a separate function, as it would slow donw the process.
 
 
 /*
