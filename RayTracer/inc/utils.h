@@ -8,6 +8,8 @@
 
 #include "Colors.h" // Color
 
+class Scene;
+
 typedef std::unordered_map<std::string, float> iniData;
 
 
@@ -25,7 +27,8 @@ Color getRandomColor( const int bitDepth = 8 );
 // Takes a stream and a Color to write to a PPM file in P6 format.
 // @param[in-out] stream: The stream where the color data will be written.
 // @param[in] pixelColor: The color data that will be written to the file.
-void writeColorToFile( std::ofstream&, const Color& );
+// @param[in] maxComp: The maximum color component as an integer number.
+void writeColorToFile( std::ofstream&, const Color&, const int );
 
 // Check if 2 float values are equal with an epsilon range of error.
 // @param[in] a: The first number that will be compared.

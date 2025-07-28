@@ -21,10 +21,13 @@ Color getRandomColor( const int colorDepth ) {
     return { getInt( 0, maxComponent ), getInt( 0, maxComponent ), getInt( 0, maxComponent ) };
 }
 
-void writeColorToFile( std::ofstream& stream, const Color& pixelColor ) {
-    unsigned char r = static_cast<unsigned char>(pixelColor.r);
-    unsigned char g = static_cast<unsigned char>(pixelColor.g);
-    unsigned char b = static_cast<unsigned char>(pixelColor.b);
+void writeColorToFile( std::ofstream& stream, const Color& pixelColor, const int maxComp ) {
+    int R{ static_cast<int>(std::roundf( std::clamp( pixelColor.r, 0.f, 1.f ) * maxComp )) };
+    int G{ static_cast<int>(std::roundf( std::clamp( pixelColor.g, 0.f, 1.f ) * maxComp )) };
+    int B{ static_cast<int>(std::roundf( std::clamp( pixelColor.b, 0.f, 1.f ) * maxComp )) };
+    unsigned char r = static_cast<unsigned char>(R);
+    unsigned char g = static_cast<unsigned char>(G);
+    unsigned char b = static_cast<unsigned char>(B);
     stream.write( reinterpret_cast<const char*>(&r), 1 );
     stream.write( reinterpret_cast<const char*>(&g), 1 );
     stream.write( reinterpret_cast<const char*>(&b), 1 );

@@ -32,7 +32,7 @@ std::vector<Triangle> getGround() {
 		FVector3{ 0.f, 1.f, 0.f } *centerMarkerSize,
 		FVector3{ -1.f, 0.f, 0.f } *centerMarkerSize
 	);
-	shape[idxColor++].color = { 255, 0, 0 };
+	shape[idxColor++].color = { 1.f, 0.f, 0.f };
 
 	for ( int i{}; i < 5; ++i ) {
 		float pt = (i + 1.f) * 10.f;
@@ -41,19 +41,19 @@ std::vector<Triangle> getGround() {
 			FVector3{ -pt, 1.f, 0.f } *markerSize,
 			FVector3{ -pt - 1.f, 0.f, 0.f } *markerSize
 		);
-		shape[idxColor++].color = { 255, 0, 0 };
+		shape[idxColor++].color = { 1.f, 0.f, 0.f };
 		shape.emplace_back(
 			FVector3{ pt + 1.f, 0.f, 0.f } *markerSize,
 			FVector3{ pt, 1.f, 0.f } *markerSize,
 			FVector3{ pt - 1.f, 0.f, 0.f } *markerSize
 		);
-		shape[idxColor++].color = { 255, 0, 0 };
+		shape[idxColor++].color = { 1.f, 0.f, 0.f };
 		shape.emplace_back(
 			FVector3{ 1.f, 0.f, -pt } *markerSize,
 			FVector3{ 0.f, 1.f, -pt } *markerSize,
 			FVector3{ -1.f, 0.f, -pt } *markerSize
 		);
-		shape[idxColor++].color = { 255, 0, 0 };
+		shape[idxColor++].color = { 1.f, 0.f, 0.f };
 	}
 	return shape;
 }

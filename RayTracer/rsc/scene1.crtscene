@@ -2,7 +2,7 @@
 	"settings": {
 		"background_color": [
 			0, 0.5, 0
-		],
+		],		
 		"image_settings": {
 			"width": 1920,
 			"height": 1080
@@ -14,176 +14,78 @@
 			1, 0, 0,
 			0, 1, 0,
 			0, 0, 1
-		],
-		
+		],		
 		"position": [
 			0, 0, 0
 		]
 	},
-	
+
 	"lights": [
 		{
-			"intensity": 100,
+			"intensity": 1000,
 			"position": [
-				0, 1.3, -2
+				5, 5, 6
 			]
 		}
+	],
+
+	"textures":[{
+			"name": "Color texture",
+			"type": "albedo",
+			"albedo": [
+				1, 0, 0
+			]
+		},{
+			"name": "Red Green Edges",
+			"type": "edges",
+			"edge_color": [
+				0, 1, 0
+			],
+			"inner_color": [
+				1, 0, 0
+			],
+			"edge_width": 0.04			
+		},{
+			"name": "Black White Checker",
+			"type": "checker",
+			"color_A": [
+				0, 0, 0
+			],
+			"color_B": [
+				1, 1, 1
+			],
+			"square_size": 0.125		
+		},{
+			"name": "Dragon texture",
+			"type": "bitmap",
+			"file_path": "/textures/dragon.jpg"
+		}		
 	],
 	
 	"materials": [{
 			"type": "diffuse",
-			"albedo": [
-				0.9, 0.4, 0.2
-			],
+			"albedo": "Red Green Edges",
 			"smooth_shading": false
-		},
-		{
-			"type": "diffuse",
-			"albedo": [
-				1, 1, 0
-			],
-			"smooth_shading": false
-		},
-		{
-			"type": "refractive",
-			"ior": 1.5,
-			"smooth_shading": false
-		},
-		{
-			"type": "diffuse",
-			"albedo": [
-				0.4, 0.9, 0.2
-			],
-			"smooth_shading": false
-		},
-		{
-			"type": "diffuse",
-			"albedo": [
-				0.2, 0.4, 0.9
-			],
-			"smooth_shading": false
-		},
-		{
-			"type": "diffuse",
-			"albedo": [
-				0.9, 0.2, 0.9
-			],
-			"smooth_shading": false
-		},
-		{
-			"type": "diffuse",
-			"albedo": [
-				0.2, 0.9, 0.9
-			],
-			"smooth_shading": false
-		},
-		{
-			"type": "constant",
-			"albedo": [
-				1, 0, 0
-			],
-			"smooth_shading": true
 		}	
 	],
-			
-	"objects": [
-		{
-			"material_index": 2,		
+	
+	"objects": [{
+			"material_index": 0,	
 			"vertices": [
-				-0.5, -0.5, -2.5,
-				0.5, -0.5, -2.5,
-				-0.5, 0.5, -2.5,
-				0.5, 0.5, -2.5,
-				-0.5, -0.5, -1.5,
-				0.5, -0.5, -1.5,
-				-0.5, 0.5, -1.5,
-				0.5, 0.5, -1.5
+				-1.75, -1.75, -3,
+				1.75, -1.75, -3,
+				0, 1.75, -3
 			],
-			
+			"uvs": [
+				0, 0, 0,
+				1, 0, 0,
+				0.5, 1, 0
+			],			
 			"triangles": [
-				0,2,3,
-				3,1,0,
-				4,5,7,
-				7,6,4,
-				0,1,5,
-				5,4,0,
-				1,3,7,
-				7,5,1,
-				3,2,6,
-				6,7,3,
-				2,0,4,
-				4,6,2
-			]
-		},
-		{
-			"material_index": 0,		
-			"vertices": [
-				-1.5, -1.5, -1.5,
-				1.5, -1.5, -1.5,
-				-1.5, -1.5, -4.5,
-				1.5, -1.5, -4.5
-			],
-			
-			"triangles": [
-				0, 1, 2,
-				3, 2, 1
-			]
-		},
-		{
-			"material_index": 3,		
-			"vertices": [
-				1.5, -1.5, -1.5,
-				1.5, -1.5, -4.5,
-				1.5, 1.5, -1.5,
-				1.5, 1.5, -4.5
-			],
-			
-			"triangles": [
-				0, 2, 1,
-				2, 3, 1
-			]
-		},
-		{
-			"material_index": 4,		
-			"vertices": [
-				-1.5, -1.5, -1.5,
-				-1.5, -1.5, -4.5,
-				-1.5, 1.5, -1.5,
-				-1.5, 1.5, -4.5
-			],
-			
-			"triangles": [
-				0, 1, 2,
-				2, 1, 3
-			]
-		},
-		{
-			"material_index": 5,		
-			"vertices": [
-				1.5, -1.5, -4.5,
-				1.5, 1.5, -4.5,
-				-1.5, -1.5, -4.5,
-				-1.5, 1.5, -4.5
-			],
-			
-			"triangles": [
-				0, 1, 2,
-				1, 3, 2
-			]
-		},
-		{
-			"material_index": 6,		
-			"vertices": [
-				-1.5, 1.5, -1.5,
-				1.5, 1.5, -1.5,
-				-1.5, 1.5, -4.5,
-				1.5, 1.5, -4.5
-			],
-			
-			"triangles": [
-				0, 2, 1,
-				1, 2, 3
+				0, 1, 2
 			]
 		}
 	]
 }
+
+

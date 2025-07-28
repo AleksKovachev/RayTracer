@@ -3,13 +3,16 @@
 
 #include <string> // string
 
+#include "Colors.h" // Color, ColorMode
 #include "Mesh.h" // PreparedMesh
 #include "Vectors.h" // FVector2, FVector3
 
 enum class ColorMode;
 struct Color;
-class Scene;
 class FVector3;
+struct Material;
+class Scene;
+class Triangle;
 
 constexpr int InvalidIdx = -1;
 
@@ -18,6 +21,8 @@ enum class RenderMode {
 	// Render the object with its override material. Either mesh or triangle color.
 	ObjectColor,
 	Barycentric, // Render object visualizing the Barycentric coordinates.
+	Normals, // Render object using normal vectors as colors.
+	ShadedNormals, // Render object using normal vectors as colors (with shading).
 	Material // Render the object with its material.
 };
 

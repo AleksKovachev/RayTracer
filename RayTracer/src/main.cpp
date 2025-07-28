@@ -32,6 +32,8 @@
 // TODO: Finish the OBJ file parser
 // TODO: Make the Triangle class hold pointers or indices to the vertices, not their copies.
 // TODO: Make the PreparedMesh material property a pointer so materials can be reused.
+// TODO: Implement reading and applying Normal maps.
+// TODO: Replace IsInShadow() with TraceRay.
 
 
 /*
@@ -68,12 +70,12 @@ int main() {
     //params.camera.Tilt( 15 );
     //params.camera.RotateAroundPoint( {0, 0, -3}, {0, 45, 0});
 
-    Scene scene( "./rsc/scene3.crtscene" );
+    Scene scene( "./rsc/RefractionBall.crtscene" );
     //Scene scene( "./rsc/OverlappingTriangles.crtscene" );
     //Scene scene( "./rsc/Pyramid.crtscene" );
     //Scene scene( "./rsc/TestPlane.obj" );
     scene.SetColorMode( ColorMode::LoadedMaterial );
-    scene.SetRenderMode( RenderMode::Material );
+    scene.SetRenderMode( RenderMode::ShadedNormals );
     scene.ParseSceneFile();
     //scene.ParseObjFile();
 
