@@ -1,5 +1,7 @@
+#include "Bucket.h" // Bucket
 #include "Camera.h" // Camera
 #include "Colors.h" // Color, ColorMode, Colors::Black, Colors::Red
+#include "ImageBuffer.h" // ImageBuffer
 #include "Lights.h" // Light, PointLight
 #include "Materials.h" // MaterialType, Bitmap, TextureType
 #include "Mesh.h" // PreparedMesh
@@ -12,11 +14,14 @@
 
 #include <algorithm> // round, min, max, swap
 #include <cassert> // assert
-#include <cmath> // sqrtf
+#include <cmath> // sqrtf, ceil
 #include <filesystem> // create_directories
-#include <iostream> // cout, flush
+#include <functional> // ref, cref
+#include <iostream> // cout, flush, cerr
 #include <numbers> // pi_v
 #include <string> // string, to_string
+#include <thread> // hardware_concurrency
+#include <stdexcept> // runtime_error
 
 
 Render::Render( const Scene& scene )
@@ -43,6 +48,300 @@ Render::Render( const Scene& scene, Camera& overrideCamera, const std::string& o
 Render::~Render() {
     delete m_overrideCamera;
     delete m_overrideSaveName;
+}
+
+void Render::RenderImage() {
+    const unsigned& width{ m_scene.GetSettings().renderWidth };
+    const unsigned& height{ m_scene.GetSettings().renderHeight };
+    const Camera& camera{
+        m_overrideCamera == nullptr ? m_scene.GetCamera() : *m_overrideCamera };
+    std::ofstream ppmFileStream = PrepareScene();
+    Color pixelColor{};
+
+    for ( unsigned y{}; y < height; ++y ) {
+        for ( unsigned x{}; x < width; ++x ) {
+            Ray ray = camera.GenerateRay( x, y, m_scene.GetSettings() );
+            if ( !HasAABBCollision( ray ) ) {
+                pixelColor = m_scene.GetSettings().BGColor;
+            }
+            else {
+                IntersectionData intersectData = TraceRay( ray );
+                pixelColor = Shade( ray, intersectData );
+            }
+            writeColorToFile( ppmFileStream, pixelColor, m_scene.GetSettings().maxColorComp );
+        }
+        std::cout << "\rLine: " << y + 1 << " / " << height << "  |  "
+            << (static_cast<float>(y + 1) / height) * 100 << "%          " << std::flush;
+    }
+
+    ppmFileStream.close();
+}
+
+void Render::RenderParallel() {
+    unsigned threadCount{ std::thread::hardware_concurrency() };
+
+    if ( threadCount == 0u ) {
+        std::cerr << "Warning: Could not detect number of hardware threads."
+            "Falling back to 1.\n";
+        threadCount = 1u;
+        RenderImage();
+        return;
+    }
+
+    const unsigned& width = m_scene.GetSettings().renderWidth;
+    const unsigned& height = m_scene.GetSettings().renderHeight;
+    const Camera& camera{
+        m_overrideCamera == nullptr ? m_scene.GetCamera() : *m_overrideCamera };
+    std::ofstream ppmFileStream = PrepareScene();
+
+    ImageBuffer buff{ width, height };
+
+    // Calculate number of rows and columns of regions based on number of threads.
+    unsigned rows{ static_cast<unsigned>( std::sqrt( threadCount ) ) };
+    unsigned cols{ static_cast<unsigned>(std::ceil( static_cast<double>( threadCount ) / rows )) };
+    unsigned regionWidth = static_cast<int>(std::ceil( static_cast<double>(width) / cols ));
+    unsigned regionHeight = static_cast<int>(std::ceil( static_cast<double>(height) / rows ));
+
+    std::vector<std::thread> threads{};
+    threads.reserve( threadCount );
+
+    for ( unsigned int i{}; i < threadCount; ++i ) {
+        // Calculate start and end pixels for current region.
+        Bucket region;
+        region.startX = ( i % cols ) * regionWidth;
+        region.startY = ( i / cols ) * regionHeight;
+        region.endX = region.startX + regionWidth;
+        region.endY = region.startY + regionHeight;
+
+        // Clamp end coordinates to image boundaries.
+        if ( region.endX > width )
+            region.endX = width;
+        if ( region.endY > height )
+            region.endY = height;
+
+        // Skip region if the it's empty due to rounding or small image.
+        if ( region.startX >= region.endX || region.startY >= region.endY )
+            continue;
+
+        threads.emplace_back(
+            &Render::RenderRegion,
+            this,
+            std::cref( region ),
+            std::ref( buff )
+        );
+    }
+
+    for ( std::thread& t : threads ) {
+        if ( t.joinable() ) {
+            t.join();
+        }
+    }
+
+    for ( unsigned row{}; row < height; ++row ) {
+        for ( unsigned col{}; col < width; ++col ) {
+            writeColorToFile( ppmFileStream, buff[row][col], m_scene.GetSettings().maxColorComp);
+        }
+    }
+    ppmFileStream.close();
+}
+
+void Render::RenderBuckets() {
+    unsigned threadCount{ std::thread::hardware_concurrency() };
+
+    if ( threadCount == 0 ) {
+        std::cerr << "Warning: Could not detect number of hardware threads."
+            "Falling back to 1.\n";
+        threadCount = 1;
+        RenderImage();
+        return;
+    }
+
+    const unsigned& width = m_scene.GetSettings().renderWidth;
+    const unsigned& height = m_scene.GetSettings().renderHeight;
+    const Camera& camera{
+        m_overrideCamera == nullptr ? m_scene.GetCamera() : *m_overrideCamera };
+    std::ofstream ppmFileStream = PrepareScene();
+
+    ImageBuffer buff{ width, height };
+
+    std::queue<Bucket> buckets;
+    std::mutex bucketMutex;
+
+
+    unsigned bucketSize{ m_scene.GetSettings().bucketSize };
+    if ( bucketSize == 0u ) {
+        std::cerr << "Error: Buckets must have size. Defaulting to 24." << std::endl;
+        bucketSize = 24u;
+    }
+
+    // Calculate number of rows and columns of buckets based on their size.
+    unsigned cols = static_cast<unsigned>(std::ceil( static_cast<double>(width) / bucketSize ));
+    unsigned rows = static_cast<unsigned>(std::ceil( static_cast<double>(height) / bucketSize ));
+
+    for ( unsigned row = 0; row < rows; ++row ) {
+        for ( unsigned col = 0; col < cols; ++col ) {
+            unsigned startX = col * bucketSize;
+            unsigned startY = row * bucketSize;
+            unsigned endX = startX + bucketSize;
+            unsigned endY = startY + bucketSize;
+
+            // Clamp end coordinates to image boundaries.
+            if ( endX > width ) endX = width;
+            if ( endY > height ) endY = height;
+
+            // Only add valid buckets.
+            if ( startX < endX && startY < endY ) {
+                buckets.push( Bucket( startX, startY, endX, endY ) );
+            }
+        }
+    }
+
+    std::vector<std::thread> threads{};
+    threads.reserve( threadCount );
+
+    for ( unsigned int i{}; i < threadCount; ++i ) {
+        threads.emplace_back(
+            &Render::RenderBucketWorker,
+            this,
+            std::ref( bucketMutex ),
+            std::ref( buckets ),
+            std::ref( buff )
+        );
+    }
+
+    for ( std::thread& t : threads ) {
+        if ( t.joinable() ) {
+            t.join();
+        }
+    }
+
+    for ( unsigned row{}; row < height; ++row ) {
+        for ( unsigned col{}; col < width; ++col ) {
+            writeColorToFile( ppmFileStream, buff[row][col], m_scene.GetSettings().maxColorComp );
+        }
+    }
+    ppmFileStream.close();
+}
+
+void Render::RenderRegion( const Bucket& region, ImageBuffer& buff ) {
+    const Camera& camera{
+        m_overrideCamera == nullptr ? m_scene.GetCamera() : *m_overrideCamera };
+    Color pixelColor{};
+
+    for ( unsigned row{ region.startY}; row < region.endY; ++row ) {
+        for ( unsigned col{ region.startX}; col < region.endX; ++col ) {
+            Ray ray = camera.GenerateRay( col, row, m_scene.GetSettings() );
+            if ( !HasAABBCollision( ray ) ) {
+                pixelColor = m_scene.GetSettings().BGColor;
+            }
+            else {
+                IntersectionData intersectData = TraceRay( ray );
+                pixelColor = Shade( ray, intersectData );
+            }
+            buff[row][col] = pixelColor;
+        }
+    }
+}
+
+void Render::RenderCameraMoveAnimation(
+    const FVector3& initialPos, const FVector3& moveWith ) {
+
+    Camera camera{};
+    m_overrideCamera = &camera;
+    camera.Move( initialPos );
+    std::string saveName;
+
+    for ( int frame{}; frame < m_frames; ++frame ) {
+        camera.Move( moveWith );
+        saveName = "Move" + std::to_string( frame );
+        RenderImage();
+    }
+}
+
+void Render::RenderRotationAroundObject( const FVector3& initialPos, const FVector3& rot ) {
+    Camera camera{};
+    m_overrideCamera = &camera;
+    std::string saveName;
+
+    camera.Move( initialPos );
+    float distToObject{ initialPos.z };
+
+    for ( int frame{}; frame < m_frames; ++frame ) {
+        camera.RotateAroundPoint(
+            { 0.f, 0.f, distToObject }, { frame * rot.x, frame * rot.y, frame * rot.z } );
+        saveName = "Orbit" + std::to_string( frame + 1 );
+        RenderImage();
+    }
+}
+
+void Render::RenderBucketWorker( std::mutex& bucketMutex, std::queue<Bucket>& buckets, ImageBuffer& buff ) {
+    while ( true ) {
+        Bucket bck;
+        bool gotBucket = false;
+
+        // Acquire lock to safely access the shared queue
+        {
+            std::lock_guard<std::mutex> lock( bucketMutex );
+            if ( !buckets.empty() ) {
+                bck = buckets.front();
+                buckets.pop();
+                gotBucket = true;
+            }
+        } // Lock released when going out of scope.
+
+        if ( gotBucket ) {
+            RenderRegion( bck, buff );
+        } else {
+            break; // No more buckets. This thread can exit.
+        }
+    }
+}
+
+bool Render::HasAABBCollision( const Ray& ray ) const {
+    const FVector3& AABBmax{ m_scene.GetAABBmax() };
+    const FVector3& AABBmin{ m_scene.GetAABBmin() };
+
+    float tMin{ 0.f }; // The closes intersection point along the ray must be positive.
+    float tMax{ std::numeric_limits<float>::max() };
+
+    for ( int i{}; i < 3; ++i ) {
+        float rayOriginComponent;
+        float rayDirComponent;
+        float AABBminComponent;
+        float AABBmaxComponent;
+
+        if ( i == 0 ) {
+            rayOriginComponent = ray.origin.x;
+            rayDirComponent = ray.direction.x;
+            AABBminComponent = AABBmin.x;
+            AABBmaxComponent = AABBmax.x;
+        } else if ( i == 1 ) {
+            rayOriginComponent = ray.origin.y;
+            rayDirComponent = ray.direction.y;
+            AABBminComponent = AABBmin.y;
+            AABBmaxComponent = AABBmax.y;
+        } else if ( i == 2 ) {
+            rayOriginComponent = ray.origin.z;
+            rayDirComponent = ray.direction.z;
+            AABBminComponent = AABBmin.z;
+            AABBmaxComponent = AABBmax.z;
+        }
+
+        float t0 = (AABBminComponent - rayOriginComponent) / rayDirComponent;
+        float t1 = (AABBmaxComponent - rayOriginComponent) / rayDirComponent;
+
+        // Ensure t0 always holds the smaller of the 2 intersections.
+        if ( isGreaterThan( t0, t1 ) )
+            std::swap( t0, t1 );
+
+        tMin = std::max( tMin, t0 );
+        tMax = std::min( tMax, t1 );
+
+        // If at any point tMin is greater than tMax, there's no intersection.
+        if ( tMin > tMax )
+            return false;
+    }
+    return true;
 }
 
 bool Render::IsInShadow( const Ray& ray, const float distToLight ) const {
@@ -132,7 +431,7 @@ FVector3 Render::CalcHitNormal( const FVector3& intersectionPt, const Triangle& 
         + triangle.GetVert( 0u ).normal * (1 - UV.x - UV.y)).Normalize();
 }
 
-Color Render::GetEdgesColor(const IntersectionData& data) {
+Color Render::GetEdgesColor( const IntersectionData& data ) {
     const FVector2 UV = CalcBaryCoords( data.hitPoint, data.triangle );
     const float edgeWdith = data.material->texture.scalar;
     if ( UV.x < edgeWdith || UV.y < edgeWdith || 1 - UV.x - UV.y < edgeWdith ) {
@@ -241,7 +540,7 @@ Color Render::ShadeDiffuse( const IntersectionData& data ) const {
         /* Offset the hitPoint slightly along the normal to avoid self-intersection
          * Another common technique is to check rayPointDist > EPSILON */
         const FVector3 offsetHitPoint{
-            data.hitPoint + (surfaceNormal * m_scene.GetSettings().shadowBias ) };
+            data.hitPoint + (surfaceNormal * m_scene.GetSettings().shadowBias) };
         Ray shadowRay{ offsetHitPoint, lightDir, -1, RayType::Shadow, false };
 
         if ( Render::IsInShadow( shadowRay, lightDirLen ) )
@@ -400,37 +699,28 @@ Color Render::Shade( const Ray& ray, const IntersectionData& data ) const {
     if ( data.material == nullptr ) {
         // The camera ray didn't hit any objects - just the background.
         return pixelColor;
-    }
-    else if ( ray.pathDepth >= m_scene.GetSettings().pathDepth ) {
+    } else if ( ray.pathDepth >= m_scene.GetSettings().pathDepth ) {
         return pixelColor; // or  Colors::Black
-    }
-    else if ( m_scene.GetRenderMode() == RenderMode::Barycentric ) {
+    } else if ( m_scene.GetRenderMode() == RenderMode::Barycentric ) {
         pixelColor = ShadeBary( data );
-    }
-    else if ( m_scene.GetRenderMode() == RenderMode::Normals ) {
+    } else if ( m_scene.GetRenderMode() == RenderMode::Normals ) {
         pixelColor = ShadeNormals( data );
-    }
-    else if ( m_scene.GetRenderMode() == RenderMode::ShadedNormals ) {
+    } else if ( m_scene.GetRenderMode() == RenderMode::ShadedNormals ) {
         pixelColor = ShadeDiffuse( data );
-    }
-    else if ( m_scene.GetRenderMode() == RenderMode::ObjectColor ) {
+    } else if ( m_scene.GetRenderMode() == RenderMode::ObjectColor ) {
         pixelColor = ShadeConstant( data );
-    }
-    else if ( m_scene.GetRenderMode() == RenderMode::Material
+    } else if ( m_scene.GetRenderMode() == RenderMode::Material
         && data.material->type == MaterialType::Diffuse ) {
         pixelColor = ShadeDiffuse( data );
-    }
-    else if ( m_scene.GetRenderMode() == RenderMode::Material
+    } else if ( m_scene.GetRenderMode() == RenderMode::Material
         && data.material->type == MaterialType::Reflective ) {
         //pixelColor = ShadeDiffuse( data );
         pixelColor = ShadeReflective( ray, data );
-    }
-    else if ( m_scene.GetRenderMode() == RenderMode::Material
+    } else if ( m_scene.GetRenderMode() == RenderMode::Material
         && data.material->type == MaterialType::Refractive ) {
         //pixelColor = ShadeDiffuse( data );
         pixelColor = ShadeRefractive( ray, data );
-    }
-    else {
+    } else {
         assert( false );
     }
 
@@ -443,7 +733,7 @@ IntersectionData Render::TraceRay( const Ray& ray, const float maxT ) const {
     float bias{ 0.f }; //! Currently used for reflection!
     if ( ray.type == RayType::Shadow )
         bias = m_scene.GetSettings().shadowBias;
-    else if (ray.type == RayType::Refractive )
+    else if ( ray.type == RayType::Refractive )
         bias = m_scene.GetSettings().refractBias;
 
     for ( const PreparedMesh& mesh : m_scene.GetPreparedMeshes() ) {
@@ -456,8 +746,7 @@ IntersectionData Render::TraceRay( const Ray& ray, const float maxT ) const {
             if ( ray.ignoreBackface ) {
                 if ( isGreaterEqualThan( rayProj, 0.f ) )
                     continue;
-            }
-            else {
+            } else {
                 if ( areEqual( rayProj, 0.f ) )
                     continue;
             }
@@ -472,8 +761,7 @@ IntersectionData Render::TraceRay( const Ray& ray, const float maxT ) const {
                 if ( isGreaterEqualThan( rayPlaneDist, 0.f ) )
                     // Ray is not towards Triangle's plane.
                     continue;
-            }
-            else {
+            } else {
                 /* Check if: Ray hits behind the hitPoint(negative rayPointDist)
                  *           Ray hits at or very near the hitPoint (self-intersection)
                  *           Ray hits beyond the light source */
@@ -510,58 +798,6 @@ IntersectionData Render::TraceRay( const Ray& ray, const float maxT ) const {
         }
     }
     return intersectData;
-}
-
-void Render::RenderImage() {
-    const int& width{ m_scene.GetSettings().renderWidth };
-    const int& height{ m_scene.GetSettings().renderHeight };
-    const Camera& camera{
-        m_overrideCamera == nullptr ? m_scene.GetCamera() : *m_overrideCamera };
-    std::ofstream ppmFileStream = PrepareScene();
-
-    for ( int y{}; y < height; ++y ) {
-        for ( int x{}; x < width; ++x ) {
-            Ray ray = camera.GenerateRay( x, y, m_scene.GetSettings() );
-            IntersectionData intersectData = TraceRay( ray );
-            Color pixelColor = Shade( ray, intersectData );
-            writeColorToFile( ppmFileStream, pixelColor, m_scene.GetSettings().maxColorComp );
-        }
-        std::cout << "\rLine: " << y + 1 << " / " << height << "  |  "
-            << (static_cast<float>(y + 1) / height) * 100 << "%          " << std::flush;
-    }
-
-    ppmFileStream.close();
-}
-
-void Render::RenderCameraMoveAnimation(
-    const FVector3& initialPos, const FVector3& moveWith ) {
-
-    Camera camera{};
-    m_overrideCamera = &camera;
-    camera.Move( initialPos );
-    std::string saveName;
-
-    for ( int frame{}; frame < m_frames; ++frame ) {
-        camera.Move( moveWith );
-        saveName = "Move" + std::to_string( frame );
-        RenderImage();
-    }
-}
-
-void Render::RenderRotationAroundObject( const FVector3& initialPos, const FVector3& rot ) {
-    Camera camera{};
-    m_overrideCamera = &camera;
-    std::string saveName;
-
-    camera.Move( initialPos );
-    float distToObject{ initialPos.z };
-
-    for ( int frame{}; frame < m_frames; ++frame ) {
-        camera.RotateAroundPoint(
-            { 0.f, 0.f, distToObject }, { frame * rot.x, frame * rot.y, frame * rot.z } );
-        saveName = "Orbit" + std::to_string( frame + 1 );
-        RenderImage();
-    }
 }
 
 std::ofstream Render::PrepareScene() {

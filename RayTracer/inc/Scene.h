@@ -66,6 +66,14 @@ public:
 	// @return A collection of all light objects in the scene.
 	const std::vector<Light*>& GetLights() const;
 
+	// A getter function for the axis aligned bounding box min.
+	// @return The value as an FVector3 object.
+	const FVector3& GetAABBmin() const;
+
+	// A getter function for the axis aligned bounding box max.
+	// @return The value as an FVector3 object.
+	const FVector3& GetAABBmax() const;
+
 	// Parse an obj file and load all relevant data
 	void ParseObjFile();
 private:
@@ -76,6 +84,8 @@ private:
 	Settings m_settings; // Global scene settings
 	std::vector<Light*> m_lights;
 	std::vector<Texture> m_textures; // Texture objects
+	FVector3 m_AABBmin;
+	FVector3 m_AABBmax;
 
 // crtscene file parsing (json)
 private:
@@ -102,6 +112,11 @@ private:
 	// Internal function for parsing the materials tag of a crtscene file.
 	// @param[in] doc: A rapidjson document object with the parsed json file.
 	void ParseMaterialsTag( const rapidjson::Document& );
+
+	// Internal function for loading vertices from an array.
+	// @param[in] arr: The array to traverse.
+	// @return A collection of FVector3 objects representing the vertices.
+	std::vector<FVector3> LoadVertices( const rapidjson::Value::ConstArray& );
 
 // Obj file parsing
 private:

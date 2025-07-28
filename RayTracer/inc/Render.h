@@ -3,12 +3,16 @@
 
 #include <fstream> // ofstream, ios::binary
 #include <limits> // numeric_limits<float>::max
+#include <mutex> // mutex
+#include <queue> // queue
 #include <string> // string, to_string
 
 #include "RenderSettings.h" // IntersectionData
 #include "Vectors.h" // FVector2, FVector3
 
+struct Bucket;
 struct Camera;
+class ImageBuffer;
 class Mesh;
 struct Ray;
 class Scene;
@@ -17,11 +21,6 @@ class Triangle;
 
 class Render {
 public:
-	const Scene& m_scene; // Reference to the scene object and properties.
-	Camera* m_overrideCamera; // Pointer to a camera to use instead of the scene camera.
-	const std::string* m_overrideSaveName; // Pointer to a name to override the save file.
-	int m_frames; // Number of frames to render for the animation renders.
-
     // @param[in] scene: The scene object to render.
 	Render( const Scene& );
 
@@ -36,6 +35,47 @@ public:
     // @param[in] overrideSaveName: A custom name for the rendered image.
 	Render( const Scene&, Camera&, const std::string& );
 	~Render();
+
+    // Renders a single image with a single thread.
+    void RenderImage();
+
+    // Renders a single image with multiple threads, each rendering a separate region.
+    void RenderParallel();
+
+    // Renders a single image with multiple threads, taking buckets from a pool.
+    void RenderBuckets();
+
+    // Renders a single region of pixels.
+    // @param[in] region: A structure holding the start and end positions for the region to render.
+    // @param[in] buff: The buffer where the rendered colors will be stored.
+    void RenderRegion( const Bucket&, ImageBuffer& );
+
+    // Renders a camera movement animation around the scene.
+    // @param[in] initialPos: The initial camera position.
+    // @param[in] moveWith: A vector representing a relative x, y, z
+    // offset for the end camera position.
+    void RenderCameraMoveAnimation( const FVector3&, const FVector3& );
+
+    // Renders a camera orbiting animation around an object (or a point in space).
+    // @param[in] initialPos: The initial camera position.
+    // @param[in] rotation: A vector indicating an X, Y, Z angle at which to rotate the camera.
+    void RenderRotationAroundObject( const FVector3&, const FVector3& );
+
+private:
+    const Scene& m_scene; // Reference to the scene object and properties.
+    Camera* m_overrideCamera; // Pointer to a camera to use instead of the scene camera.
+    const std::string* m_overrideSaveName; // Pointer to a name to override the save file.
+    int m_frames; // Number of frames to render for the animation renders.
+
+    // Renders a single bucket of an image. Used with bucket rendering.
+    // @param[in] bucketMutex: A mutex used to lock the buckets.
+    // @param[in] buckets: A queue of nuckets to render.
+    // @param[in] buff: The image buffer to store the data.
+    void RenderBucketWorker( std::mutex&, std::queue<Bucket>&, ImageBuffer& );
+
+    // Checks if the current ray intersects the scene's axis aligned bounding box.
+    // @param[in-out] ray: The ray to be checked.
+    bool HasAABBCollision( const Ray& ) const;
 
     // Traces ShadowRay from hit point to light sources.
     // @param[in] ray: The shadow ray to trace.
@@ -126,20 +166,6 @@ public:
     IntersectionData TraceRay(
         const Ray& ray, const float maxT = std::numeric_limits<float>::max() ) const;
 
-    // Renders a single image.
-    void RenderImage();
-    // Renders a camera movement animation around the scene.
-    // @param[in] initialPos: The initial camera position.
-    // @param[in] moveWith: A vector representing a relative x, y, z
-    // offset for the end camera position.
-    void RenderCameraMoveAnimation( const FVector3&, const FVector3& );
-
-    // Renders a camera orbiting animation around an object (or a point in space).
-    // @param[in] initialPos: The initial camera position.
-    // @param[in] rotation: A vector indicating an X, Y, Z angle at which to rotate the camera.
-    void RenderRotationAroundObject( const FVector3&, const FVector3& );
-
-private:
     // Prepares a .PPM file to be filled in with color data.
     // @return A stream to fill in the color data to.
 	std::ofstream PrepareScene();

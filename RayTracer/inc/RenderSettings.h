@@ -28,8 +28,8 @@ enum class RenderMode {
 
 // Global scene settings
 struct Settings {
-	int renderWidth;
-	int renderHeight;
+	unsigned renderWidth;
+	unsigned renderHeight;
 	int maxColorComp; // The maximum color component for the scene (color-depth).
 	Color BGColor;
 	std::string saveDir;
@@ -49,6 +49,7 @@ struct Settings {
 	RenderMode renderMode;
 	// Whether the camera rays should hit or ignore the triangle's backfaces.
 	bool ignoreBackface;
+	unsigned bucketSize; // Bucket size for bucket rendering. Defaults to 24.
 
 	// @param[in] colorDepth: The color's bit depth. Defaults to 8-bit colors.
 	Settings( const int colorDepth = 8 );

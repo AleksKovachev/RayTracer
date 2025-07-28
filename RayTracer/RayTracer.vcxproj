@@ -168,6 +168,7 @@ echo ===========================================================================
     <ClCompile Include="src\Bases.cpp" />
     <ClCompile Include="src\Colors.cpp" />
     <ClCompile Include="src\DebugObjects.cpp" />
+    <ClCompile Include="src\ImageBuffer.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\Materials.cpp" />
@@ -181,9 +182,11 @@ echo ===========================================================================
     <ClCompile Include="src\Vectors.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="inc\Bucket.h" />
     <ClInclude Include="inc\Bases.h" />
     <ClInclude Include="inc\Camera.h" />
     <ClInclude Include="inc\Colors.h" />
+    <ClInclude Include="inc\ImageBuffer.h" />
     <ClInclude Include="inc\Lights.h" />
     <ClInclude Include="inc\Materials.h" />
     <ClInclude Include="inc\Mesh.h" />
