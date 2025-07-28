@@ -22,7 +22,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{d40b06a9-d55a-4358-b3c3-5030863bc28b}</ProjectGuid>
-    <RootNamespace>Testing</RootNamespace>
+    <RootNamespace>RayTracer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>RayTracer</ProjectName>
   </PropertyGroup>
@@ -106,7 +106,7 @@
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>../Test2;inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -150,7 +150,7 @@ echo ===========================================================================
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../Test2;inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ShowIncludes>false</ShowIncludes>
     </ClCompile>
@@ -176,11 +176,6 @@ echo ===========================================================================
     <ClCompile Include="src\SpaceConversions.cpp" />
     <ClCompile Include="src\utils.cpp" />
     <ClCompile Include="src\Vectors.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Test2\Test2.vcxproj">
-      <Project>{a55a915e-2745-43b3-9f25-a80abc30047d}</Project>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\Bases.h" />
