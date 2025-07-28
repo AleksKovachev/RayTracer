@@ -6,3 +6,4 @@ Settings::Settings( const int colorDepth )
 	shadowBias{ 0.1f }, renderMode { RenderMode::ShadedSmooth },
 	reflectionDepth{ 5 } {
 }
+

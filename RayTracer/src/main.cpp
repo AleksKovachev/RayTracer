@@ -28,6 +28,7 @@
 #include "utils.h"
 #include "Vectors.h"
 
+
 //void interactiveRender(Params& params) {
 //    iniData interactiveData;
 //    Scene scene( "./rsc/Pyramid.crtscene" );

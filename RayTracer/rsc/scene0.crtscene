@@ -3,6 +3,7 @@
 		"background_color": [
 			0, 0.5, 0
 		],		
+		
 		"image_settings": {
 			"width": 1920,
 			"height": 1080
@@ -15,6 +16,7 @@
 			0, 1, 0,
 			0, 0, 1
 		],		
+		
 		"position": [
 			0, 0, 0
 		]
@@ -26,7 +28,7 @@
 				1, 1, 0
 			],
 			"smooth_shading": false
-		}	
+		}
 	],
 	
 	"objects": [{
@@ -36,6 +38,7 @@
 				1.75, -1.75, -3,
 				0, 1.75, -3
 			],			
+			
 			"triangles": [
 				0, 1, 2
 			]

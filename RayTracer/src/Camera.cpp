@@ -244,32 +244,33 @@ Color Camera::GetTriangleIntersection(
             // rayProj = 0 -> Ray is parallel to surface - Ignore, it can't hit.
             // rayProj > 0 -> back-face
             // rayProj < 0 -> front-face
-            float rayProj = ray.Dot( triangle.GetNormal() );
+        float rayProj = ray.Dot( triangle.GetNormal() );
             if ( isGreaterEqualThan( rayProj, 0.f ) ) // Ignore back-face
-                continue;
+            continue;
 
             float rayPlaneDist = (triangle.GetVert( 0 ).pos - rayOrigin)
                 .Dot( triangle.GetNormal() );
 
-            // Ray is not towards Triangle's plane
-            if ( isGreaterEqualThan( rayPlaneDist, 0.f ) )
+        // Ray is not towards Triangle's plane
+        if ( isGreaterEqualThan( rayPlaneDist, 0.f ) )
                 continue;
 
             // Ray-to-Point scale factor for unit vector to reach the Point
             float rayPointDist = rayPlaneDist / rayProj;
 
-            // Ray parametric equation - represent points on a line going through a Ray.
+        // Ray parametric equation - represent points on a line going through a Ray.
             FVector3 intersectionPt = rayOrigin + (ray * rayPointDist);
 
-            // Ignore intersection if a closer one to the Camera has already been found
+        // Ignore intersection if a closer one to the Camera has already been found
             if ( rayPointDist > closestIntersectionP || isLessEqualThan( rayPointDist, 0.f ) )
                 continue;
 
             // If the Plane intersection point is not inside the triangle - don't render it
             if ( !triangle.IsPointInside( intersectionPt ) )
-                continue;
+            continue;
 
-            closestIntersectionP = rayPointDist;
+        if ( triangle.IsPointInside( intersectionPt ) ) {
+                closestIntersectionP = rayPointDist;
 
             switch ( scene.GetRenderMode() ) {
                 case RenderMode::ObjectColor: {
@@ -318,7 +319,7 @@ Color Camera::GetTriangleIntersection(
                 } // RenderMode
                 case RenderMode::ShadedSmooth: {
                     FVector3 hitNormal = calculateHitNormal( intersectionPt, triangle );
-                    IntersectionData intersectionData( meshes, mesh, scene, intersectionPt );
+                IntersectionData intersectionData( meshes, mesh, scene, intersectionPt );
 
                     switch ( mesh.m_material.type ) {
                         case MaterialType::Diffuse: {
