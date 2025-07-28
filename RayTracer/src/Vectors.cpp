@@ -29,7 +29,7 @@ Vector3& Vector3::operator+=( const Vector3& other ) {
 }
 
 void FVector3::init() {
-	setLength();
+	calculateLength();
 }
 
 FVector3 FVector3::operator+( const FVector3& other ) const {
@@ -48,20 +48,24 @@ FVector3& FVector3::operator+=( const FVector3& other ) {
 }
 
 // Cross product
-FVector3 FVector3::operator*( const FVector3& other ) {
+FVector3 FVector3::operator*( const FVector3& other ) const {
 	return { y * other.z - z * other.y,
 			 z * other.x - x * other.z,
 			 x * other.y - y * other.x };
 }
 
 // Scalar multiplication
-FVector3 FVector3::operator*( const double& other ) {
+FVector3 FVector3::operator*( const double& other ) const {
 	return { x * other, y * other, z * other };
 }
 
 
 double FVector3::getLength() const {
 	return length;
+}
+
+double FVector3::dot( const FVector3& other ) const {
+	return (x * other.x) + (y * other.y) + (z * other.z);
 }
 
 FVector3 FVector3::normalize() {
@@ -75,7 +79,7 @@ void FVector3::normalizeInPlace() {
 	z /= vecLen;
 }
 
-void FVector3::setLength() {
+void FVector3::calculateLength() {
 	length = sqrt( x * x + y * y + z * z );
 }
 

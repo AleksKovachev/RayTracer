@@ -41,6 +41,14 @@ struct Color : protected Vector3 {
         g = static_cast<int>(round( in_g * 255 ));
         b = static_cast<int>(round( in_b * 255 ));
     }
+
+    // Copy assignment
+    Color& operator=( const Color& other ) {
+        x = other.x;
+        y = other.y;
+        z = other.z;
+        return *this;
+    }
 };
 
 // Easy printing of a Color (inline prevents linker error as this is in a header)

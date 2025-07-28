@@ -71,17 +71,23 @@ struct FVector3 {
     FVector3 operator-( const FVector3& other ) const;
     FVector3& operator+=( const FVector3& other );
     // Scalar multiplication
-    FVector3 operator*( const double& other );
+    FVector3 operator*( const double& other ) const;
     // Cross product
-    FVector3 operator*( const FVector3& other );
+    FVector3 operator*( const FVector3& other ) const;
 
+    // Returns vector length
     double getLength() const;
+    // Dot product with given vector
+    double dot( const FVector3& other ) const;
+    // Returns normalized version of this vector
     FVector3 normalize();
+    // Normalizes this vector in-place
     void normalizeInPlace();
 private:
     double length;
 
-    void setLength();
+    // Calculates the length of this vector
+    void calculateLength();
 };
 
 // Easy printing of a Vector2
@@ -90,4 +96,4 @@ std::ostream& operator<<( std::ostream& os, const Vector2& vec );
 // Easy printing of a FVector3
 std::ostream& operator<<( std::ostream& os, const FVector3& vec );
 
-#endif // !VECTORS_H
+#endif // VECTORS_H
