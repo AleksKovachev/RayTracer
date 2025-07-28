@@ -67,9 +67,9 @@ void AccTreeNode::Intersect(
 	float bias{ 0.f }; //! Default value currently only used for reflection!
 
 	if ( ray.type == RayType::Shadow )
-		bias = m_scene.GetSettings().shadowBias;
+		bias = m_scene.settings.shadowBias;
 	else if ( ray.type == RayType::Refractive )
-		bias = m_scene.GetSettings().refractBias;
+		bias = m_scene.settings.refractBias;
 
 	for ( const int triIdx : triIndices ) {
 		const Triangle& triangle = m_scene.GetTriangles()[triIdx];
@@ -131,7 +131,7 @@ void AccTreeNode::Intersect(
 		closestIntersection = rayPointDist;
 		data.faceNormal = triangle.GetNormal();
 		data.hitPoint = intersectionPt;
-		if ( m_scene.GetRenderMode() == RenderMode::RandomMeshColor ) {
+		if ( m_scene.settings.renderMode == RenderMode::RandomMeshColor ) {
 			data.material = &(m_scene.GetOverrideMaterials()[triangle.overrideMatIdx]);
 		} else {
 			data.material = &(m_scene.GetMaterials()[triangle.matIdx]);

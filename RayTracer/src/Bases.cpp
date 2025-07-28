@@ -28,6 +28,15 @@ Matrix3::Matrix3( const FVector3& v1, const FVector3& v2, const FVector3& v3 ) {
     m[2][0] = v3.x; m[2][1] = v3.y; m[2][2] = v3.z;
 }
 
+Matrix3 Matrix3::GetInverse() const {
+    Matrix3 inv;
+    // Transpose matrix.
+    for ( int i{}; i < 3; ++i )
+        for ( int j{}; j < 3; ++j )
+            inv.m[i][j] = m[j][i];
+    return inv;
+}
+
 Matrix3 Matrix3::operator*( const Matrix3& other ) const {
     Matrix3 result;
     for ( int i{}; i < 3; ++i ) {
@@ -68,25 +77,15 @@ void Obj::Move( const FVector3& pos ) {
 }
 
 void Obj::Rotate( const FVector3& vec ) {
-    bool assigned{ false };
 
     if ( !areEqual( vec.x, 0.f ) ) { // pitch
-        m_orientation = GetXRotMatrix( vec.x );
-        assigned = true;
+        m_orientation *= GetXRotMatrix( vec.x );
     }
     if ( !areEqual( vec.y, 0.f ) ) { // yaw
-        if ( assigned )
-            m_orientation *= GetYRotMatrix( vec.y );
-        else {
-            m_orientation = GetYRotMatrix( vec.y );
-            assigned = true;
-        }
+        m_orientation *= GetYRotMatrix( vec.y );
     }
     if ( !areEqual( vec.z, 0.f ) ) { // roll
-        if ( assigned )
-            m_orientation *= GetZRotMatrix( vec.z );
-        else
-            m_orientation = GetZRotMatrix( vec.z );
+        m_orientation *= GetZRotMatrix( vec.z );
     }
 }
 
@@ -115,6 +114,14 @@ void Obj::Rotate( const float x, const float y, const float z ) {
 
 FVector3 Obj::GetForwardVector() const {
     return ApplyRotation( { 0, 0, -1 } );
+}
+
+Matrix3 Obj::GetOrientationMatrix() const {
+    return m_orientation;
+}
+
+void Obj::SetOrientation( const Matrix3& matrix ) {
+    m_orientation = matrix;
 }
 
 Matrix3 Obj::GetXRotMatrix( const float deg ) const {

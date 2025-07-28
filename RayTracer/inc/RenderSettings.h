@@ -6,6 +6,7 @@
 #include "Colors.h" // Color
 #include "RenderMode.h" // RenderMode
 #include "Triangle.h" // Triangle
+#include "utils.h" // areCharsInString
 #include "Vectors.h" // FVector2, FVector3
 
 struct Color;
@@ -22,8 +23,8 @@ struct Settings {
 	unsigned renderHeight{};
 	unsigned colorDepth{ 8u };
 	Color BGColor{};
+	bool overrideBGColor{ false };
 	std::string saveDir{ "renders" };
-	std::string saveName{};
 	// Define a small epsilon to avoid self - intersection artifacts. Often
 	// 1e-3 - 1e-5 is used for ray origins. Smaller value if scene scale is
 	// tiny. A good approach is to have an adaptive shadow bias, based on the
@@ -42,6 +43,23 @@ struct Settings {
 	unsigned accTreeMaxDepth{ 15u }; // Maximum depth for building acceleration tree.
 	// Maximum number of triangles to store in an AccTree node.
 	unsigned maxAABBTriangleCount{ 10u };
+
+	// Override the name of the saved file.
+	// @param[in] newName: The new name for the rendered image.
+	void SetSaveFileName( const std::string& newName ) {
+		if ( areCharsInString( newName ) )
+			std::exit( 1 );
+
+		saveName = newName;
+	}
+
+	// Get the name the file will be saved with.
+	// @return The current save file name.
+	std::string GetSaveFileName() const {
+		return saveName;
+	}
+private:
+	std::string saveName{};
 };
 
 

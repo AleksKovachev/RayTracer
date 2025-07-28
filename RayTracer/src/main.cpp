@@ -14,6 +14,8 @@
 // TODO: Implement bitmap texture mapping without stretching. 2 types - Fit, which
 //       puts black bars around the texture to fit the geometry, and Fill, which
 //       places the texture making it go "out of bounds" but fill the geometry.
+// TODO: Make each bucket in bucket rendering save the rendered image to see the
+//       progress. Make it as a separate function, as it would slow donw the process.
 
 
 /*
@@ -26,69 +28,45 @@
  */
 
 
-//void interactiveRender(Params& params) {
-//    iniData interactiveData;
-//    Scene scene( "./rsc/Pyramid.crtscene" );
-//    scene.ParseSceneFile();
-//
-//    while ( true ) {
-//        interactiveData = readConfig();
-//
-//        render( scene );
-//    }
-//}
+int main( int argc, char* argv[] ) {
+	Camera camera{};
 
+	Scene scene( "./rsc/scene1.crtscene" );
+	//Scene scene( "./rsc/RefractionBall.crtscene" );
+	//Scene scene( "./rsc/TestPlane.obj" );
+	scene.settings.renderMode = RenderMode::Material;
+	scene.ParseSceneFile();
+	//scene.ParseObjFile();
 
-int main() {
-    Camera camera{};
+	Render render( scene );
 
-    //params.camera.Dolly( -3 );
-    //params.camera.Pan( 45 );
-    //params.camera.Dolly( 3 );
-    //params.camera.Tilt( 15 );
-    //params.camera.RotateAroundPoint( {0, 0, -3}, {0, 45, 0});
+	double secondsMedian{};
+	int nrRuns{ 1 };
+	for ( int i{}; i < nrRuns; ++i ) {
+		std::chrono::high_resolution_clock::time_point start{
+			std::chrono::high_resolution_clock::now() };
 
-    Scene scene( "./rsc/scene1.crtscene" );
-    //Scene scene( "./rsc/RefractionBall.crtscene" );
-    //Scene scene( "./rsc/TestPlane.obj" );
-    scene.SetRenderMode( RenderMode::Material );
-    scene.ParseSceneFile();
-    //scene.ParseObjFile();
+		//render.RenderImage();
+		render.RenderBuckets();
 
-    Render render( scene );
+		std::chrono::high_resolution_clock::time_point stop{
+			std::chrono::high_resolution_clock::now() };
 
-    double secondsMedian{};
-    int nrRuns{ 1 };
-    for ( int i{}; i < nrRuns; ++i ) {
-    std::chrono::high_resolution_clock::time_point start{
-        std::chrono::high_resolution_clock::now() };
+		std::chrono::microseconds duration{
+			std::chrono::duration_cast<std::chrono::microseconds>(stop - start) };
+		const double seconds{ duration.count() / 1'000'000.0 };
+		secondsMedian += seconds;
 
-    //render.RenderImage();
-    render.RenderBuckets();
+		std::cout << "Execution time: " << seconds << " seconds." << std::endl;
+	}
 
-    std::chrono::high_resolution_clock::time_point stop{
-        std::chrono::high_resolution_clock::now() };
+	std::cout << "\n\nMean execution time: " << secondsMedian / nrRuns <<
+		" for " << nrRuns << " runs." << std::endl;
 
-    std::chrono::microseconds duration{
-        std::chrono::duration_cast<std::chrono::microseconds>(stop - start) };
-    const double seconds{ duration.count() / 1'000'000.0 };
-        secondsMedian += seconds;
+	//render.frames = 10;
+	//render.RenderCameraMoveAnimation(
+	//	scene.GetCamera().GetLocation(), {0.f, 0.f, 0.2f});
+	//render.RenderRotationAroundObject( scene.GetCamera().GetLocation(), { 0.f, 5.f, 0.f } );
 
-    std::cout << "Execution time: " << seconds << " seconds." << std::endl;
-    }
-
-    std::cout << "\n\nMean execution time: " << secondsMedian / nrRuns <<
-        " for " << nrRuns << " runs." << std::endl;
-
-    //renderCameraMoveAnimation( scene, { 0.f, 1.f, 5.f }, { 0.2f, 0.f, 0.f }, 10 );
-    //renderRotationAroundObject( scene, { 0.f, 2.f, 5.f }, 30 );
-
-    //renderPyramid( params );
-    //renderRotationAroundPyramid( params );
-
-    //renderCameraTruckAnimation( Pyramid( { 0, 0, 0 } ).shape, params );
-
-    //interactiveRender( params );
-
-    return 0;
+	return 0;
 }

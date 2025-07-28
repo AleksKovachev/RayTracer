@@ -11,17 +11,24 @@ class Matrix3 {
 public:
     // Identity matrix by default.
     Matrix3();
+
     // @param[in] values: An initializer list of all values forming the matrix.
     Matrix3( const std::initializer_list<std::initializer_list<float>>& );
+
     // @param[in] v1: The first vector to form the first matrix row.
     // @param[in] v2: The second vector to form the second matrix row.
     // @param[in] v3: The third vector to form the third matrix row.
     Matrix3( const FVector3&, const FVector3&, const FVector3& );
 
+    // Get the inverse of this matrix. Return transposed matrix.
+	// @return A new Matrix3 object that is the inverse of this one.
+    Matrix3 GetInverse() const;
+
     // Multiplication with another row-major Matrix3.
     // @param[in] other: The other matrix this one will be multiplied with.
     // @return The resulting matrix.
     Matrix3 operator*( const Matrix3& ) const;
+
     // In-place multiplication with another row-major Matrix3.
     // @param[in] other: The other matrix this one will be multiplied with.
     // @return The same matrix, modified with the multiplication result.
@@ -41,6 +48,7 @@ private:
 class Obj {
 public:
     Obj();
+
     // @param[in] pos: The initial position of the object.
     Obj( const FVector3& );
 
@@ -72,6 +80,14 @@ public:
     // @return The forward vector.
     FVector3 GetForwardVector() const;
 
+    // Get the camera's current orientation matrix.
+	// @return The orientation matrix of the camera.
+    Matrix3 GetOrientationMatrix() const;
+
+    // Set the camera orientation matrix directly.
+	// @param[in] matrix: The orientation matrix to set.
+    void SetOrientation( const Matrix3& );
+
     friend class Scene;
 
 protected:
@@ -83,10 +99,12 @@ protected:
     // @param[int] deg: The angle in degrees at which the matrix should be generated.
     // @return The resulting matrix.
     Matrix3 GetXRotMatrix( const float ) const;
+
     // Returns the Rotation Matrix for the Y axis based on a given angle.
     // @param[int] deg: The angle in degrees at which the matrix should be generated.
     // @return The resulting matrix.
     Matrix3 GetYRotMatrix( const float ) const;
+
     // Returns the Rotation Matrix for the Z axis based on a given angle.
     // @param[int] deg: The angle in degrees at which the matrix should be generated.
     // @return The resulting matrix.

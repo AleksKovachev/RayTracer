@@ -24,37 +24,37 @@
 
 Render::Render( const Scene& scene )
 	: m_scene{ scene },
-	m_overrideCamera{ nullptr },
-	m_overrideSaveName{ nullptr },
-	m_frames{ 1 } {
+	overrideCamera{ nullptr },
+	overrideSaveName{ nullptr },
+	frames{ 1 } {
 }
 
 Render::Render( const Scene& scene, Camera& overrideCamera )
 	: m_scene{ scene },
-	m_overrideCamera{ &overrideCamera },
-	m_overrideSaveName{ nullptr },
-	m_frames{ 1 } {
+	overrideCamera{ &overrideCamera },
+	overrideSaveName{ nullptr },
+	frames{ 1 } {
 }
 
 Render::Render( const Scene& scene, Camera& overrideCamera, const std::string& overrideSaveName )
 	: m_scene{ scene },
-	m_overrideCamera{ &overrideCamera },
-	m_overrideSaveName{ &overrideSaveName },
-	m_frames{ 1 } {
+	overrideCamera{ &overrideCamera },
+	overrideSaveName{ &overrideSaveName },
+	frames{ 1 } {
 }
 
 Render::~Render() {
-	delete m_overrideCamera;
-	delete m_overrideSaveName;
+	delete overrideCamera;
+	delete overrideSaveName;
 }
 
 void Render::RenderImage() {
-	const Settings& settings{ m_scene.GetSettings() };
+	const Settings& settings{ m_scene.settings };
 	const unsigned maxColorComp{ static_cast<unsigned>( (1 << settings.colorDepth) - 1) };
 	const unsigned& width{ settings.renderWidth };
 	const unsigned& height{ settings.renderHeight };
 	const Camera& camera{
-		m_overrideCamera == nullptr ? m_scene.GetCamera() : *m_overrideCamera };
+		overrideCamera == nullptr ? m_scene.GetCamera() : *overrideCamera };
 	std::ofstream ppmFileStream = PrepareScene();
 	const AABBox& aabb{ m_scene.GetAABB() };
 	Color pixelColor{};
@@ -79,7 +79,7 @@ void Render::RenderImage() {
 
 void Render::RenderBuckets() {
 	unsigned threadCount{ std::thread::hardware_concurrency() };
-	const Settings& settings{ m_scene.GetSettings() };
+	const Settings& settings{ m_scene.settings };
 	const unsigned maxColorComp{ static_cast<unsigned>((1 << settings.colorDepth) - 1) };
 
 	if ( threadCount == 0 ) {
@@ -93,7 +93,7 @@ void Render::RenderBuckets() {
 	const unsigned& width = settings.renderWidth;
 	const unsigned& height = settings.renderHeight;
 	const Camera& camera{
-		m_overrideCamera == nullptr ? m_scene.GetCamera() : *m_overrideCamera };
+		overrideCamera == nullptr ? m_scene.GetCamera() : *overrideCamera };
 	std::ofstream ppmFileStream = PrepareScene();
 
 	ImageBuffer buff{ width, height };
@@ -161,18 +161,18 @@ void Render::RenderBuckets() {
 
 void Render::RenderTree( const Bucket& region, ImageBuffer& buff ) {
 	const Camera& camera{
-		m_overrideCamera == nullptr ? m_scene.GetCamera() : *m_overrideCamera };
-	Color pixelColor{ m_scene.GetSettings().BGColor };
+		overrideCamera == nullptr ? m_scene.GetCamera() : *overrideCamera };
+	Color pixelColor{ m_scene.settings.BGColor };
 
 	std::stack<int> nodeIndicesToCheck{};
 	nodeIndicesToCheck.push( 0 ); // 0 is always the root index
 
 	for ( unsigned row{ region.startY }; row < region.endY; ++row ) {
 		for ( unsigned col{ region.startX }; col < region.endX; ++col ) {
-			Ray ray = camera.GenerateRay( col, row, m_scene.GetSettings() );
+			Ray ray = camera.GenerateRay( col, row, m_scene.settings );
 			IntersectionData intersectData = IntersectRay( ray );
 			if ( !intersectData.filled )
-				pixelColor = m_scene.GetSettings().BGColor;
+				pixelColor = m_scene.settings.BGColor;
 			else
 				pixelColor = Shade( ray, intersectData );
 			buff[row][col] = pixelColor;
@@ -182,33 +182,44 @@ void Render::RenderTree( const Bucket& region, ImageBuffer& buff ) {
 
 void Render::RenderCameraMoveAnimation(
 	const FVector3& initialPos, const FVector3& moveWith ) {
+	Camera* camera = new Camera();
+	overrideCamera = camera;
+	camera->Move( initialPos );
+	camera->SetOrientation( m_scene.GetCamera().GetOrientationMatrix() );
+	std::string* saveName = new std::string;
 
-	Camera camera{};
-	m_overrideCamera = &camera;
-	camera.Move( initialPos );
-	std::string saveName;
-
-	for ( int frame{}; frame < m_frames; ++frame ) {
-		camera.Move( moveWith );
-		saveName = "Move" + std::to_string( frame );
-		RenderImage();
+	for ( int frame{}; frame < frames; ++frame ) {
+		*saveName = m_scene.settings.GetSaveFileName() + "_move" + std::to_string( frame );
+		overrideSaveName = saveName;
+		//RenderImage();
+		RenderBuckets();
+		camera->Move( moveWith );
 	}
 }
 
-void Render::RenderRotationAroundObject( const FVector3& initialPos, const FVector3& rot ) {
-	Camera camera{};
-	m_overrideCamera = &camera;
-	std::string saveName;
-
-	camera.Move( initialPos );
+void Render::RenderRotationAroundObject( const FVector3& initialPos, const FVector3& angle ) {
+	Camera* camera = new Camera();
+	overrideCamera = camera;
+	camera->Move( initialPos );
+	camera->SetOrientation( m_scene.GetCamera().GetOrientationMatrix() );
 	float distToObject{ initialPos.z };
+	std::string* saveName = new std::string;
 
-	for ( int frame{}; frame < m_frames; ++frame ) {
-		camera.RotateAroundPoint(
-			{ 0.f, 0.f, distToObject }, { frame * rot.x, frame * rot.y, frame * rot.z } );
-		saveName = "Orbit" + std::to_string( frame + 1 );
-		RenderImage();
+	FVector3 sceneCenter{ (m_scene.GetAABB().max + m_scene.GetAABB().min) / 2 };
+	FVector3 groundCenter = { sceneCenter.x, m_scene.GetAABB().min.y, sceneCenter.z };
+
+	for ( int frame{}; frame < frames; ++frame ) {
+		camera->RotateAroundPoint( groundCenter, angle );
+
+		*saveName = m_scene.settings.GetSaveFileName() + "_orbit" + std::to_string( frame );
+		overrideSaveName = saveName;
+		//RenderImage();
+		RenderBuckets();
 	}
+}
+
+const Scene& Render::GetScene() {
+	return m_scene;
 }
 
 IntersectionData Render::IntersectRay( const Ray& ray, const float maxT ) const {
@@ -374,7 +385,7 @@ Color Render::GetBitmapColor( const IntersectionData& data ) {
 
 Color Render::GetRenderColor( const IntersectionData& data ) const {
 	// Override if rendering geometry normals.
-	if ( m_scene.GetRenderMode() == RenderMode::ShadedNormals ) {
+	if ( m_scene.settings.renderMode == RenderMode::ShadedNormals ) {
 		return ShadeNormals( data );
 	}
 
@@ -389,7 +400,7 @@ Color Render::GetRenderColor( const IntersectionData& data ) const {
 			return GetBitmapColor( data );
 		}
 		case TextureType::SolidColor: {
-			return m_scene.GetSettings().renderMode == RenderMode::RandomTriangleColor
+			return m_scene.settings.renderMode == RenderMode::RandomTriangleColor
 				? m_scene.GetTriangleColors()[data.triangle.colorIdx]
 				: data.material->texture.albedo;
 		}
@@ -440,7 +451,7 @@ Color Render::ShadeDiffuse( const IntersectionData& data ) const {
 		/* Offset the hitPoint slightly along the normal to avoid self-intersection
 		 * Another common technique is to check rayPointDist > EPSILON */
 		const FVector3 offsetHitPoint{
-			data.hitPoint + (surfaceNormal * m_scene.GetSettings().shadowBias) };
+			data.hitPoint + (surfaceNormal * m_scene.settings.shadowBias) };
 		Ray shadowRay{ offsetHitPoint, lightDir, -1, RayType::Shadow, false };
 
 		// If there's something on the way to the light - leave the color as is.
@@ -562,11 +573,13 @@ Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) co
 		FVector3 C = (ray.direction + (useNormal * cosIN)).Normalize();
 		FVector3 B = C * sinRnN;
 
+		// Alternative formula for finding the refraction ray direction
+		//((ray.direction * eta) + (useNormal * (eta * cosIN - cosRnN))).Normalize(),
+
 		// Generate Refraction Ray.
 		Ray refractionRay{
-			data.hitPoint + (-useNormal * m_scene.GetSettings().refractBias),
+			data.hitPoint + (-useNormal * m_scene.settings.refractBias),
 			(A + B).Normalize(),
-			//((ray.direction * eta) + (useNormal * (eta * cosIN - cosRnN))).Normalize(),
 			pathDepth + 1,
 			RayType::Refractive,
 			false
@@ -582,7 +595,7 @@ Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) co
 
 	// Generate Reflection Ray.
 	Ray reflectionRay{
-		data.hitPoint + (useNormal * m_scene.GetSettings().refractBias),
+		data.hitPoint + (useNormal * m_scene.settings.refractBias),
 		ray.direction - (useNormal * ray.direction.Dot( useNormal ) * 2.f),
 		pathDepth + 1,
 		RayType::Reflective,
@@ -598,30 +611,30 @@ Color Render::ShadeRefractive( const Ray& ray, const IntersectionData& data ) co
 }
 
 Color Render::Shade( const Ray& ray, const IntersectionData& data ) const {
-	Color pixelColor{ m_scene.GetSettings().BGColor };
+	Color pixelColor{ m_scene.settings.BGColor };
 
 	if ( data.filled == false ) {
 		// The camera ray didn't hit any objects - just the background.
 		return pixelColor;
-	} else if ( ray.pathDepth >= m_scene.GetSettings().pathDepth ) {
+	} else if ( ray.pathDepth >= m_scene.settings.pathDepth ) {
 		return pixelColor; // or  Colors::Black
-	} else if ( m_scene.GetRenderMode() == RenderMode::Barycentric ) {
+	} else if ( m_scene.settings.renderMode == RenderMode::Barycentric ) {
 		pixelColor = ShadeBary( data );
-	} else if ( m_scene.GetRenderMode() == RenderMode::Normals ) {
+	} else if ( m_scene.settings.renderMode == RenderMode::Normals ) {
 		pixelColor = ShadeNormals( data );
-	} else if ( m_scene.GetRenderMode() == RenderMode::ShadedNormals ) {
+	} else if ( m_scene.settings.renderMode == RenderMode::ShadedNormals ) {
 		pixelColor = ShadeDiffuse( data );
-	} else if ( m_scene.GetRenderMode() == RenderMode::RandomTriangleColor ) {
+	} else if ( m_scene.settings.renderMode == RenderMode::RandomTriangleColor ) {
 		pixelColor = m_scene.GetTriangleColors()[data.triangle.colorIdx];
-	} else if ( m_scene.GetRenderMode() == RenderMode::RandomMeshColor ) {
+	} else if ( m_scene.settings.renderMode == RenderMode::RandomMeshColor ) {
 		pixelColor = data.material->texture.albedo;
-	} else if ( m_scene.GetRenderMode() == RenderMode::Material
+	} else if ( m_scene.settings.renderMode == RenderMode::Material
 		&& data.material->type == MaterialType::Diffuse ) {
 		pixelColor = ShadeDiffuse( data );
-	} else if ( m_scene.GetRenderMode() == RenderMode::Material
+	} else if ( m_scene.settings.renderMode == RenderMode::Material
 		&& data.material->type == MaterialType::Reflective ) {
 		pixelColor = ShadeReflective( ray, data );
-	} else if ( m_scene.GetRenderMode() == RenderMode::Material
+	} else if ( m_scene.settings.renderMode == RenderMode::Material
 		&& data.material->type == MaterialType::Refractive ) {
 		pixelColor = ShadeRefractive( ray, data );
 	} else {
@@ -632,12 +645,12 @@ Color Render::Shade( const Ray& ray, const IntersectionData& data ) const {
 }
 
 std::ofstream Render::PrepareScene() {
-	const Settings& settings{ m_scene.GetSettings() };
+	const Settings& settings{ m_scene.settings };
 	const unsigned maxColorComp{ static_cast<unsigned>((1 << settings.colorDepth) - 1) };
 
 	const std::string& saveDir{ settings.saveDir };
 	const std::string& saveName{
-		(m_overrideSaveName == nullptr ? settings.saveName : *m_overrideSaveName) };
+		(overrideSaveName == nullptr ? settings.GetSaveFileName() : *overrideSaveName)};
 
 	std::filesystem::create_directories( saveDir );
 	std::ofstream ppmFileStream( saveDir + "/" + saveName + ".ppm", std::ios::binary );

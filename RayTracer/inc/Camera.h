@@ -89,7 +89,7 @@ struct Camera : public Obj {
     void Roll( const float );
 
     // Rotate Camera around a point at a given distance at a given angle.
-    // @param[in] dist: The distance at which the camera is situated from the object.
+    // @param[in] pivot: The point, around which the camera will rotate.
     // @param[in] angle: The angle at which the camera will rotate each frame.
     void RotateAroundPoint( const FVector3&, const FVector3& );
 };

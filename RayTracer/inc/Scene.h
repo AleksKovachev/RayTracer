@@ -17,6 +17,9 @@
 
 class Scene {
 public:
+	Settings settings; // Global scene settings
+
+	Scene();
 	// @param[in] sceneFilePath: Path to the scene file.
 	Scene( const std::string& );
 
@@ -25,23 +28,6 @@ public:
 	// Parse the scene file to get all data.
 	void ParseSceneFile();
 
-	// Override the name of the saved file.
-	// @param[in] saveName: The new name for the rendered image.
-	void SetSaveFileName( const std::string& );
-
-	// Set render resolutions.
-	// @param[in] width: The width of the rendered image in pixels.
-	// @param[in] height: The height of the rendered image in pixels.
-	void SetRenderResolution( const int, const int );
-
-	// Get the render mode from the scene settings.
-	// @return a render mode enum value.
-	const RenderMode& GetRenderMode() const;
-
-	// Sets the render mode for the scene.
-	// @param[in] renderMode: The render mode to use for the final image.
-	void SetRenderMode( const RenderMode& );
-
 	// Gets all the triangles in the scene.
 	// @return A collection of triangles, ready to iterate.
 	const std::vector<Triangle>& GetTriangles() const;
@@ -49,10 +35,6 @@ public:
 	// Get the scene camera.
 	// @return A camera object.
 	const Camera& GetCamera() const;
-
-	// Get the scene settings.
-	// @return A settings object.
-	const Settings& GetSettings() const;
 
 	// Get the scene lights, no matter the type.
 	// @return A collection of all light objects in the scene.
@@ -77,11 +59,16 @@ public:
 	// @return A collection of color objects.
 	const std::vector<Color>& GetTriangleColors() const;
 
+	// Gets the scene's acceleration tree.
+	// @return The acceleration tree object.
 	const AccTree& GetAccTree() const;
+
+	// Set the name of the scene file to be processed and rendered.
+	// @param[in] filePath: The path to the scene file.
+	void SetRenderScene( const std::string& );
 private:
 	std::string m_filePath;
 	Camera m_camera; // Main scene Camera
-	Settings m_settings; // Global scene settings
 	std::vector<Light*> m_lights;
 	std::vector<Texture> m_textures; // Texture objects
 	std::vector<Material> m_materials;

@@ -4,12 +4,12 @@
 
 // Enum for choosing render style
 enum class RenderMode {
-	Barycentric, // Render object visualizing the Barycentric coordinates.
-	Normals, // Render object using normal vectors as colors.
-	ShadedNormals, // Render object using normal vectors as colors (with shading).
 	Material, // Render the object with its material.
 	RandomMeshColor, // Use a random color for each mesh.
-	RandomTriangleColor // Use a random color for each triangle in the scene.
+	RandomTriangleColor, // Use a random color for each triangle in the scene.
+	Barycentric, // Render object visualizing the Barycentric coordinates.
+	Normals, // Render object using normal vectors as colors.
+	ShadedNormals // Render object using normal vectors as colors (with shading).
 };
 
 

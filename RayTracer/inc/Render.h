@@ -14,6 +14,7 @@
 struct AABBox;
 struct Camera;
 class ImageBuffer;
+class Matrix;
 struct Ray;
 class Scene;
 class Triangle;
@@ -27,6 +28,10 @@ struct Bucket {
 
 class Render {
 public:
+    Camera* overrideCamera; // Pointer to a camera to use instead of the scene camera.
+    const std::string* overrideSaveName; // Pointer to a name to override the save file.
+    int frames; // Number of frames to render for the animation renders.
+
     // @param[in] scene: The scene object to render.
 	Render( const Scene& );
 
@@ -61,14 +66,15 @@ public:
 
     // Renders a camera orbiting animation around an object (or a point in space).
     // @param[in] initialPos: The initial camera position.
-    // @param[in] rotation: A vector indicating an X, Y, Z angle at which to rotate the camera.
+    // @param[in] angle: A vector indicating an X, Y, Z angle at which to rotate the camera.
     void RenderRotationAroundObject( const FVector3&, const FVector3& );
+
+	// Get the scene object used by this renderer.
+	// @return A const reference to the scene object.
+    const Scene& GetScene();
 
 private:
     const Scene& m_scene; // Reference to the scene object and properties.
-    Camera* m_overrideCamera; // Pointer to a camera to use instead of the scene camera.
-    const std::string* m_overrideSaveName; // Pointer to a name to override the save file.
-    int m_frames; // Number of frames to render for the animation renders.
 
     // Renders a single bucket of an image. Used with bucket rendering.
     // @param[in] bucketMutex: A mutex used to lock the buckets.
