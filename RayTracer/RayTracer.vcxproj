@@ -164,10 +164,12 @@ echo ===========================================================================
     <None Include="config\config.ini" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Bases.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\SpaceConversions.cpp" />
     <ClCompile Include="src\Triangle.cpp" />
+    <ClCompile Include="src\utils.cpp" />
     <ClCompile Include="src\Vectors.cpp" />
   </ItemGroup>
   <ItemGroup>
