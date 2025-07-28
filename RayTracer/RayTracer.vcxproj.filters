@@ -15,28 +15,37 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="config\config.ini" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="src\Camera.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\SpaceConversions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Vectors.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\Triangle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SpaceConversions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Bases.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\utils.cpp">
+    <ClCompile Include="src\Scene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Render.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DebugObjects.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\RenderSettings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -44,10 +53,13 @@
     <ClInclude Include="inc\Vectors.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="inc\Camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="inc\Bases.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="inc\Camera.h">
+    <ClInclude Include="inc\Triangle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="inc\SpaceConversions.h">
@@ -56,11 +68,20 @@
     <ClInclude Include="inc\utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="inc\SceneObjects.h">
+    <ClInclude Include="inc\DebugObjects.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="inc\Triangle.h">
+    <ClInclude Include="inc\Scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="inc\Render.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\RenderSettings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="config\config.ini" />
   </ItemGroup>
 </Project>

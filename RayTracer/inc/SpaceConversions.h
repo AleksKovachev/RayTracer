@@ -1,8 +1,8 @@
 #ifndef SPACECONVERSIONS_H
 #define SPACECONVERSIONS_H
 
-#include "Camera.h"
-#include "Vectors.h"
+struct FVector2;
+struct ImagePlane;
 
 // Convert 2D world coordinates to raster coordinates.
 FVector2 world2RasterSpace( const FVector2& w_coords, const ImagePlane& imgPlane );

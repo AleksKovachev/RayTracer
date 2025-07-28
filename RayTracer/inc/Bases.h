@@ -7,7 +7,7 @@
 #include <iostream>
 #include <numbers>
 
-#include "Vectors.h"
+#include "Vectors.h" // FVector3
 
 
 class Matrix3 {
@@ -15,6 +15,7 @@ public:
     // Identity matrix by default
     Matrix3();
     Matrix3( std::initializer_list<std::initializer_list<float>> );
+    Matrix3( const FVector3&, const FVector3&, const FVector3& );
 
     Matrix3 operator*( const Matrix3& ) const;
     friend FVector3 operator*( const FVector3&, const Matrix3& );
@@ -50,13 +51,18 @@ public:
         const FVector3 moveDirInWorldSpace{ pos * m_orientation };
         m_position += moveDirInWorldSpace;
     }
+
+    // Rotate to an absolute angle
     virtual void Rotate( const FVector3& vec );
+    // Rotate to an absolute angle
     virtual void Rotate( const float, const float, const float );
 
     // Get forward vector (negative Z in camera space)
     FVector3 GetForwardVector() const {
         return ApplyRotation( { 0, 0, -1 } );
     }
+
+    friend class Scene;
 
 protected:
     FVector3 m_position;
@@ -68,6 +74,7 @@ protected:
     Matrix3 GetYRotMatrix( const float deg ) const;
     Matrix3 GetZRotMatrix( const float deg ) const;
 };
+
 
 /* Color class that works with integers.
 Initializes with R, G, B integer values or normalized float values. */

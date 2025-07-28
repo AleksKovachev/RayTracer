@@ -3,7 +3,7 @@
 
 #include <optional>
 
-#include "Bases.h"
+#include "Bases.h"   // Obj, Color
 #include "Vectors.h"
 
 constexpr int vertsInTriangle{ 3 };
@@ -13,8 +13,8 @@ class Triangle : public Obj {
 public:
     Color color;
 
-    Triangle() = default;
-    Triangle( FVector3 vert0, FVector3 vert1, FVector3 vert2 );
+    Triangle() { init( {}, {}, {} ); }
+    Triangle( const FVector3& vert0, const FVector3& vert1, const FVector3& vert2 );
 
     // Calculates Edges, Normal Vector and Area
     void init( const FVector3& v0, const FVector3& v1, const FVector3& v2 );

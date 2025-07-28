@@ -1,5 +1,5 @@
-#include "Bases.h"
-#include "utils.h"
+#include "Bases.h" // Obj, Matrix3, Color
+#include "utils.h" // areEqual
 
 // Multiplication with a Matrix3, assuming this is a column-major vector
 FVector3 operator*( const FVector3& vec, const Matrix3& mat ) {
@@ -25,6 +25,12 @@ Matrix3::Matrix3( std::initializer_list<std::initializer_list<float>> values ) {
         }
         ++i;
     }
+}
+
+Matrix3::Matrix3( const FVector3& v1, const FVector3& v2, const FVector3& v3 ) {
+    m[0][0] = v1.x; m[0][1] = v1.y; m[0][2] = v1.z;
+    m[1][0] = v2.x; m[1][1] = v2.y; m[1][2] = v2.z;
+    m[2][0] = v3.x; m[2][1] = v3.y; m[2][2] = v3.z;
 }
 
 Matrix3 Matrix3::operator*( const Matrix3& other ) const {
@@ -85,9 +91,9 @@ void Obj::Rotate( const float x, const float y, const float z ) {
     }
     if ( !areEqual( z, 0.f ) ) { // roll
         if ( assigned )
-            m_orientation *= GetYRotMatrix( z );
+            m_orientation *= GetZRotMatrix( z );
         else
-            m_orientation = GetYRotMatrix( z );
+            m_orientation = GetZRotMatrix( z );
     }
 }
 
@@ -96,8 +102,8 @@ Matrix3 Obj::GetXRotMatrix( const float deg ) const {
     float cosR{ cosf( rad ) };
     float sinR{ sinf( rad ) };
     return { {{1.f, 0.f, 0.f},
-             {0.f, cosR,  sinR},
-             {0.f, sinR, cosR}} };
+             {0.f, cosR, sinR},
+             {0.f, -sinR, cosR}} };
 }
 
 Matrix3 Obj::GetYRotMatrix( const float deg ) const {

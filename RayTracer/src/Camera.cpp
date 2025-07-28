@@ -1,7 +1,9 @@
+#include "Bases.h" // Color
 #include "Camera.h"
-#include "SpaceConversions.h"
-#include "Vectors.h"
-#include "utils.h"
+#include "SpaceConversions.h" // ray2NDC, NDC2ScreenSpace, getFixedAspectRatio
+#include "Triangle.h"
+#include "utils.h" // isGreaterEqualThan
+#include "Vectors.h" // FVector3
 
 #include <cmath>
 #include <numeric>
@@ -43,15 +45,15 @@ FVector3 Camera::GenerateRay( const int x, const int y ) const {
 }
 
 void Camera::Dolly( float val ) {
-    Move( { m_position.x, m_position.y, val } );
+    Move( { 0.f, 0.f, val } );
 }
 
 void Camera::Truck( float val ) {
-    Move( { val, m_position.y, m_position.z } );
+    Move( { val, 0.f, 0.f } );
 }
 
 void Camera::Pedestal( float val ) {
-    Move( { m_position.x, val, m_position.z } );
+    Move( { 0.f, val, 0.f } );
 }
 
 void Camera::Pan( const float deg ) {
@@ -67,29 +69,28 @@ void Camera::Roll( const float deg ) {
 }
 
 void Camera::RotateAroundPoint( const FVector3& dist, const FVector3& angle ) {
-    Move( dist );
-    Rotate( angle );
     Move( -dist );
+    Rotate( angle );
+    Move( dist );
 }
 
 Color Camera::GetTriangleIntersection(
-    const FVector3 ray,
+    const FVector3& ray,
     const std::vector<Triangle>& triangles,
-    const Camera& camera
+    const Color& BGColor
 ) const {
-    Color blackBG{ 0, 0, 0 };
-    Color& pixelColor{ blackBG };
+    Color pixelColor{ BGColor };
     float closestIntersectionP{ std::numeric_limits<float>::max() };
 
     for ( const Triangle& triangle : triangles ) {
         // Ignore if Ray is parallel or hits triangle back.
         float rayProj = ray.Dot( triangle.GetNormal() );
-        if ( isGreaterEqualThan(rayProj, 0.f ) )
+        if ( isGreaterEqualThan( rayProj, 0.f ) )
             continue;
 
-        float rayPlaneDist = (triangle.GetVert( 0 ) - camera.m_position).Dot( triangle.GetNormal() );
+        float rayPlaneDist = (triangle.GetVert( 0 ) - m_position).Dot( triangle.GetNormal() );
         // Ray is not towards Triangle's plane
-        if ( isGreaterEqualThan(rayPlaneDist, 0.f) )
+        if ( isGreaterEqualThan( rayPlaneDist, 0.f ) )
             continue; // rayPlaneDist > 0 -> Back-face culling
 
         /* Check if rayPlaneDist direction is needed or length
@@ -100,7 +101,7 @@ Color Camera::GetTriangleIntersection(
         //? float rayPointDist = abs( rayPlaneDist ) / abs( rayProj );
 
         // Ray parametric equation - represent points on a line going through a Ray.
-        FVector3 intersectionPt = camera.m_position + (ray * rayPointDist);
+        FVector3 intersectionPt = m_position + (ray * rayPointDist);
         float intersectionPLen = intersectionPt.GetLength();
 
         // Ignore intersection if a closer one to the Camera has already been found
