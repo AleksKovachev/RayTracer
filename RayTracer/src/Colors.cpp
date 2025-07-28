@@ -5,7 +5,7 @@
 #include <iomanip> // setw
 
 
-Color::Color( const float in_r, const float in_g, const float in_b, const int depth )
+Color::Color( const float in_r, const float in_g, const float in_b )
 	: r{ in_r }, g{ in_g }, b{ in_b } {
 }
 

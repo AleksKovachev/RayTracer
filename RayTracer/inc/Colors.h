@@ -13,8 +13,7 @@ struct Color {
     // @param[in] in_r: The red color value as a normalized float [0.0, 1.0]. Defaults to 0.
     // @param[in] in_g: The green color value as a normalized float [0.0, 1.0]. Defaults to 0.
     // @param[in] in_b: The blue color value as a normalized float [0.0, 1.0]. Defaults to 0.
-    // @param[in] depth: The color bit-depth value. Defaults to 8-bit color
-    Color( const float = 0.f, const float = 0.f, const float = 0.f, const int depth = 8 );
+    Color( const float = 0.f, const float = 0.f, const float = 0.f );
 
     // @param[in] in_r: The red color value as an integer.
     // @param[in] in_g: The green color value as an integer.
@@ -42,7 +41,7 @@ struct Color {
     Color operator/( const float ) const;
 
     // In-place division of a color by a value.
-    // @param[in] val: The value this color is beeing divided by.
+    // @param[in] val: The value this color is being divided by.
     // @return This color, modified to the resulting division.
     Color& operator/=( const float );
 
@@ -52,27 +51,27 @@ struct Color {
     Color operator*( const float ) const;
 
     // In-place multiplication of two colors.
-    // @param[in] other: The color that's beeing multiplied by this one.
+    // @param[in] other: The color that's being multiplied by this one.
     // @return This color, modified to the resulting multiplication.
     Color& operator*=( const Color& );
 
     // Subtracts a color from this one.
-    // @param[in] other: The color that's beeing subtracted.
+    // @param[in] other: The color that's being subtracted.
     // @return The resulting color.
     Color operator-( const Color& ) const;
 
     // In-place subtraction of two colors.
-    // @param[in] other: The color that's beeing subtracted from this one.
+    // @param[in] other: The color that's being subtracted from this one.
     // @return This color, modified to the resulting subtraction.
     Color& operator-=( const Color& );
 
     // Adds a color to this one.
-    // @param[in] other: The color that's beeing added.
+    // @param[in] other: The color that's being added.
     // @return The resulting color.
     Color operator+( const Color& ) const;
 
     // In-place addition of two colors.
-    // @param[in] other: The color that's beeing added to this one.
+    // @param[in] other: The color that's being added to this one.
     // @return This color, modified to the resulting addition.
     Color& operator+=( const Color& );
 };

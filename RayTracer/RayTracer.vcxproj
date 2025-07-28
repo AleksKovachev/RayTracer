@@ -170,6 +170,8 @@ echo ===========================================================================
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <EntryPointSymbol>
+      </EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -192,6 +194,7 @@ echo ===========================================================================
     <ClInclude Include="inc\Bases.h" />
     <ClInclude Include="inc\Camera.h" />
     <ClInclude Include="inc\Colors.h" />
+    <ClInclude Include="inc\FXAA.h" />
     <ClInclude Include="inc\ImageBuffer.h" />
     <ClInclude Include="inc\Lights.h" />
     <ClInclude Include="inc\Materials.h" />
