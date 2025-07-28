@@ -18,6 +18,9 @@
     <ClInclude Include="inc\UI_Main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="inc\RenderType.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -65,7 +68,7 @@
     <ClCompile Include="..\RayTracer\src\ImageBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ImageViewer.cpp">
+    <ClCompile Include="src\CustomWidgets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -77,7 +80,7 @@
     <QtMoc Include="inc\UI_MainWindow.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <QtMoc Include="inc\ImageViewer.h">
+    <QtMoc Include="inc\CustomWidgets.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

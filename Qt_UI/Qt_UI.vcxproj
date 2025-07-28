@@ -158,7 +158,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <QtMoc Include="inc\ImageViewer.h" />
+    <QtMoc Include="inc\CustomWidgets.h" />
+    <ClInclude Include="inc\RenderType.h" />
     <ClInclude Include="inc\UI_Main.h" />
     <QtMoc Include="inc\UI_MainWindow.h" />
   </ItemGroup>
@@ -181,7 +182,7 @@
     <ClCompile Include="..\RayTracer\src\Triangle.cpp" />
     <ClCompile Include="..\RayTracer\src\utils.cpp" />
     <ClCompile Include="..\RayTracer\src\Vectors.cpp" />
-    <ClCompile Include="src\ImageViewer.cpp" />
+    <ClCompile Include="src\CustomWidgets.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\moc_UI_MainWindow.cpp" />
     <ClCompile Include="src\UI_MainWindow.cpp" />

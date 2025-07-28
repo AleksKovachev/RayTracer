@@ -1,4 +1,4 @@
-#include "ImageViewer.h"
+#include "CustomWidgets.h"
 
 #include <QGraphicsPixmapItem>
 #include <QFileInfo>

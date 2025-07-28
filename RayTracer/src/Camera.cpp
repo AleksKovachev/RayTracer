@@ -80,8 +80,29 @@ void Camera::Roll( const float deg ) {
     Rotate( 0.f, 0.f, deg );
 }
 
-void Camera::RotateAroundPoint( const FVector3& dist, const FVector3& angle ) {
-    Move( -dist );
+void Camera::RotateAroundPoint( const FVector3& pivot, const FVector3& angle ) {
+    // Calculate vector from pivot to camera in world space.
+    FVector3 relPos{ m_position - pivot };
+
+    // Build combined rotation matrix.
+    Matrix3 rotX{ GetXRotMatrix( angle.x ) };
+    Matrix3 rotY{ GetYRotMatrix( angle.y ) };
+    Matrix3 rotZ{ GetZRotMatrix( angle.z ) };
+    Matrix3 rotMat{ rotZ * rotY * rotX };
+
+    // Rotate relative position vector.
+    FVector3 rotatedRelPos = relPos * rotMat;
+
+    // Compute new camera position by adding pivot back.
+    FVector3 newCameraPos = pivot + rotatedRelPos;
+
+    // Calculate world-space move from current position to new position.
+    FVector3 moveVecWorld = newCameraPos - m_position;
+
+    // Convert world - space move vector into camera - local space.
+    FVector3 moveVecLocal = moveVecWorld * m_orientation.GetInverse();
+
+	// Move camera to new position and apply rotation.
+    Move( moveVecLocal );
     Rotate( angle );
-    Move( dist );
 }

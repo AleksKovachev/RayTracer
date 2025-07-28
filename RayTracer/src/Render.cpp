@@ -24,28 +24,28 @@
 
 Render::Render( const Scene& scene )
 	: m_scene{ scene },
-	m_overrideCamera{ nullptr },
-	m_overrideSaveName{ nullptr },
-	m_frames{ 1 } {
+	overrideCamera{ nullptr },
+	overrideSaveName{ nullptr },
+	frames{ 1 } {
 }
 
 Render::Render( const Scene& scene, Camera& overrideCamera )
 	: m_scene{ scene },
-	m_overrideCamera{ &overrideCamera },
-	m_overrideSaveName{ nullptr },
-	m_frames{ 1 } {
+	overrideCamera{ &overrideCamera },
+	overrideSaveName{ nullptr },
+	frames{ 1 } {
 }
 
 Render::Render( const Scene& scene, Camera& overrideCamera, const std::string& overrideSaveName )
 	: m_scene{ scene },
-	m_overrideCamera{ &overrideCamera },
-	m_overrideSaveName{ &overrideSaveName },
-	m_frames{ 1 } {
+	overrideCamera{ &overrideCamera },
+	overrideSaveName{ &overrideSaveName },
+	frames{ 1 } {
 }
 
 Render::~Render() {
-	delete m_overrideCamera;
-	delete m_overrideSaveName;
+	delete overrideCamera;
+	delete overrideSaveName;
 }
 
 void Render::RenderImage() {
@@ -54,7 +54,7 @@ void Render::RenderImage() {
 	const unsigned& width{ settings.renderWidth };
 	const unsigned& height{ settings.renderHeight };
 	const Camera& camera{
-		m_overrideCamera == nullptr ? m_scene.GetCamera() : *m_overrideCamera };
+		overrideCamera == nullptr ? m_scene.GetCamera() : *overrideCamera };
 	std::ofstream ppmFileStream = PrepareScene();
 	const AABBox& aabb{ m_scene.GetAABB() };
 	Color pixelColor{};
@@ -93,7 +93,7 @@ void Render::RenderBuckets() {
 	const unsigned& width = settings.renderWidth;
 	const unsigned& height = settings.renderHeight;
 	const Camera& camera{
-		m_overrideCamera == nullptr ? m_scene.GetCamera() : *m_overrideCamera };
+		overrideCamera == nullptr ? m_scene.GetCamera() : *overrideCamera };
 	std::ofstream ppmFileStream = PrepareScene();
 
 	ImageBuffer buff{ width, height };
@@ -161,7 +161,7 @@ void Render::RenderBuckets() {
 
 void Render::RenderTree( const Bucket& region, ImageBuffer& buff ) {
 	const Camera& camera{
-		m_overrideCamera == nullptr ? m_scene.GetCamera() : *m_overrideCamera };
+		overrideCamera == nullptr ? m_scene.GetCamera() : *overrideCamera };
 	Color pixelColor{ m_scene.settings.BGColor };
 
 	std::stack<int> nodeIndicesToCheck{};
@@ -182,35 +182,44 @@ void Render::RenderTree( const Bucket& region, ImageBuffer& buff ) {
 
 void Render::RenderCameraMoveAnimation(
 	const FVector3& initialPos, const FVector3& moveWith ) {
+	Camera* camera = new Camera();
+	overrideCamera = camera;
+	camera->Move( initialPos );
+	camera->SetOrientation( m_scene.GetCamera().GetOrientationMatrix() );
+	std::string* saveName = new std::string;
 
-	Camera camera{};
-	m_overrideCamera = &camera;
-	camera.Move( initialPos );
-	std::string saveName;
+	for ( int frame{}; frame < frames; ++frame ) {
+		*saveName = m_scene.settings.GetSaveFileName() + "_move" + std::to_string( frame );
+		overrideSaveName = saveName;
+		//RenderImage();
+		RenderBuckets();
+		camera->Move( moveWith );
+	}
+}
 
-	for ( int frame{}; frame < m_frames; ++frame ) {
-		camera.Move( moveWith );
-		saveName = "Move" + std::to_string( frame );
+void Render::RenderRotationAroundObject( const FVector3& initialPos, const FVector3& angle ) {
+	Camera* camera = new Camera();
+	overrideCamera = camera;
+	camera->Move( initialPos );
+	camera->SetOrientation( m_scene.GetCamera().GetOrientationMatrix() );
+	float distToObject{ initialPos.z };
+	std::string* saveName = new std::string;
+
+	FVector3 sceneCenter{ (m_scene.GetAABB().max + m_scene.GetAABB().min) / 2 };
+	FVector3 groundCenter = { sceneCenter.x, m_scene.GetAABB().min.y, sceneCenter.z };
+
+	for ( int frame{}; frame < frames; ++frame ) {
+		camera->RotateAroundPoint( groundCenter, angle );
+
+		*saveName = m_scene.settings.GetSaveFileName() + "_orbit" + std::to_string( frame );
+		overrideSaveName = saveName;
 		//RenderImage();
 		RenderBuckets();
 	}
 }
 
-void Render::RenderRotationAroundObject( const FVector3& initialPos, const FVector3& rot ) {
-	Camera camera{};
-	m_overrideCamera = &camera;
-	std::string saveName;
-
-	camera.Move( initialPos );
-	float distToObject{ initialPos.z };
-
-	for ( int frame{}; frame < m_frames; ++frame ) {
-		camera.RotateAroundPoint(
-			{ 0.f, 0.f, distToObject }, { frame * rot.x, frame * rot.y, frame * rot.z } );
-		saveName = "Orbit" + std::to_string( frame + 1 );
-		//RenderImage();
-		RenderBuckets();
-	}
+const Scene& Render::GetScene() {
+	return m_scene;
 }
 
 IntersectionData Render::IntersectRay( const Ray& ray, const float maxT ) const {
@@ -641,7 +650,7 @@ std::ofstream Render::PrepareScene() {
 
 	const std::string& saveDir{ settings.saveDir };
 	const std::string& saveName{
-		(m_overrideSaveName == nullptr ? settings.GetSaveFileName() : *m_overrideSaveName)};
+		(overrideSaveName == nullptr ? settings.GetSaveFileName() : *overrideSaveName)};
 
 	std::filesystem::create_directories( saveDir );
 	std::ofstream ppmFileStream( saveDir + "/" + saveName + ".ppm", std::ios::binary );
