@@ -14,6 +14,10 @@ FVector2 raster2NDC( const FVector2& coords, const ImagePlane& imgPlane ) {
     return { coords.x / imgPlane.resolution.x, coords.y / imgPlane.resolution.y };
 }
 
+FVector2 ray2NDC( const int x, const int y, const ImagePlane& imgPlane ) {
+    return { (x + 0.5) / imgPlane.resolution.x, (y + 0.5) / imgPlane.resolution.y };
+}
+
 FVector2 NDC2ScreenSpace( const FVector2& coords ) {
     // Inverts Y
     return { (2.0 * coords.x) - 1.0, 1.0 - (2.0 * coords.y) };
@@ -38,20 +42,4 @@ double ScreenSpace2NDCInvert( double val ) {
 
 FVector2 getFixedAspectRatio( const FVector2& vec, const ImagePlane& imgPlane ) {
     return { vec.x * (imgPlane.resolution.x / imgPlane.resolution.y), vec.y };
-}
-
-FVector3 worldSpace2NormalizedVector( const FVector2& vec, const ImagePlane& imgPlane ) {
-    FVector3 normRayDir{
-        FVector3(
-            getFixedAspectRatio(
-                NDC2ScreenSpace(
-                    raster2NDC(
-                        { vec.x, vec.y },
-                        imgPlane
-                    )
-                ), imgPlane
-            ), imgPlane.m_position.z
-        ).normalize()
-    };
-    return { ScreenSpace2NDC( { normRayDir.x, normRayDir.y } ), ScreenSpace2NDC( normRayDir.z ) };
 }

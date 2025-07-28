@@ -24,13 +24,13 @@
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Shapes.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\SpaceConversions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Vectors.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Triangle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -44,13 +44,16 @@
     <ClInclude Include="inc\Camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="inc\Shapes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="inc\SpaceConversions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="inc\utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\SceneObjects.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\Triangle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

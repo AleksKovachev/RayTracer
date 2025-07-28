@@ -1,58 +1,95 @@
-#include <iostream>
-#include <string>
-#include <vector>
-#include <memory>
-#include <map>
-#include <set>
-#include <unordered_map>
-#include <unordered_set>
-#include <cstring>
-#include "sstream"
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
-#include <stack>
-#include <iomanip>
+#include <cstring>
 #include <fstream>
-#include <algorithm>
-#include <random>
+#include <iomanip>
+#include <iostream>
 #include <limits>
+#include <map>
+#include <memory>
+#include <random>
+#include <set>
+#include <sstream>
+#include <stack>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 #include "Bases.h"
 #include "Camera.h"
-#include "Shapes.h"
+#include "SceneObjects.h"
 #include "SpaceConversions.h"
+#include "Triangle.h"
 #include "Vectors.h"
+#include "utils.h"
 
+
+struct Params {
+    const int width;
+    const int height;
+    const int maxColorComp;
+    const Color BGColor{ 0, 0, 0 };
+    const Color shapeColor{ 17, 230, 181 };
+    std::string fileName;
+    Camera camera;
+
+    int getMaxColorComp( const int colorDepth ) const {
+        return static_cast<int>( pow( 2, colorDepth ) - 1 );
+    }
+
+    Params( const int width, const int height, const Camera& camera, const std::string& fileName, int colorDepth = 8 )
+        : width{ width }, height{ height }, camera{ camera }, fileName{
+        fileName
+        }, maxColorComp{ getMaxColorComp( colorDepth ) } {
+    }
+};
+
+void render( const std::vector<Triangle>& triangles, const Params& params ) {
+    std::ofstream ppmFileStream( params.fileName + ".ppm", std::ios::out | std::ios::binary );
+    ppmFileStream << "P3\n";
+    ppmFileStream << params.width << " " << params.height << "\n";
+    ppmFileStream << params.maxColorComp << "\n";
+
+    Color pixelColor{};
+
+    FVector3 ray{};
+
+    for ( int y{}; y < params.height; ++y ) {
+        for ( int x{}; x < params.width; ++x ) {
+            ray = params.camera.generateRay( x, y );
+            pixelColor = params.camera.getTriangleIntersection( ray, triangles, params.camera );
+
+            ppmFileStream << pixelColor << "  ";
+        }
+        ppmFileStream << "\n";
+        std::cout << "\rLine: " << y + 1 << " / " << params.height << std::flush;
+    }
+ 
+    ppmFileStream.close();
+}
 
 int main() {
-    FVector3 vec1{ 3.5, 0 , 0 };
-    FVector3 vec2{ 1.75, 3.5, 0 };
-    std::cout << vec1 << " X " << vec2 << " = " << vec1 * vec2 << std::endl;
+    Camera camera{};
+    Params params{ 1920, 1080, camera, "renders/Pyramid" };
+    // Lecture Triangle
+    Triangle triangle1{ {-1.75, -1.75, -3}, {1.75, -1.75, -3}, {0, 1.75, -3} };
+    triangle1.color = Color( getInt( 0, 255 ), getInt( 0, 255 ), getInt( 0, 255 ) );
 
-    FVector3 vec3{ 3, -3, 1 };
-    FVector3 vec4{ 4, 9, 3 };
-    std::cout << vec3 << " X " << vec4 << " = " << vec3 * vec4 << std::endl;
+    // Made-up Traingle
+    Triangle triangle2{ {-2.31, -2.35, -4.3}, {5.03, -0.93, -5.2}, {1.87, 3.17, -3.8} };
+    triangle2.color = Color( getInt( 0, 255 ), getInt( 0, 255 ), getInt( 0, 255 ) );
 
-    std::cout << "Area of Parallelogram from " << vec3 << " and " << vec4 <<
-        " is: " << (vec3 * vec4).getLength() << std::endl;
-    std::cout << "Area of Triangle from " << vec3 << " and " << vec4 <<
-        " is: " << (vec3 * vec4).getLength() / 2 << std::endl;
+    // Two Triangles overlapping
+    std::vector<Triangle> tris;
+    tris.reserve( 2 );
+    tris.push_back( triangle1 );
+    tris.push_back( triangle2 );
 
-    FVector3 vec5{ -12, 12, -4 };
-    std::cout << "Area of Parallelogram from " << vec3 << " and " << vec5 <<
-        " is: " << (vec3 * vec5).getLength() << std::endl;
+    std::vector<Triangle> pyramid{ getPyramid() };
 
-    Triangle tri1{ { -1.75, -1.75, -3 }, { 1.75, -1.75, -3 }, { 0, 1.75, -3 } };
-    std::cout << "Triangle 1 normal: " << tri1.getNormalVector() << std::endl;
-    std::cout << "Triangle 1 area: " << tri1.getArea() << std::endl;
-
-    Triangle tri2{ { 0, 0, -1 }, { 1, 0, 1 }, { -1, 0, 1 } };
-    std::cout << "Triangle 2 normal: " << tri2.getNormalVector() << std::endl;
-    std::cout << "Triangle 2 area: " << tri2.getArea() << std::endl;
-
-    Triangle tri3{ { 0.56, 1.11, 1.23 }, { 0.44, -2.368, -0.54 }, { -1.56, 0.15, -1.92 } };
-    std::cout << "Triangle 3 normal: " << tri3.getNormalVector() << std::endl;
-    std::cout << "Triangle 3 area: " << tri3.getArea() << std::endl;
+    render( pyramid, params);
 
     return 0;
 }

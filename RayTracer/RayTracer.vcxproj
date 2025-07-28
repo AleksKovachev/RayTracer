@@ -166,15 +166,16 @@ echo ===========================================================================
   <ItemGroup>
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\Shapes.cpp" />
     <ClCompile Include="src\SpaceConversions.cpp" />
+    <ClCompile Include="src\Triangle.cpp" />
     <ClCompile Include="src\Vectors.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\Bases.h" />
     <ClInclude Include="inc\Camera.h" />
-    <ClInclude Include="inc\Shapes.h" />
+    <ClInclude Include="inc\SceneObjects.h" />
     <ClInclude Include="inc\SpaceConversions.h" />
+    <ClInclude Include="inc\Triangle.h" />
     <ClInclude Include="inc\utils.h" />
     <ClInclude Include="inc\Vectors.h" />
   </ItemGroup>
