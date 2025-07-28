@@ -535,7 +535,7 @@ Color Render::ShadeDiffuse( const IntersectionData& data ) const {
             continue;
 
         // Compute sphere area.
-        float falloff = 4 * std::numbers::pi_v<float> *lightDirLen * lightDirLen;
+        float falloff = 4 * std::numbers::pi_v<float> * lightDirLen * lightDirLen;
 
         /* Offset the hitPoint slightly along the normal to avoid self-intersection
          * Another common technique is to check rayPointDist > EPSILON */
@@ -730,8 +730,7 @@ Color Render::Shade( const Ray& ray, const IntersectionData& data ) const {
 IntersectionData Render::TraceRay( const Ray& ray, const float maxT ) const {
     IntersectionData intersectData{};
     float closestIntersectionP{ std::numeric_limits<float>::max() };
-    float bias{ 0.f }; //! Default value currently only used for reflection!
-
+    float bias{ 0.f }; //! Currently used for reflection!
     if ( ray.type == RayType::Shadow )
         bias = m_scene.GetSettings().shadowBias;
     else if ( ray.type == RayType::Refractive )

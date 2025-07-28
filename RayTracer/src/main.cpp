@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "Camera.h"
+#include "DebugObjects.h"
 #include "Render.h"
 #include "Scene.h"
 #include "Vectors.h"

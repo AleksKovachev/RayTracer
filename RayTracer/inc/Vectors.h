@@ -74,7 +74,7 @@ public:
     // @param[in] other: The second vector that will be in the cross product calculation.
     // @return The resulting vector.
     FVector3 operator*( const FVector3& ) const;
- 
+
     // ReGets turns vector length/magnitude.
     // @return the length as a float.
     float GetLength();

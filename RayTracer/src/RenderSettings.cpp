@@ -7,3 +7,4 @@ Settings::Settings( const int colorDepth )
 	renderMode{ RenderMode::Material }, pathDepth{ 5 }, ignoreBackface{ true },
 	bucketSize{ 24u } {
 }
+
