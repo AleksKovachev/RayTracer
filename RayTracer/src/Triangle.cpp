@@ -30,7 +30,7 @@ void Triangle::init( const FVector3& v0, const FVector3& v1, const FVector3& v2 
 
 FVector3 Triangle::GetNormal() const {
     return normal;
-}
+    }
 
 float Triangle::GetArea() const {
     return area;

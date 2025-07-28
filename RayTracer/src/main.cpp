@@ -60,21 +60,21 @@ int main() {
     double secondsMedian{};
     int nrRuns{ 1 };
     for ( int i{}; i < nrRuns; ++i ) {
-        std::chrono::high_resolution_clock::time_point start{
-            std::chrono::high_resolution_clock::now() };
+    std::chrono::high_resolution_clock::time_point start{
+        std::chrono::high_resolution_clock::now() };
 
-        //render.RenderImage();
-        render.RenderBuckets();
+    //render.RenderImage();
+    render.RenderBuckets();
 
-        std::chrono::high_resolution_clock::time_point stop{
-            std::chrono::high_resolution_clock::now() };
+    std::chrono::high_resolution_clock::time_point stop{
+        std::chrono::high_resolution_clock::now() };
 
-        std::chrono::microseconds duration{
-            std::chrono::duration_cast<std::chrono::microseconds>(stop - start) };
-        const double seconds{ duration.count() / 1'000'000.0 };
+    std::chrono::microseconds duration{
+        std::chrono::duration_cast<std::chrono::microseconds>(stop - start) };
+    const double seconds{ duration.count() / 1'000'000.0 };
         secondsMedian += seconds;
 
-        std::cout << "Execution time: " << seconds << " seconds." << std::endl;
+    std::cout << "Execution time: " << seconds << " seconds." << std::endl;
     }
 
     std::cout << "\n\nMean execution time: " << secondsMedian / nrRuns <<
