@@ -27,10 +27,6 @@ struct AABBox {
 	// @param[in] splitAxis: The axis along which the AABB will be split in half.
 	// @return: A pair of the resulting AABBs.
 	std::pair<AABBox, AABBox> Split( const int );
-
-	bool Contains( const CompactFVector3& ) const;
-
-	void ExpandToInclude( const Triangle& );
 };
 
 
@@ -95,9 +91,8 @@ public:
 	// Check for intersection between a triangle and an AABB.
 	// @param[in] triangle: The triangle to check.
 	// @param[in] aabb: The AABB to check.
-	// @param[in] aabb: The AABB resize.
 	// @return If there's an intersection.
-	bool TriangleIntersectAABB( const Triangle&, AABBox&, AABBox& );
+	bool TriangleIntersectAABB( const Triangle&, AABBox& );
 
 	// Gets all of this tree's nodes.
 	// @return A collection of nodes.
