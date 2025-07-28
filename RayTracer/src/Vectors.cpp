@@ -5,27 +5,14 @@
 #include <iomanip>
 #include <string>
 
-Vector2 Vector2::operator+( const Vector2& val ) const {
-	return Vector2( x + val.x, y + val.y );
-}
 
-FVector2 FVector2::operator+( const float val ) const {
-	return FVector2( x + val, y + val );
-}
+FVector3::FVector3() : x{ 0.f }, y{ 0.f }, z{ 0.f } {
+	init();
+};
 
-FVector2 FVector2::operator+( const FVector2& val ) const {
-	return FVector2( x + val.x, y + val.y );
-}
-
-Vector3 Vector3::operator+( const Vector3& other ) const {
-	return { x + other.x, y + other.y, z + other.z };
-}
-
-Vector3& Vector3::operator+=( const Vector3& other ) {
-	x += other.x;
-	y += other.y;
-	z += other.z;
-	return *this;
+FVector3::FVector3( const FVector2& vec, float in_z )
+	: x{ vec.x }, y{ vec.y }, z{ in_z } {
+	init();
 }
 
 void FVector3::init() {
@@ -90,22 +77,4 @@ void FVector3::NormalizeInPlace() {
 
 void FVector3::CalculateLength() {
 	length = sqrt( x * x + y * y + z * z );
-}
-
-// Easy printing of a Vector2
-std::ostream& operator<<( std::ostream& os, const Vector2& vec ) {
-	const size_t maxLen{ std::max(
-		std::to_string( vec.x ).length(),
-		std::to_string( vec.y ).length()
-	) };
-	os << "(" << std::setw( maxLen ) << vec.x << ", " << std::setw( maxLen ) << vec.y << ")";
-	return os;
-}
-
-// Easy printing of a FVector3
-std::ostream& operator<<( std::ostream& os, const FVector3& vec ) {
-	os << "(" << std::setw( 4 ) << vec.x << ", " <<
-		std::setw( 4 ) << vec.y << ", " <<
-		std::setw( 4 ) << vec.z << ")";
-	return os;
 }

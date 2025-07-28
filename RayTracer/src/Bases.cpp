@@ -1,5 +1,8 @@
-#include "Bases.h" // Obj, Matrix3, Color
+#include "Bases.h"
 #include "utils.h" // areEqual
+
+#include <cmath> // sinf, cosf
+#include <numbers> // pi
 
 // Multiplication with a Matrix3, assuming this is a column-major vector
 FVector3 operator*( const FVector3& vec, const Matrix3& mat ) {
@@ -51,6 +54,19 @@ Matrix3& Matrix3::operator*=( const Matrix3& other ) {
     return *this;
 }
 
+Obj::Obj() : m_position{ 0.f, 0.f, 0.f }, m_rotation{ 0.f, 0.f, 0.f } {}
+
+Obj::Obj( FVector3 pos ) : m_position{ pos }, m_rotation{ 0.f, 0.f, 0.f } {}
+
+FVector3 Obj::ApplyRotation( const FVector3& direction ) const {
+    return direction * m_orientation;
+}
+
+void Obj::Move( const FVector3& pos ) {
+    const FVector3 moveDirInWorldSpace{ pos * m_orientation };
+    m_position += moveDirInWorldSpace;
+}
+
 void Obj::Rotate( const FVector3& vec ) {
     bool assigned{ false };
 
@@ -97,6 +113,10 @@ void Obj::Rotate( const float x, const float y, const float z ) {
     }
 }
 
+FVector3 Obj::GetForwardVector() const {
+    return ApplyRotation( { 0, 0, -1 } );
+}
+
 Matrix3 Obj::GetXRotMatrix( const float deg ) const {
     const float rad{ static_cast<float>(deg * (std::numbers::pi / 180.f)) };
     float cosR{ cosf( rad ) };
@@ -122,23 +142,4 @@ Matrix3 Obj::GetZRotMatrix( const float deg ) const {
     return { {{cosR, sinR, 0.f},
              {-sinR, cosR, 0.f},
              {0.f, 0.f, 1.f}} };
-}
-
-Color::Color( float in_r, float in_g, float in_b )
-    : r{ static_cast<int>(round(in_r * 255.f)) },
-    g{ static_cast<int>(round( in_g * 255.f)) },
-    b{ static_cast<int>(round(in_b * 255.f)) } {
-}
-
-Color& Color::operator=( const Color& other ) {
-    r = other.r;
-    g = other.g;
-    b = other.b;
-    return *this;
-}
-
-// Easy printing of a Color (inline prevents linker error as this is in a header)
-inline std::ostream& operator<<( std::ostream& os, const Color& color ) {
-    os << std::setw( 3 ) << color.r << " " << std::setw( 3 ) << color.g << " " << std::setw( 3 ) << color.b;
-    return os;
 }

@@ -3,13 +3,13 @@
 
 #include <optional>
 
-#include "Bases.h"   // Obj, Color
-#include "Vectors.h"
+#include "Colors.h" // Color
+#include "Vectors.h" // FVector3
 
 constexpr int vertsInTriangle{ 3 };
 
 // Triangle class with position vertices
-class Triangle : public Obj {
+class Triangle {
 public:
     Color color;
 
@@ -19,30 +19,13 @@ public:
     // Calculates Edges, Normal Vector and Area
     void init( const FVector3& v0, const FVector3& v1, const FVector3& v2 );
 
-    virtual FVector3 GetLocation() const override {
-        return m_position;
-    }
-
-    virtual void Move( const FVector3& vec ) override;
-
     // Returns Normal Vector
-    FVector3 GetNormal() const {
-        return normal;
-    }
-
-    // Returns Triangle Area
-    float GetArea() const {
-        return area;
-    }
+    FVector3 GetNormal() const;
 
     // std::optional<FVector3> GetVert( const int vertIdx ) const;
 
     // Get vertex at index
     FVector3 GetVert( const int vertIdx ) const;
-
-    // Change vertex position and recalculate Normal Vector and Area
-    void SetVert( const FVector3& point, const int vertIdx );
-    std::optional<FVector3> GetEdge( const int edgeIdx ) const;
 
     // Checks if a given point is inside the triangle
     bool IsPointInside( const FVector3& point ) const;
@@ -52,16 +35,8 @@ private:
     FVector3 verts[vertsInTriangle];
     FVector3 edges[vertsInTriangle];
     FVector3 normal;
-    float area;
 
     void CalculateNormal();
-    void CalculateArea();
 };
 
 #endif // SHAPES_H
-
-/*
-* Triangle area 3 sides:
-* s = (a + b + c) / 2 -> semi perimeter
-* area = sqrt(s * (s - a) * (s - b) * (s - c))
-*/

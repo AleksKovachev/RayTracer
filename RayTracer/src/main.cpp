@@ -4,29 +4,30 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <limits>
 #include <map>
 #include <memory>
 #include <random>
 #include <set>
 #include <stack>
-#include <string>
 #include <sstream>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
 #include "Bases.h"
 #include "Camera.h"
+#include "DebugObjects.h"
 #include "Render.h"
 #include "Scene.h"
-#include "DebugObjects.h"
 #include "SpaceConversions.h"
 #include "Triangle.h"
-#include "Vectors.h"
 #include "utils.h"
+#include "Vectors.h"
+
 
 //void interactiveRender(Params& params) {
 //    iniData interactiveData;
@@ -50,9 +51,9 @@ int main() {
     //params.camera.Tilt( 15 );
     //params.camera.RotateAroundPoint( {0, 0, -3}, {0, 45, 0});
 
-    //Scene scene( "./rsc/scene1.crtscene" );
+    Scene scene( "./rsc/scene1.crtscene" );
     //Scene scene( "./rsc/OverlappingTriangles.crtscene" );
-    Scene scene( "./rsc/Pyramid.crtscene" );
+    //Scene scene( "./rsc/Pyramid.crtscene" );
     scene.ParseSceneFile();
     render( scene );
     //renderCameraMoveAnimation( scene, { 0.f, 1.f, 5.f }, { 0.2f, 0.f, 0.f }, 10 );

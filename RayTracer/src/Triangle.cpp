@@ -1,4 +1,5 @@
 #include "Triangle.h"
+#include "utils.h"
 
 Triangle::Triangle( const FVector3& vert0, const FVector3& vert1, const FVector3& vert2 )
     : verts{ vert0, vert1, vert2 } {
@@ -13,12 +14,8 @@ void Triangle::init( const FVector3& v0, const FVector3& v1, const FVector3& v2 
     CalculateArea();
 }
 
-void Triangle::Move( const FVector3& pos ) {
-    const FVector3 moveDirInWorldSpace{ pos * m_orientation };
-
-    // Update all vertices locations
-    for ( int i{}; i < vertsInTriangle; ++i ) {
-        verts[i] = verts[i] - m_position + moveDirInWorldSpace;
+FVector3 Triangle::GetNormal() const {
+    return normal;
     }
     m_position += moveDirInWorldSpace;
     init( verts[0], verts[1], verts[2] );
@@ -62,11 +59,11 @@ std::optional<FVector3> Triangle::GetEdge( const int edgeIdx ) const {
 }
 
 bool Triangle::IsPointInside( const FVector3& point ) const {
-    if ( (edges[0] * (point - verts[0])).Dot( normal ) <= 0.f )
+    if ( isLessThan( (edges[0] * (point - verts[0])).Dot( normal ), 0.f ) )
         return false;
-    if ( (edges[1] * (point - verts[1])).Dot( normal ) <= 0.f )
+    if ( isLessThan( (edges[1] * (point - verts[1])).Dot( normal ), 0.f ) )
         return false;
-    if ( (edges[2] * (point - verts[2])).Dot( normal ) <= 0.f )
+    if ( isLessThan( (edges[2] * (point - verts[2])).Dot( normal ), 0.f ) )
         return false;
 
     return true;

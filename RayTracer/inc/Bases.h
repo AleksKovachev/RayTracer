@@ -1,11 +1,8 @@
 #ifndef BASES_H
 #define BASES_H
 
-#include <cmath>
-#include <initializer_list>
-#include <iomanip>
-#include <iostream>
-#include <numbers>
+
+#include <initializer_list> // initializer_list
 
 #include "Vectors.h" // FVector3
 
@@ -28,29 +25,19 @@ private:
 // Parent class to all scene objects describing the position of an object in 3D.
 class Obj {
 public:
-    Obj()
-        : m_position{ 0.f, 0.f, 0.f }, m_rotation{ 0.f, 0.f, 0.f } {
-    }
-    Obj( FVector3 pos )
-        : m_position{ pos }, m_rotation{ 0.f, 0.f, 0.f } {
-    }
-    Obj( Vector3 pos )
-        : m_position{ FVector3( pos ) }, m_rotation{ 0.f, 0.f, 0.f } {
-    }
+    Obj();
+    Obj( FVector3 pos );
+
+    virtual ~Obj() = default;
 
     // Apply rotation to a direction vector (to the location)
-    FVector3 ApplyRotation( const FVector3& direction ) const {
-        return direction * m_orientation;
-    }
+    FVector3 ApplyRotation( const FVector3& direction ) const;
 
     // Returns object's current coordinates
     virtual FVector3 GetLocation() const = 0;
 
     // Set absolute object location
-    virtual void Move( const FVector3& pos ) {
-        const FVector3 moveDirInWorldSpace{ pos * m_orientation };
-        m_position += moveDirInWorldSpace;
-    }
+    virtual void Move( const FVector3& pos );
 
     // Rotate to an absolute angle
     virtual void Rotate( const FVector3& vec );
@@ -58,9 +45,7 @@ public:
     virtual void Rotate( const float, const float, const float );
 
     // Get forward vector (negative Z in camera space)
-    FVector3 GetForwardVector() const {
-        return ApplyRotation( { 0, 0, -1 } );
-    }
+    FVector3 GetForwardVector() const;
 
     friend class Scene;
 
@@ -75,21 +60,5 @@ protected:
     Matrix3 GetZRotMatrix( const float deg ) const;
 };
 
-
-/* Color class that works with integers.
-Initializes with R, G, B integer values or normalized float values. */
-struct Color {
-    int r;
-    int g;
-    int b;
-
-    Color( int in_r = 0, int in_g = 0, int in_b = 0 )
-        : r{ in_r }, g{ in_g }, b{ in_b } {
-    }
-    Color( float in_r, float in_g, float in_b );
-
-    // Copy assignment
-    Color& operator=( const Color& other );
-};
 
 #endif // BASES_H

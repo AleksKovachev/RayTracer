@@ -1,3 +1,4 @@
+#include "Lights.h" // Light
 #include "Scene.h" // Scene, Mesh
 #include "utils.h" // getRandomColor
 
@@ -20,6 +21,11 @@ Scene::Scene( const std::string& sceneFileName )
 	m_settings.saveName = path.stem().string();
 }
 
+Scene::~Scene() {
+	for ( Light* light : m_lights )
+		delete light;
+}
+
 
 void Scene::ParseSceneFile() {
 	std::ifstream ifs( m_fileName );
@@ -33,9 +39,10 @@ void Scene::ParseSceneFile() {
 	ParseSettingsTag( doc );
 	ParseCameraTag( doc );
 	ParseObjectsTag( doc );
+	ParseLightsTag( doc );
 
 	for ( Mesh& mesh : m_meshes ) {
-		mesh.color = getRandomColor();
+		mesh.albedo = getRandomColor();
 	}
 }
 
@@ -48,6 +55,11 @@ void Scene::SetSaveFileName( const std::string& saveName ) {
 
 void Scene::SetColorMode( const ColorMode colorMode ) {
 	m_settings.colorMode = colorMode;
+}
+
+void Scene::SetRenderResolution( const int width, const int height ) {
+	m_settings.renderWidth = width;
+	m_settings.renderHeight = height;
 }
 
 
@@ -109,6 +121,31 @@ void Scene::ParseObjectsTag( const rapidjson::Document& doc ) {
 			assert( mesh.HasMember( t_triangles ) && mesh[t_triangles].IsArray() );
 			m_meshes.emplace_back( loadMeshVerts( mesh[t_vertices].GetArray() ),
 				loadMeshTris( mesh[t_triangles].GetArray() ) );
+		}
+	}
+}
+
+void Scene::ParseLightsTag( const rapidjson::Document& doc ) {
+	// JSON Tags to look for
+	char t_lights[]{ "lights" };
+	char t_position[]{ "position" };
+	char t_intensity[]{ "intensity" };
+
+	if ( doc.HasMember( t_lights ) && doc[t_lights].IsArray() ) {
+		const rapidjson::Value::ConstArray& lightsArr = doc[t_lights].GetArray();
+
+		for ( unsigned i{}; i < lightsArr.Size(); ++i ) {
+			assert( lightsArr[i].IsObject() );
+			const rapidjson::Value& light{ lightsArr[i] };
+			assert( light.HasMember(t_position) && light[t_position].IsArray());
+			const FVector3 lightPos = loadVector3<FVector3>( light[t_position].GetArray() );
+
+			// Not using assert because if no intensity is specified - simply init it to 1.
+			float ligthIntensity = 1.f;
+			if ( light.HasMember( t_intensity ) && light[t_intensity].IsNumber() )
+				ligthIntensity = static_cast<float>( light[t_intensity].GetDouble() );
+
+			m_lights.emplace_back( new PointLight( lightPos, ligthIntensity ) );
 		}
 	}
 }

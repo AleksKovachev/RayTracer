@@ -3,8 +3,12 @@
 
 #include <vector>
 
-#include "Bases.h"    // Obj, Color
+#include "Bases.h" // Obj
+#include "Colors.h" // Color, Colors::Black
+#include "Mesh.h" // PreparedMesh
+#include "RenderSettings.h" // IntersectionData
 #include "Triangle.h"
+#include "Vectors.h" // FVector3
 
 class Scene;
 
@@ -13,10 +17,7 @@ struct ImagePlane {
     FVector2 resolution;
     float distanceFromCamera;
 
-    ImagePlane( int width = 1920, int height = 1080, float distFromCamera = 1.f )
-        : resolution{ static_cast<float>(width), static_cast<float>(height) },
-        distanceFromCamera{ distFromCamera } {
-    }
+    ImagePlane( int width = 1920, int height = 1080, float distFromCamera = 1.f );
 };
 
 /* Camera class with an Image Plane, position, orientation and children. Any child object
@@ -29,22 +30,17 @@ struct Camera : public Obj {
     FVector2 m_aspectRatio;
 
     Camera() : m_imgPlane{ ImagePlane() } { init(); };
-    Camera( ImagePlane imgPlane, FVector3 direction, FVector3 pos = { 0.f, 0.f, 0.f } ) {
-        init();
-    };
+    Camera( ImagePlane imgPlane, FVector3 direction, FVector3 pos = { 0.f, 0.f, 0.f } );
 
-    virtual FVector3 GetLocation() const override {
-        return m_position;
-    };
+    ~Camera();
+
+    virtual FVector3 GetLocation() const override;
 
     // Move camera to given relative position
     virtual void Move( const FVector3& relPos ) override;
 
     // Initializes all variables that need calculation
     void init();
-
-    // Move camera to given absolute position
-    void MoveAbs( const FVector3& absPos );
 
     // Generate a normalized Camera Ray for Image Plane pixel (x, y) with applied orientation
     FVector3 GenerateRay( const int x, const int y ) const;
@@ -70,11 +66,14 @@ struct Camera : public Obj {
     // Rotate Camera around a point at a given distance with given degree
     void RotateAroundPoint( const FVector3& dist, const FVector3& angle );
 
+    // Traces ShadowRay from hit point to light sources.
+    static bool IsInShadow( const FVector3& ray, const IntersectionData& data, const FVector3& triN );
+
     // Returns the color of the Triangle closest to the camera ray
     Color GetTriangleIntersection(
         const FVector3& ray,
-        const std::vector<Triangle>& triangles,
-        const Color& BGColor = { 0.f, 0.f, 0.f }
+        const std::vector<PreparedMesh>& meshes,
+        const Scene& scene
     ) const;
 
 private:

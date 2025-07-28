@@ -5,13 +5,10 @@
 #include <random>
 #include <unordered_map>
 
-#include "Bases.h" // Color
+#include "Colors.h" // Color
 
 typedef std::unordered_map<std::string, float> iniData;
 
-// Return the normalized value based on a current and a max value.
-template <typename T>
-float normalize( T val, T max );
 
 // Get a random int in range
 int getInt( const int min, const int max );
