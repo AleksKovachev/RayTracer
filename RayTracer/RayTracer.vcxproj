@@ -21,9 +21,10 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{a55a915e-2745-43b3-9f25-a80abc30047d}</ProjectGuid>
-    <RootNamespace>Test2</RootNamespace>
+    <ProjectGuid>{d40b06a9-d55a-4358-b3c3-5030863bc28b}</ProjectGuid>
+    <RootNamespace>RayTracer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>RayTracer</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -102,13 +103,44 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PreBuildEvent>
+      <Command>echo ==============================================================================================
+echo Solution Name                      : $(SolutionName)
+echo Language                           : $(Language)
+echo Computer Name                      : $(COMPUTERNAME)
+echo Username                           : $(USERNAME)
+echo Processor Architecture             : $(PROCESSOR_ARCHITECTURE)
+echo Number of Processors               : $(NUMBER_OF_PROCESSORS)
+echo Platform                           : $(Platform)
+echo Int Dir Full Path                  : $(IntDirFullPath)
+echo Configuration                      : $(Configuration)
+echo Dev Environment Directory          : $(DevEnvDir)
+echo Local Debugger Command             : $(LocalDebuggerCommand)
+echo Local Debugger Working Directory   : $(LocalDebuggerWorkingDirectory)
+echo Output Directory                   : $(OutDir)
+echo Project Directory                  : $(ProjectDir)
+echo Visual Studio Version              : $(VisualStudioVersion)
+echo MS Build Version                   : $(MSBuildVersion)
+echo AppData                            : $(APPDATA)
+echo Available Platforms                : $(AvailablePlatforms)
+echo Building Inside Visual Studio      : $(BuildingInsideVisualStudio)
+echo Build Project References           : $(BuildProjectReferences)
+echo Character Set                      : $(CharacterSet)
+echo Assembly Search Paths              : $(AssemblySearchPaths)
+echo Assembly Name                      : $(AssemblyName)
+echo BaseIntermediate Output Path       : $(BaseIntermediateOutputPath)
+echo Cuda Cache Max Size                : $(CUDA_CACHE_MAXSIZE)
+echo ==============================================================================================</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -118,6 +150,9 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <ShowIncludes>false</ShowIncludes>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -127,11 +162,39 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Test2.cpp" />
-    <ClCompile Include="TstClass.cpp" />
+    <ClCompile Include="src\Bases.cpp" />
+    <ClCompile Include="src\Colors.cpp" />
+    <ClCompile Include="src\DebugObjects.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\Camera.cpp" />
+    <ClCompile Include="src\Materials.cpp" />
+    <ClCompile Include="src\Mesh.cpp" />
+    <ClCompile Include="src\Render.cpp" />
+    <ClCompile Include="src\RenderSettings.cpp" />
+    <ClCompile Include="src\Scene.cpp" />
+    <ClCompile Include="src\Triangle.cpp" />
+    <ClCompile Include="src\SpaceConversions.cpp" />
+    <ClCompile Include="src\utils.cpp" />
+    <ClCompile Include="src\Vectors.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="TstClass.h" />
+    <ClInclude Include="inc\Bases.h" />
+    <ClInclude Include="inc\Camera.h" />
+    <ClInclude Include="inc\Colors.h" />
+    <ClInclude Include="inc\Lights.h" />
+    <ClInclude Include="inc\Materials.h" />
+    <ClInclude Include="inc\Mesh.h" />
+    <ClInclude Include="inc\Render.h" />
+    <ClInclude Include="inc\RenderSettings.h" />
+    <ClInclude Include="inc\Scene.h" />
+    <ClInclude Include="inc\DebugObjects.h" />
+    <ClInclude Include="inc\Triangle.h" />
+    <ClInclude Include="inc\SpaceConversions.h" />
+    <ClInclude Include="inc\utils.h" />
+    <ClInclude Include="inc\Vectors.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="config\config.ini" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
