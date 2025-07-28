@@ -1,7 +1,12 @@
 #include "Camera.h"
+#include "Lights.h" // Light, PointLight
+#include "Scene.h" // Scene
 #include "SpaceConversions.h" // ray2NDC, NDC2ScreenSpace, getFixedAspectRatio
 #include "RenderSettings.h" // Settings
 
+#include <algorithm> // round
+#include <limits> // numeric_limits<float>::max
+#include <numbers> // pi
 #include <numeric> // gcd
 
 
