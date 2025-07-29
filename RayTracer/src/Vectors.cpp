@@ -109,6 +109,12 @@ void FVector3::NormalizeInPlace() {
 	x = y = z = 0.f;
 }
 
+// Disable warning about constant arithmetic overflow
+#pragma warning(push)
+#pragma warning(disable : 4756)
+
 void FVector3::CalculateLength() {
 	length = std::sqrt( x * x + y * y + z * z );
 }
+
+#pragma warning(pop)

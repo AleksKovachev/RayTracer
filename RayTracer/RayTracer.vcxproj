@@ -178,6 +178,8 @@ echo ===========================================================================
     <ClCompile Include="src\AccelerationStructures.cpp" />
     <ClCompile Include="src\Bases.cpp" />
     <ClCompile Include="src\Colors.cpp" />
+    <ClCompile Include="src\Antialiasing.cpp" />
+    <ClCompile Include="src\ColorUtils.cpp" />
     <ClCompile Include="src\ImageBuffer.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Camera.cpp" />
@@ -194,7 +196,8 @@ echo ===========================================================================
     <ClInclude Include="inc\Bases.h" />
     <ClInclude Include="inc\Camera.h" />
     <ClInclude Include="inc\Colors.h" />
-    <ClInclude Include="inc\FXAA.h" />
+    <ClInclude Include="inc\Antialiasing.h" />
+    <ClInclude Include="inc\ColorUtils.h" />
     <ClInclude Include="inc\ImageBuffer.h" />
     <ClInclude Include="inc\Lights.h" />
     <ClInclude Include="inc\Materials.h" />
@@ -203,6 +206,7 @@ echo ===========================================================================
     <ClInclude Include="inc\RenderMode.h" />
     <ClInclude Include="inc\RenderSettings.h" />
     <ClInclude Include="inc\Scene.h" />
+    <ClInclude Include="inc\SIMD.h" />
     <ClInclude Include="inc\Triangle.h" />
     <ClInclude Include="inc\SpaceConversions.h" />
     <ClInclude Include="inc\utils.h" />

@@ -172,9 +172,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\RayTracer\src\AccelerationStructures.cpp" />
+    <ClCompile Include="..\RayTracer\src\Antialiasing.cpp" />
     <ClCompile Include="..\RayTracer\src\Bases.cpp" />
     <ClCompile Include="..\RayTracer\src\Camera.cpp" />
     <ClCompile Include="..\RayTracer\src\Colors.cpp" />
+    <ClCompile Include="..\RayTracer\src\ColorUtils.cpp" />
     <ClCompile Include="..\RayTracer\src\ImageBuffer.cpp" />
     <ClCompile Include="..\RayTracer\src\Materials.cpp" />
     <ClCompile Include="..\RayTracer\src\Render.cpp" />

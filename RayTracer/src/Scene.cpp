@@ -78,7 +78,7 @@ const AABBox& Scene::GetAABB() const {
 	return m_aabb;
 }
 
-void Scene::ParseSettingsTag(const rapidjson::Document& doc) {
+void Scene::ParseSettingsTag( const rapidjson::Document& doc ) {
 	// JSON Tags to look for
 	char t_settings[]{ "settings" };
 	char t_bgColor[]{ "background_color" };
@@ -88,13 +88,13 @@ void Scene::ParseSettingsTag(const rapidjson::Document& doc) {
 	char t_bucketSize[]{ "bucket_size" };
 
 	if ( doc.HasMember( t_settings ) && doc[t_settings].IsObject() ) {
-		const rapidjson::Value& settings_{doc[t_settings]};
+		const rapidjson::Value& settings_{ doc[t_settings] };
 		assert( settings_.HasMember( t_bgColor ) && settings_[t_bgColor].IsArray() );
 		if ( !settings.overrideBGColor )
 			settings.BGColor = loadVector3<Color>( settings_[t_bgColor].GetArray() );
 
 		assert( settings_.HasMember( t_imgSettings ) && settings_[t_imgSettings].IsObject() );
-		const rapidjson::Value& imgSettings{ settings_[t_imgSettings]};
+		const rapidjson::Value& imgSettings{ settings_[t_imgSettings] };
 
 		assert( imgSettings.HasMember( t_width ) && imgSettings[t_width].IsInt() );
 		settings.renderWidth = imgSettings[t_width].GetUint();
@@ -115,11 +115,11 @@ void Scene::ParseCameraTag( const rapidjson::Document& doc ) {
 	char t_position[]{ "position" };
 
 	if ( doc.HasMember( t_camera ) && doc[t_camera].IsObject() ) {
-		const rapidjson::Value& camera{doc[t_camera]};
-		assert( camera.HasMember( t_matrix ) && camera[t_matrix].IsArray());
+		const rapidjson::Value& camera{ doc[t_camera] };
+		assert( camera.HasMember( t_matrix ) && camera[t_matrix].IsArray() );
 		m_camera.m_orientation = loadMatrix3( camera[t_matrix].GetArray() );
 
-		assert( camera.HasMember( t_position ) && camera[t_position].IsArray());
+		assert( camera.HasMember( t_position ) && camera[t_position].IsArray() );
 		m_camera.m_position = loadVector3<FVector3>( camera[t_position].GetArray() );
 	}
 }
@@ -169,7 +169,7 @@ void Scene::ParseLightsTag( const rapidjson::Document& doc ) {
 		for ( unsigned i{}; i < lightsArr.Size(); ++i ) {
 			assert( lightsArr[i].IsObject() );
 			const rapidjson::Value& light{ lightsArr[i] };
-			assert( light.HasMember(t_position) && light[t_position].IsArray());
+			assert( light.HasMember( t_position ) && light[t_position].IsArray() );
 			const FVector3 lightPos = loadVector3<FVector3>( light[t_position].GetArray() );
 
 			// Not using assert because if no intensity is specified - simply init it to 1.
@@ -207,31 +207,28 @@ void Scene::ParseTexturesTag( const rapidjson::Document& doc ) {
 
 			Texture tex{};
 			tex.name = texture[t_name].GetString();
-			
+
 			if ( texture[t_type] == "albedo" ) {
 				tex.type = TextureType::SolidColor;
 				assert( texture.HasMember( t_albedo ) && texture[t_albedo].IsArray() );
 				tex.albedo = loadVector3<Color>( texture[t_albedo].GetArray() );
-			}
-			else if ( texture[t_type] == "edges" ) {
+			} else if ( texture[t_type] == "edges" ) {
 				tex.type = TextureType::EdgesP;
 				assert( texture.HasMember( t_edgeColor ) && texture[t_edgeColor].IsArray() );
 				assert( texture.HasMember( t_innerColor ) && texture[t_innerColor].IsArray() );
 				assert( texture.HasMember( t_edgeWidth ) && texture[t_edgeWidth].IsDouble() );
 				tex.colorA = loadVector3<Color>( texture[t_edgeColor].GetArray() );
 				tex.colorB = loadVector3<Color>( texture[t_innerColor].GetArray() );
-				tex.scalar = static_cast<float>( texture[t_edgeWidth].GetDouble() );
-			}
-			else if ( texture[t_type] == "checker" ) {
+				tex.scalar = static_cast<float>(texture[t_edgeWidth].GetDouble());
+			} else if ( texture[t_type] == "checker" ) {
 				tex.type = TextureType::CheckerP;
 				assert( texture.HasMember( t_colorA ) && texture[t_colorA].IsArray() );
 				assert( texture.HasMember( t_colorB ) && texture[t_colorB].IsArray() );
 				assert( texture.HasMember( t_squareSize ) && texture[t_squareSize].IsDouble() );
 				tex.colorA = loadVector3<Color>( texture[t_colorA].GetArray() );
 				tex.colorB = loadVector3<Color>( texture[t_colorB].GetArray() );
-				tex.scalar = static_cast<float>( texture[t_squareSize].GetDouble() );
-			}
-			else if ( texture[t_type] == "bitmap" ) {
+				tex.scalar = static_cast<float>(texture[t_squareSize].GetDouble());
+			} else if ( texture[t_type] == "bitmap" ) {
 				tex.type = TextureType::Bitmap;
 				assert( texture.HasMember( t_filePath ) && texture[t_filePath].IsString() );
 				tex.filePath = std::string( "./rsc" ) + texture[t_filePath].GetString();
@@ -245,8 +242,7 @@ void Scene::ParseTexturesTag( const rapidjson::Document& doc ) {
 				tex.bitmap.height = height;
 				tex.bitmap.channels = channels;
 				tex.bitmap.buffer = image;
-			}
-			else {
+			} else {
 				assert( false );
 			}
 
@@ -296,8 +292,7 @@ void Scene::ParseMaterialsTag( const rapidjson::Document& doc ) {
 			if ( material.HasMember( t_albedo ) ) {
 				if ( material[t_albedo].IsString() ) {
 					mat.texName = material[t_albedo].GetString();
-				}
-				else if ( material[t_albedo].IsArray() ) {
+				} else if ( material[t_albedo].IsArray() ) {
 					mat.texture.type = TextureType::SolidColor;
 					mat.texture.albedo = loadVector3<Color>( material[t_albedo].GetArray() );
 				}
@@ -416,9 +411,9 @@ void Scene::LoadMesh(
 		}
 		v0.normal = v1.normal = v2.normal = {}; // Init normals to 0
 
-		m_triangles.emplace_back(v0, v1, v2 );
+		m_triangles.emplace_back( v0, v1, v2 );
 		size_t lastTriIdx = m_triangles.size() - 1;
-		m_triIndices.push_back( static_cast<int>( lastTriIdx ) );
+		m_triIndices.push_back( static_cast<int>(lastTriIdx) );
 
 		vertexNormals[idx0] += m_triangles[lastTriIdx].GetNormal();
 		vertexNormals[idx1] += m_triangles[lastTriIdx].GetNormal();
@@ -439,7 +434,7 @@ void Scene::LoadMesh(
 		if ( settings.renderMode == RenderMode::RandomTriangleColor ) {
 			m_triangleColors.push_back( getRandomColor() );
 			m_triangles[lastTriIdx].colorIdx = static_cast<unsigned>(
-				m_triangleColors.size() ) - 1;
+				m_triangleColors.size()) - 1;
 		}
 	}
 
@@ -487,7 +482,7 @@ void Scene::ParsePolygonLine( std::istringstream& iss, const std::string& line, 
 			vertexIndices.push_back( stoi( vertexData ) );
 			continue;
 		}
-		vertexIndices.push_back( std::stoi( vertexData.substr(0, pos) ) );
+		vertexIndices.push_back( std::stoi( vertexData.substr( 0, pos ) ) );
 		// Ignore 'vt' and 'vn'
 	}
 
@@ -549,7 +544,7 @@ void Scene::ParseObjFile() {
 	*    (usually 3 or 4, but could be any N-gon). The 1st element is the vertex
 	*    index "v", the 2nd - vertex texture coordinate "vt" index, and the 3rd
 	*    is the vertex normal "vn" index.
-	* 
+	*
 	*   In this parser:
 	*   Ignore vertex normals "vn"
 	*   Ignore vertex texture coordinates "vt"

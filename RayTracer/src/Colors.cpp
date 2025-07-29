@@ -79,6 +79,29 @@ Color& Color::operator+=( const Color& other ) {
 	return *this;
 }
 
+float& Color::operator[]( const int idx ) {
+	if ( idx < 0 || idx > 2 )
+		throw std::out_of_range( "Index out of bounds." );
+
+	if ( idx == 0 )
+		return r;
+	else if ( idx == 1 )
+		return g;
+	else
+		return b;
+}
+const float& Color::operator[]( const int idx ) const {
+	if ( idx < 0 || idx > 2 )
+		throw std::out_of_range( "Index out of bounds." );
+
+	if ( idx == 0 )
+		return r;
+	else if ( idx == 1 )
+		return g;
+	else
+		return b;
+}
+
 namespace Colors {
 	const Color& Grey = Gray;
 }
