@@ -151,13 +151,14 @@
       <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Qt\6.8.0\msvc2022_64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>Qt6Core.lib;Qt6Gui.lib;Qt6Widgets.lib;Qt6Concurrent.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="rsc\resource.h" />
     <QtMoc Include="inc\CustomWidgets.h" />
     <ClInclude Include="inc\RenderType.h" />
     <ClInclude Include="inc\UI_Main.h" />
@@ -171,9 +172,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\RayTracer\src\AccelerationStructures.cpp" />
+    <ClCompile Include="..\RayTracer\src\Antialiasing.cpp" />
     <ClCompile Include="..\RayTracer\src\Bases.cpp" />
     <ClCompile Include="..\RayTracer\src\Camera.cpp" />
     <ClCompile Include="..\RayTracer\src\Colors.cpp" />
+    <ClCompile Include="..\RayTracer\src\ColorUtils.cpp" />
     <ClCompile Include="..\RayTracer\src\ImageBuffer.cpp" />
     <ClCompile Include="..\RayTracer\src\Materials.cpp" />
     <ClCompile Include="..\RayTracer\src\Render.cpp" />
@@ -192,6 +195,9 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="rsc\icons\RayTracing.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="rsc\appIcon.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(QtMsBuild)\qt.targets" Condition="Exists('$(QtMsBuild)\qt.targets')" />

@@ -28,7 +28,8 @@ Color getRandomColor( const int bitDepth = 8 );
 // @param[in-out] stream: The stream where the color data will be written.
 // @param[in] pixelColor: The color data that will be written to the file.
 // @param[in] maxComp: The maximum color component as an integer number.
-void writeColorToFile( std::ofstream&, const Color&, const int );
+// @param[in] outputSRGB: Whether to save as linear or sRGB color.
+void writeColorToFile( std::ofstream&, const Color&, const int, bool );
 
 // Check if 2 float values are equal with an epsilon range of error.
 // @param[in] a: The first number that will be compared.
@@ -78,6 +79,13 @@ bool isGE( const float a, const float b, const float epsilon = 1e-9f );
 // @return Boolean indication if the numbers are equal within the epsilon range.
 bool areAlmostEqual( float a, float b, float epsilon = 1e-9f );
 
+// Linear interpolation between 2 floats.
+// @param[in] a: The first number to be interpolated.
+// @param[in] b: The second number to be interpolated.
+// @param[in] t: The factor of interpolation.
+// @return: The interpolated value.
+float lerp( const float, const float, const float );
+
 // Reads a config.ini file for an improvised interactive rendering.
 // @return An unordered map of values to use for different settings.
 iniData readConfig();
@@ -89,6 +97,6 @@ iniData readConfig();
 // in the given string. Defaults to nullptr - checks for forbidden name characters.
 // @return Boolean indication if any of the characters is in the string.
 bool areCharsInString(
-	const std::string& str, const std::unordered_set<char>* passedCharsPtr = nullptr);
+	const std::string& str, const std::unordered_set<char>* passedCharsPtr = nullptr );
 
 #endif // UTILS_H

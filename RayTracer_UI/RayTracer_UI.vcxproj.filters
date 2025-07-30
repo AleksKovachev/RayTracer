@@ -21,6 +21,9 @@
     <ClInclude Include="inc\RenderType.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="rsc\resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -71,6 +74,12 @@
     <ClCompile Include="src\CustomWidgets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\RayTracer\src\Antialiasing.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RayTracer\src\ColorUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="rsc\RayTracer.ui" />
@@ -91,5 +100,10 @@
     <Image Include="rsc\icons\RayTracing.png">
       <Filter>Resource Files</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="rsc\appIcon.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

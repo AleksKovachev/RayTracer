@@ -54,6 +54,12 @@
     <ClCompile Include="src\AccelerationStructures.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Antialiasing.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ColorUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\Vectors.h">
@@ -102,6 +108,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="inc\RenderMode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\Antialiasing.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\ColorUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\SIMD.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

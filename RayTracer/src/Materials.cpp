@@ -6,7 +6,7 @@
 
 constexpr const char* INVALID = "<INVALID>";
 
-Bitmap::Bitmap() : width{ 0 }, height{ 0 }, channels{ 0 }, buffer { nullptr } {}
+Bitmap::Bitmap() : width{ 0 }, height{ 0 }, channels{ 0 }, buffer{ nullptr } {}
 
 size_t Texture::counter = 0;
 
@@ -78,8 +78,7 @@ Bitmap::Bitmap( const Bitmap& other )
 	: width( other.width ),
 	height( other.height ),
 	channels( other.channels ),
-	buffer( nullptr )
-{
+	buffer( nullptr ) {
 	if ( other.buffer != nullptr ) {
 		size_t bufferSize = static_cast<size_t>(width) * height * channels;
 
@@ -123,8 +122,7 @@ Bitmap& Bitmap::operator=( const Bitmap& other ) {
 			if ( buffer ) {
 				std::memcpy( buffer, other.buffer, bufferSize );
 			}
-		}
-		else {
+		} else {
 			buffer = nullptr; // If source has no buffer, ensure current has none
 		}
 	}

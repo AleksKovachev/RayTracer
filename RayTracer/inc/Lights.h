@@ -28,7 +28,8 @@ protected:
 class PointLight : public Light {
 public:
 	PointLight( const FVector3& pos, const float intensity )
-		: Light( pos, intensity ) {}
+		: Light( pos, intensity ) {
+	}
 };
 
 #endif // LIGHTS_H

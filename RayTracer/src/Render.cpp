@@ -1,6 +1,7 @@
 #include "AccelerationStructures.h" // AABBox, AccTreeNode
 #include "Camera.h" // Camera
 #include "Colors.h" // Color, Colors::Black, Colors::Red
+#include "Antialiasing.h" // Antialiasing, FXAA
 #include "ImageBuffer.h" // ImageBuffer
 #include "Lights.h" // Light, PointLight
 #include "Materials.h" // Bitmap, MaterialType, TextureType
@@ -50,7 +51,7 @@ Render::~Render() {
 
 void Render::RenderImage() {
 	const Settings& settings{ m_scene.settings };
-	const unsigned maxColorComp{ static_cast<unsigned>( (1 << settings.colorDepth) - 1) };
+	const unsigned maxColorComp{ static_cast<unsigned>((1 << settings.colorDepth) - 1) };
 	const unsigned& width{ settings.renderWidth };
 	const unsigned& height{ settings.renderHeight };
 	const Camera& camera{
@@ -68,7 +69,7 @@ void Render::RenderImage() {
 				IntersectionData intersectData = IntersectRay( ray );
 				pixelColor = Shade( ray, intersectData );
 			}
-			writeColorToFile( ppmFileStream, pixelColor, maxColorComp );
+			writeColorToFile( ppmFileStream, pixelColor, maxColorComp, settings.outputSRGB );
 		}
 		std::cout << "\rLine: " << y + 1 << " / " << height << "  |  "
 			<< (static_cast<float>(y + 1) / height) * 100 << "%          " << std::flush;
@@ -145,18 +146,27 @@ void Render::RenderBuckets() {
 		);
 	}
 
-	for ( std::thread& t : threads ) {
-		if ( t.joinable() ) {
+	for ( std::thread& t : threads )
+		if ( t.joinable() )
 			t.join();
-		}
+
+	const ImageBuffer* finalImage{ &buff };
+	if ( settings.antialiasing == Antialiasing::FXAA ) {
+		FXAA fxaa{ settings, &buff, true };
+		finalImage = fxaa.ApplyFXAA();
 	}
 
 	for ( unsigned row{}; row < height; ++row ) {
 		for ( unsigned col{}; col < width; ++col ) {
-			writeColorToFile( ppmFileStream, buff[row][col], maxColorComp );
+			writeColorToFile( 
+				ppmFileStream, (*finalImage)[row][col], maxColorComp, settings.outputSRGB );
 		}
 	}
+
 	ppmFileStream.close();
+
+	if ( settings.antialiasing != Antialiasing::NO )
+		delete finalImage;
 }
 
 void Render::RenderTree( const Bucket& region, ImageBuffer& buff ) {
@@ -423,6 +433,9 @@ Color Render::ShadeDiffuse( const IntersectionData& data ) const {
 	const FVector3& surfaceNormal = data.material->smoothShading ? hitNormal : data.faceNormal;
 
 	for ( const Light* light : m_scene.GetLights() ) {
+		if ( light == nullptr )
+			continue;
+
 		//! If Scene lights get more types, replace static_cast with dynamic to check light type.
 		const PointLight* ptLight = static_cast<const PointLight*>(light);
 
@@ -650,7 +663,7 @@ std::ofstream Render::PrepareScene() {
 
 	const std::string& saveDir{ settings.saveDir };
 	const std::string& saveName{
-		(overrideSaveName == nullptr ? settings.GetSaveFileName() : *overrideSaveName)};
+		(overrideSaveName == nullptr ? settings.GetSaveFileName() : *overrideSaveName) };
 
 	std::filesystem::create_directories( saveDir );
 	std::ofstream ppmFileStream( saveDir + "/" + saveName + ".ppm", std::ios::binary );

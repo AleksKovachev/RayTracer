@@ -2,6 +2,7 @@
 #include "UI_MainWindow.h"
 #include "CustomWidgets.h" // ImageViewer
 
+#include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QColorDialog>
@@ -21,11 +22,22 @@ MainWindow::MainWindow( QWidget* parent )
 	// Install event filter to handle Image Viewer next/previous shortcuts.
 	qApp->installEventFilter( this );
 
+	// Set this Combo Box' dropdown menu wide enough to fit longest entry name.
+	renderModeCombo->view()->setMinimumWidth( 150 );
+
+	cameraBox->setFixedWidth( 225 );
+
 	// Set cursor style for Color button.
 	colorPickerBtn->setCursor( Qt::PointingHandCursor );
 
 	SetupCameraWidgets();
 
+	connect( custWidthBtn, &QPushButton::toggled, this, [this]() {
+		resWidthSpin->setEnabled( custWidthBtn->isChecked() ); } );
+	connect( custHeightBtn, &QPushButton::toggled, this, [this]() {
+		resHeightSpin->setEnabled( custHeightBtn->isChecked() ); } );
+	connect( custBucketSizeBtn, &QPushButton::toggled, this, [this]() {
+		bucketSizeSpin->setEnabled( custBucketSizeBtn->isChecked() ); } );
 	connect( saveDirBtn, &QToolButton::clicked, this, &MainWindow::OpenRenderToBtnClicked );
 	connect( sceneFileBtn, &QToolButton::clicked, this, &MainWindow::OpenSceneBtnClicked );
 	connect( openImgBtn, &QToolButton::clicked, this, &MainWindow::OpenImageBtnClicked );
@@ -41,8 +53,7 @@ MainWindow::MainWindow( QWidget* parent )
 	connect( nextImgBtn, &QPushButton::clicked, this, [this]() { NavigateImages( 1 ); } );
 	connect( prevImgBtn, &QPushButton::clicked, this, [this]() { NavigateImages( -1 ); } );
 	connect( overrideBGColorBtn, &QPushButton::toggled, this, [this]() {
-		overrideBGColorBtn->isChecked() ? colorPickerBtn->show() : colorPickerBtn->hide(); }
-	);
+		colorPickerBtn->setVisible( overrideBGColorBtn->isChecked() ); } );
 	connect( camActionCombo, &QComboBox::currentTextChanged, this,
 		&MainWindow::OnCameraActionChanged );
 	connect( sceneInitialCamPosBtn, &QPushButton::clicked, this,
@@ -54,10 +65,7 @@ MainWindow::MainWindow( QWidget* parent )
 		delete imagePath;
 		} );
 	connect( enableGIBtn, &QPushButton::clicked, this, [this]() {
-		bool enabled{ enableGIBtn->isChecked() };
-		giSamplesLabel->setEnabled( enabled );
-		giSamplesSpin->setEnabled( enabled );
-		} );
+		giSamplesLabel->setEnabled( enableGIBtn->isChecked() ); } );
 
 	colorPickerBtn->hide();
 }
@@ -190,7 +198,7 @@ void MainWindow::OnCameraActionChanged() {
 		}
 		cameraBoxLayout->addWidget( camInitialPosLabel, 1, 0, 1, 5 );
 		cameraBoxLayout->addWidget(
-			sceneInitialCamPosBtn, 1, 3, 1, 5, Qt::AlignRight );
+			sceneInitialCamPosBtn, 1, 3, 1, 3, Qt::AlignRight );
 		cameraBoxLayout->addWidget( xInitialLabel, 2, 0 );
 		cameraBoxLayout->addWidget( camXInitialSpin, 2, 1 );
 		cameraBoxLayout->addWidget( yInitialLabel, 2, 2 );
@@ -214,28 +222,90 @@ void MainWindow::OnCameraActionChanged() {
 	camZActionSpin->setValue( 0.0 );
 
 	// Change the label text based on the selected action.
-	if ( camActionCombo->currentText() == "Move Animation" )
+	if ( camActionCombo->currentText() == "Move Animation" ) {
 		camActionLabel->setText( "Move Offset" );
-	else if ( camActionCombo->currentText() == "Orbit Animation" )
+
+		QString camActionLabelMsg = QCoreApplication::translate(
+			"RayTracer",
+			"The distance the camera should move on each frame and on which ases.",
+			nullptr );
+		camActionLabel->setToolTip( camActionLabelMsg );
+		camActionLabel->setStatusTip( camActionLabelMsg );
+
+		QString camXActionMsg = QCoreApplication::translate(
+			"RayTracer", "The camera offset on the X axis.", nullptr );
+		xActionLabel->setToolTip( camXActionMsg );
+		xActionLabel->setStatusTip( camXActionMsg );
+		camXActionSpin->setToolTip( camXActionMsg );
+		camXActionSpin->setStatusTip( camXActionMsg );
+		camXActionSpin->setSuffix(
+			QCoreApplication::translate( "RayTracer", "", nullptr ) );
+
+		QString camYActionMsg = QCoreApplication::translate(
+			"RayTracer", "The camera offset on the Y axis.", nullptr );
+		yActionLabel->setToolTip( camYActionMsg );
+		yActionLabel->setStatusTip( camYActionMsg );
+		camYActionSpin->setToolTip( camYActionMsg );
+		camYActionSpin->setStatusTip( camYActionMsg );
+		camYActionSpin->setSuffix(
+			QCoreApplication::translate( "RayTracer", "", nullptr ) );
+
+		QString camZActionMsg = QCoreApplication::translate(
+			"RayTracer", "The camera offset on the Z axis.", nullptr );
+		zActionLabel->setToolTip( camZActionMsg );
+		zActionLabel->setStatusTip( camZActionMsg );
+		camZActionSpin->setToolTip( camZActionMsg );
+		camZActionSpin->setStatusTip( camZActionMsg );
+		camZActionSpin->setSuffix(
+			QCoreApplication::translate( "RayTracer", "", nullptr ) );
+	} else if ( camActionCombo->currentText() == "Orbit Animation" ) {
 		camActionLabel->setText( "Rotation Offset in degrees" );
+
+		QString camActionLabelMsg = QCoreApplication::translate(
+			"RayTracer",
+			"The degrees the camera should rotate on each frame and on which ases.",
+			nullptr );
+		camActionLabel->setToolTip( camActionLabelMsg );
+		camActionLabel->setStatusTip( camActionLabelMsg );
+
+		QString camXActionMsg = QCoreApplication::translate(
+			"RayTracer", "The camera angle offset on the X axis.", nullptr );
+		xActionLabel->setToolTip( camXActionMsg );
+		xActionLabel->setStatusTip( camXActionMsg );
+		camXActionSpin->setToolTip( camXActionMsg );
+		camXActionSpin->setStatusTip( camXActionMsg );
+		camXActionSpin->setSuffix(
+			QCoreApplication::translate( "RayTracer", "\302\260", nullptr ) );
+
+		QString camYActionMsg = QCoreApplication::translate(
+			"RayTracer", "The camera angle offset on the Y axis.", nullptr );
+		yActionLabel->setToolTip( camYActionMsg );
+		yActionLabel->setStatusTip( camYActionMsg );
+		camYActionSpin->setToolTip( camYActionMsg );
+		camYActionSpin->setStatusTip( camYActionMsg );
+		camYActionSpin->setSuffix(
+			QCoreApplication::translate( "RayTracer", "\302\260", nullptr ) );
+
+		QString camZActionMsg = QCoreApplication::translate(
+			"RayTracer", "The camera angle offset on the Z axis.", nullptr );
+		zActionLabel->setToolTip( camZActionMsg );
+		zActionLabel->setStatusTip( camZActionMsg );
+		camZActionSpin->setToolTip( camZActionMsg );
+		camZActionSpin->setStatusTip( camZActionMsg );
+		camZActionSpin->setSuffix(
+			QCoreApplication::translate( "RayTracer", "\302\260", nullptr ) );
+	}
 }
 
 void MainWindow::HandleSceneCameraPositionButtonClicked() {
-	if ( sceneInitialCamPosBtn->isChecked() ) {
-		xInitialLabel->setDisabled( true );
-		camXInitialSpin->setDisabled( true );
-		yInitialLabel->setDisabled( true );
-		camYInitialSpin->setDisabled( true );
-		zInitialLabel->setDisabled( true );
-		camZInitialSpin->setDisabled( true );
-	} else {
-		xInitialLabel->setEnabled( true );
-		camXInitialSpin->setEnabled( true );
-		yInitialLabel->setEnabled( true );
-		camYInitialSpin->setEnabled( true );
-		zInitialLabel->setEnabled( true );
-		camZInitialSpin->setEnabled( true );
-	}
+	bool isBtnClicked{ sceneInitialCamPosBtn->isChecked() };
+	xInitialLabel->setDisabled( isBtnClicked );
+	camXInitialSpin->setDisabled( isBtnClicked );
+	yInitialLabel->setDisabled( isBtnClicked );
+	camYInitialSpin->setDisabled( isBtnClicked );
+	zInitialLabel->setDisabled( isBtnClicked );
+	camZInitialSpin->setDisabled( isBtnClicked );
+
 }
 
 void MainWindow::SetupPostRenderWatcher(
@@ -424,7 +494,18 @@ void MainWindow::SetupAnimationCoordinates( FVector3& initialPos, FVector3& acti
 		static_cast<float>(camZActionSpin->value()) };
 }
 
-bool MainWindow::eventFilter( QObject* watched, QEvent* event ) {
+bool MainWindow::eventFilter( QObject* obj, QEvent* event ) {
+	// If the event is mouse wheel and widget is any of the below -> transfer
+	// mouse wheel event to the scroll area widget.
+	if ( event->type() == QEvent::Wheel
+		&& (obj->inherits( "QSpinBox" )
+			|| obj->inherits( "QDoubleSpinBox" )
+			|| obj->inherits( "QComboBox" ))
+		) {
+		QApplication::sendEvent( settingsScrollArea->viewport(), event );
+		return true;
+	}
+
 	if ( event->type() == QEvent::KeyPress ) {
 		QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
 
@@ -446,7 +527,7 @@ bool MainWindow::eventFilter( QObject* watched, QEvent* event ) {
 			}
 		}
 	}
-	return QMainWindow::eventFilter( watched, event );
+	return QMainWindow::eventFilter( obj, event );
 }
 
 bool MainWindow::VerifyRenderDir() {
@@ -497,8 +578,9 @@ bool MainWindow::VerifyRenderDir() {
 }
 
 bool MainWindow::ManageSceneMainSettings() {
-	scene->settings.renderWidth = static_cast<unsigned>(resWidthSpin->value());
-	scene->settings.renderHeight = static_cast<unsigned>(resHeightSpin->value());
+	scene->settings.colorDepth = static_cast<unsigned>(colorDepthSpin->value());
+	scene->settings.BGColor = Color( bgColor.redF(), bgColor.greenF(), bgColor.blueF() );
+	scene->settings.overrideBGColor = overrideBGColorBtn->isChecked();
 
 	if ( !VerifyRenderDir() )
 		return false;
@@ -517,7 +599,6 @@ bool MainWindow::ManageSceneMainSettings() {
 	else
 		scene->settings.SetSaveFileName( rendNameEntry->text().trimmed().toStdString() );
 
-	scene->settings.colorDepth = static_cast<unsigned>(colorDepthSpin->value());
 	scene->settings.saveDir = saveDirEntry->text().toStdString();
 	scene->SetRenderScene( sceneFileEntry->text().toStdString() );
 	scene->settings.shadowBias = static_cast<float>(shadowBiasSpin->value());
@@ -525,11 +606,10 @@ bool MainWindow::ManageSceneMainSettings() {
 	scene->settings.pathDepth = pathDepthSpin->value();
 	scene->settings.renderMode = static_cast<RenderMode>(renderModeCombo->currentIndex());
 	scene->settings.ignoreBackface = ignoreBackfaceBtn->isChecked();
-	scene->settings.bucketSize = static_cast<unsigned>(bucketSizeSpin->value());
 	scene->settings.accTreeMaxDepth = static_cast<unsigned>(accTreeMaxDepthSpin->value());
 	scene->settings.maxAABBTriangleCount = static_cast<unsigned>(maxAABBTriCountSpin->value());
-	scene->settings.BGColor = Color( bgColor.redF(), bgColor.greenF(), bgColor.blueF() );
-	scene->settings.overrideBGColor = overrideBGColorBtn->isChecked();
+	scene->settings.outputSRGB = sRGBBtn->isChecked();
+	scene->settings.antialiasing = static_cast<Antialiasing>(antialiasCombo->currentIndex());
 
 	if ( sceneFile.suffix().toLower() == "crtscene" ) {
 		scene->ParseSceneFile();
@@ -539,5 +619,13 @@ bool MainWindow::ManageSceneMainSettings() {
 		return false;
 		//scene.ParseObjFile();
 	}
+
+	if ( custWidthBtn->isChecked() )
+		scene->settings.renderWidth = static_cast<unsigned>(resWidthSpin->value());
+	if ( custHeightBtn->isChecked() )
+		scene->settings.renderHeight = static_cast<unsigned>(resHeightSpin->value());
+	if ( custBucketSizeBtn->isChecked() )
+		scene->settings.bucketSize = static_cast<unsigned>(bucketSizeSpin->value());
+
 	return true;
 }
