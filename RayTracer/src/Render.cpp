@@ -1,7 +1,7 @@
 #include "AccelerationStructures.h" // AABBox, AccTreeNode
 #include "Camera.h" // Camera
 #include "Colors.h" // Color, Colors::Black, Colors::Red
-#include "Antialiasing.h" // FXAA
+#include "Antialiasing.h" // Antialiasing, FXAA
 #include "ImageBuffer.h" // ImageBuffer
 #include "Lights.h" // Light, PointLight
 #include "Materials.h" // Bitmap, MaterialType, TextureType
@@ -150,17 +150,23 @@ void Render::RenderBuckets() {
 		if ( t.joinable() )
 			t.join();
 
-	FXAA fxaa{ settings, &buff, true };
-	const ImageBuffer* antialiasedImage = fxaa.ApplyFXAA();
+	const ImageBuffer* finalImage{ &buff };
+	if ( settings.antialiasing == Antialiasing::FXAA ) {
+		FXAA fxaa{ settings, &buff, true };
+		finalImage = fxaa.ApplyFXAA();
+	}
 
 	for ( unsigned row{}; row < height; ++row ) {
 		for ( unsigned col{}; col < width; ++col ) {
-			writeColorToFile( ppmFileStream, buff[row][col], maxColorComp, settings.outputSRGB );
+			writeColorToFile( 
+				ppmFileStream, (*finalImage)[row][col], maxColorComp, settings.outputSRGB );
 		}
 	}
 
 	ppmFileStream.close();
-	delete antialiasedImage;
+
+	if ( settings.antialiasing != Antialiasing::NO )
+		delete finalImage;
 }
 
 void Render::RenderTree( const Bucket& region, ImageBuffer& buff ) {

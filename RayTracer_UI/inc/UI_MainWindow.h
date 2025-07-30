@@ -47,7 +47,7 @@ private slots:
 	// Open file dialog when "Render To" button is clicked.
 	void OpenRenderToBtnClicked();
 
-	// Manages camera animation widgets placement, removal and visibility.
+	// Manages camera animation widgets placement, removal, visibility, and cosmetics.
 	void OnCameraActionChanged();
 
 	// Enables/Disables camera initial position widgets.

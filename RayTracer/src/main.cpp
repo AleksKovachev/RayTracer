@@ -1,6 +1,7 @@
 #include <chrono> // high_resolution_clock, microseconds
 #include <iostream> // cout, endl
 
+#include "Antialiasing.h" // Antialiasing
 #include "Camera.h" // Camera
 #include "Render.h" // Render, RenderMode
 #include "Scene.h" // Scene
@@ -35,6 +36,7 @@ int main( int argc, char* argv[] ) {
 	//Scene scene( "./rsc/RefractionBall.crtscene" );
 	//Scene scene( "./rsc/TestPlane.obj" );
 	scene.settings.renderMode = RenderMode::Material;
+	scene.settings.antialiasing = Antialiasing::NO;
 	scene.ParseSceneFile();
 	//scene.ParseObjFile();
 

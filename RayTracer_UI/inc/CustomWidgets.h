@@ -35,25 +35,25 @@ private:
 
 
 class SmartDoubleSpinBox : public QDoubleSpinBox {
-    Q_OBJECT
+	Q_OBJECT
 public:
-    explicit SmartDoubleSpinBox( QWidget* parent = nullptr ) : QDoubleSpinBox( parent ) {}
+	explicit SmartDoubleSpinBox( QWidget* parent = nullptr ) : QDoubleSpinBox( parent ) {}
 
-    QString textFromValue( double value ) const override {
-        // Show minimal decimal places needed, but allow full precision
-        QString text = QDoubleSpinBox::textFromValue( value );
+	QString textFromValue( double value ) const override {
+		// Show minimal decimal places needed, but allow full precision
+		QString text = QDoubleSpinBox::textFromValue( value );
 
-        // Trim trailing zeros and optional decimal point
-        if ( text.contains( '.' ) ) {
-            while ( text.endsWith( '0' ) ) {
-                text.chop( 1 );
-            }
-            if ( text.endsWith( '.' ) ) {
-                text.chop( 1 );
-            }
-        }
-        return text;
-    }
+		// Trim trailing zeros and optional decimal point
+		if ( text.contains( '.' ) ) {
+			while ( text.endsWith( '0' ) ) {
+				text.chop( 1 );
+			}
+			if ( text.endsWith( '.' ) ) {
+				text.chop( 1 );
+			}
+		}
+		return text;
+	}
 };
 
 #endif // CUSTOMWIDGETS_H

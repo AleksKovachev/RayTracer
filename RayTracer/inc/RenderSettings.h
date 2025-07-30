@@ -3,6 +3,7 @@
 
 #include <string> // string
 
+#include "Antialiasing.h" // Antialiasing
 #include "Colors.h" // Color
 #include "RenderMode.h" // RenderMode
 #include "Triangle.h" // Triangle
@@ -44,6 +45,7 @@ struct Settings {
 	// Maximum number of triangles to store in an AccTree node.
 	unsigned maxAABBTriangleCount{ 10u };
 	bool outputSRGB{ false }; // Whether the image is saved in linear or sRGB space.
+	Antialiasing antialiasing{ Antialiasing::NO }; // Antialiasing type.
 
 	// Override the name of the saved file.
 	// @param[in] newName: The new name for the rendered image.

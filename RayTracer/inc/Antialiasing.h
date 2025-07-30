@@ -8,6 +8,12 @@ class ImageBuffer;
 struct Settings;
 
 
+enum class Antialiasing {
+	NO, // No antialiasing
+	FXAA // Fast Approximate Anti-Aliasing
+};
+
+
 class FXAA {
 public:
 	// @param[in] settings: A reference to a settings object.
