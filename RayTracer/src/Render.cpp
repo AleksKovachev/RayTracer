@@ -458,7 +458,7 @@ Color Render::ShadeDiffuse( const IntersectionData& data ) const {
 			continue;
 
 		// Compute sphere area.
-		float falloff = 4 * std::numbers::pi_v<float> *lightDirLen * lightDirLen;
+    float falloff = 4 * std::numbers::pi_v<float> * lightDirLen * lightDirLen;
 
 		/* Offset the hitPoint slightly along the normal to avoid self-intersection
 		 * Another common technique is to check rayPointDist > EPSILON */
