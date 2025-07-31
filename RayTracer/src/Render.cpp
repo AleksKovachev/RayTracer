@@ -102,7 +102,6 @@ void Render::RenderBuckets() {
 	std::queue<Bucket> buckets;
 	std::mutex bucketMutex;
 
-
 	unsigned bucketSize{ settings.bucketSize };
 	if ( bucketSize == 0u ) {
 		std::cerr << "Error: Buckets must have size. Defaulting to 24." << std::endl;

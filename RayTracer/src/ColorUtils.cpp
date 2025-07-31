@@ -33,6 +33,7 @@ Color lineartoSRGBColor( const Color& color ) {
 		lineartoSRGBComponent( color.b )
 	};
 }
+
 Color lerpColor( const Color& colorA, const Color& colorB, const float t ) {
 	return {
 		lerp( colorA.r, colorB.r, t ),
