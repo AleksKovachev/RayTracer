@@ -54,3 +54,8 @@ float getLuminance_HSP( const Color& color ) {
 float getLuminance_BT601( const Color& color ) {
 	return 0.299f * color.r + 0.587f * color.g + 0.114f * color.b;
 }
+
+float getColorDifference( const Color& a, const Color& b ) {
+	Color diff{ a - b };
+	return std::sqrtf( diff.r * diff.r + diff.g * diff.g + diff.b * diff.b );
+}

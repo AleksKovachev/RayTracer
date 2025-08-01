@@ -59,7 +59,7 @@ struct Camera : public Obj {
 	// @param[in] y: Resolution height.
 	// @param[in] settings: Scene settings.
 	// @return The generated camera ray.
-	Ray GenerateRay( const int, const int, const Settings& ) const;
+	Ray GenerateRay( const float, const float, const Settings& ) const;
 
 	// Move Camera forward-backward.
 	// @param[in] val: The number of units the Camera will move.

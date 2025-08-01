@@ -9,12 +9,17 @@
 #include <cmath> // fabs
 
 
-FXAA::FXAA( const Settings& settings, const ImageBuffer* image, const bool linear )
+FXAA::FXAA(
+	const Settings& settings,
+	const ImageBuffer* image,
+	const bool linear
+)
 	: m_settings{ settings },
 	m_image{ image },
 	m_width{ settings.renderWidth },
 	m_height{ settings.renderHeight },
-	inputIsLinear{ linear } {
+	inputIsLinear{ linear },
+	m_edgeDetection{ settings.edgeDetectionTypeFXAA } {
 	if ( m_image == nullptr )
 		throw std::invalid_argument( "ImageBuffer pointer cannot be nullptr." );
 }
@@ -99,19 +104,65 @@ Color FXAA::ApplyFXAAtoPixel( int row, int col, const float* luminanceImage ) {
 
 	float lumaMin = std::min(
 		{ lumaCenter, lumaN, lumaNE, lumaE, lumaSE, lumaS, lumaSW, lumaW, lumaNW } );
-	float lumaMax = std::max( 
+	float lumaMax = std::max(
 		{ lumaCenter, lumaN, lumaNE, lumaE, lumaSE, lumaS, lumaSW, lumaW, lumaNW } );
 
 	float lumaRange = lumaMax - lumaMin;
 
 	// Early exit if contrast is too low.
-	const Color& origPixelColor = (*m_image)[row][col];
+	const Color& centerColor = (*m_image)[row][col];
 	if ( lumaRange < EDGE_THRESHOLD )
-		return origPixelColor;
+		return centerColor;
 	if ( lumaRange < (lumaMax * EDGE_THRESHOLD_MIN) )
-		return origPixelColor;
+		return centerColor;
 
-	// Determine the dominant edge direction (horizontal or vertical based on gradients).
+	float colorDiffMax{};
+	const unsigned neighborSamples{ 8 };
+	if ( m_edgeDetection == EdgeDetection::CHROMA || m_edgeDetection == EdgeDetection::COMBINED ) {
+		const int safeNegRow{ std::max( row - 1, 0 ) };
+		const int safePosRow{ std::min( row + 1, static_cast<int>( m_height ) ) };
+		const int safeNegCol{ std::max( col - 1, 0 ) };
+		const int safePosCol{ std::min( col + 1, static_cast<int>( m_width ) ) };
+		const Color* neighborColors[neighborSamples]{
+			&(*m_image)[safeNegRow][col],        // N
+			&(*m_image)[safeNegRow][safePosCol], // NE
+			&(*m_image)[row][safePosCol],        // E
+			&(*m_image)[safePosRow][safePosCol], // SE
+			&(*m_image)[safePosRow][col],        // S
+			&(*m_image)[safePosRow][safeNegCol], // SW
+			&(*m_image)[row][safeNegCol],        // W
+			&(*m_image)[safeNegRow][safeNegCol]  // NW
+		};
+		for ( int i{}; i < 8; ++i ) {
+			float diff = getColorDifference( centerColor, (*neighborColors)[i] );
+			if ( diff > colorDiffMax )
+				colorDiffMax = diff;
+		}
+	}
+
+	// Compute blend factor based on local contrast and edge span.
+	float edgeStrengthLuma{ std::fabs(
+		lumaCenter - 0.5f * (lumaMin + lumaMax) ) / (lumaMax - lumaMin + 1e-6f) };
+
+	float edgeStrength{};
+	switch ( m_edgeDetection ) {
+		case EdgeDetection::LUMA:
+			edgeStrength = edgeStrengthLuma;
+			break;
+		case EdgeDetection::CHROMA:
+			edgeStrength = colorDiffMax / 1.732f; // sqrtf( 3.f );
+			break;
+		case EdgeDetection::COMBINED:
+			float maxColorDist{ colorDiffMax / 1.732f }; // sqrtf( 3.f );
+			edgeStrength = std::max( edgeStrengthLuma, CHROMA_LUMA_WEIGHT * maxColorDist );
+			break;
+	}
+
+	// Early exit if strength is too low.
+	if ( edgeStrength < EDGE_THRESHOLD )
+		return centerColor;
+
+	// Determine edge orientation (horizontal or vertical based on gradients).
 	float gradHor = std::fabs( lumaW - lumaE );
 	float gradVer = std::fabs( lumaN - lumaS );
 	bool horizontal = gradHor >= gradVer;
@@ -141,20 +192,21 @@ Color FXAA::ApplyFXAAtoPixel( int row, int col, const float* luminanceImage ) {
 	}
 
 	// Compute sub-pixel offset.
-	float span{ static_cast<float>( neg + pos ) };
+	float span{ static_cast<float>(neg + pos) };
 	// Normalize to [-0.5, 0.f].
-	float subpixelOffset{ ( span == 0 ? 0 : static_cast<float>(-neg) / span) - 0.5f };
+	float subpixelOffset{ (span == 0 ? 0 : static_cast<float>(-neg) / span) - 0.5f };
+
 	float sampleCol{};
 	float sampleRow{};
 
 	if ( horizontal ) {
 		// Calculate exact sample position
-		sampleCol = static_cast<float>( col ) + subpixelOffset;
-		sampleRow = static_cast<float>( row ); // X coordinate stays the same for horizontal edge.
+		sampleCol = static_cast<float>(col) + subpixelOffset;
+		sampleRow = static_cast<float>(row); // X coordinate stays the same for horizontal edge.
 	} else { // Vertical edge
 		// Calculate exact sample position
-		sampleRow = static_cast<float>( row ) + subpixelOffset;
-		sampleCol = static_cast<float>( col ); // Y coordinate doesn't change for vertical edge.
+		sampleRow = static_cast<float>(row) + subpixelOffset;
+		sampleCol = static_cast<float>(col); // Y coordinate doesn't change for vertical edge.
 	}
 
 	Color sampledColor{
@@ -162,13 +214,8 @@ Color FXAA::ApplyFXAAtoPixel( int row, int col, const float* luminanceImage ) {
 		BilinearInterpolate( sampleRow, sampleCol, 1 ),
 		BilinearInterpolate( sampleRow, sampleCol, 2 ) };
 
-	// Compute blend factor based on local contrast and edge span.
-	float edgeStrength{ std::fabs(
-		lumaCenter - 0.5f * (lumaMin + lumaMax) ) / (lumaMax - lumaMin + 1e-6f) };
-	// Multiplying edgeStrength by 0.5 to avoid over-blurring strong edges.
+	// blendFactor scales edgeStrength to control over-blurring strong edges.
 	float blendFactor{ std::clamp( edgeStrength * EDGE_STRENGTH_MUL, 0.0f, 1.0f ) };
 
-	Color blendedColor{ lerpColor( origPixelColor, sampledColor, blendFactor ) };
-
-	return blendedColor;
+	return lerpColor( centerColor, sampledColor, blendFactor );
 }

@@ -3,8 +3,8 @@
 #include "Vectors.h"
 
 
-FVector2 ray2NDC( const int x, const int y, const ImagePlane& imgPlane ) {
-	return { (x + 0.5f) / imgPlane.resolution.x, (y + 0.5f) / imgPlane.resolution.y };
+FVector2 ray2NDC( const float x, const float y, const ImagePlane& imgPlane ) {
+	return { x / imgPlane.resolution.x, y / imgPlane.resolution.y };
 }
 
 FVector2 NDC2ScreenSpace( const FVector2& coords ) {

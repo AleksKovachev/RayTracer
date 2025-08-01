@@ -23,6 +23,13 @@
 #include <vector> // vector
 
 
+// Short syntax for static casting unsigned to float.
+// @param[in] val: The value to cast.
+// @return The value in float format.
+inline static float toFloat( unsigned val ) {
+	return static_cast<float>(val);
+}
+
 Render::Render( const Scene& scene )
 	: m_scene{ scene },
 	overrideCamera{ nullptr },
@@ -60,19 +67,36 @@ void Render::RenderImage() {
 	const AABBox& aabb{ m_scene.GetAABB() };
 	Color pixelColor{};
 
-	for ( unsigned y{}; y < height; ++y ) {
-		for ( unsigned x{}; x < width; ++x ) {
-			Ray ray = camera.GenerateRay( x, y, settings );
-			if ( !HasAABBCollision( ray, aabb ) ) {
-				pixelColor = settings.BGColor;
-			} else {
-				IntersectionData intersectData = IntersectRay( ray );
-				pixelColor = Shade( ray, intersectData );
+	// SSAA setup
+	unsigned subdivisions{};
+	if ( m_scene.settings.antialiasing == Antialiasing::SSAA )
+		subdivisions = m_scene.settings.subPixDepthAA;
+
+	unsigned subpixelsPerSide{ (subdivisions + 1u) };
+	float stepSize = 1.0f / subpixelsPerSide;
+	unsigned subpixelNum{ subpixelsPerSide * subpixelsPerSide };
+
+	for ( unsigned row{}; row < height; ++row ) {
+		for ( unsigned col{}; col < width; ++col ) {
+			Color pixelColor{};
+			for ( unsigned subRow{}; subRow < subpixelsPerSide; ++subRow ) {
+				for ( unsigned subCol{}; subCol < subpixelsPerSide; ++subCol ) {
+					float x = toFloat( col ) + (toFloat( subCol ) + 0.5f) * stepSize;
+					float y = toFloat( row ) + (toFloat( subRow ) + 0.5f) * stepSize;
+					Ray ray = camera.GenerateRay( x, y, settings );
+					if ( !HasAABBCollision( ray, aabb ) ) {
+						pixelColor += settings.BGColor;
+					} else {
+						IntersectionData intersectData = IntersectRay( ray );
+						pixelColor += Shade( ray, intersectData );
+					}
+				}
 			}
+			pixelColor /= static_cast<float>(subpixelNum);
 			writeColorToFile( ppmFileStream, pixelColor, maxColorComp, settings.outputSRGB );
 		}
-		std::cout << "\rLine: " << y + 1 << " / " << height << "  |  "
-			<< (static_cast<float>(y + 1) / height) * 100 << "%          " << std::flush;
+		std::cout << "\rLine: " << row + 1 << " / " << height << "  |  "
+			<< (static_cast<float>(row + 1) / height) * 100 << "%          " << std::flush;
 	}
 
 	ppmFileStream.close();
@@ -151,7 +175,7 @@ void Render::RenderBuckets() {
 
 	const ImageBuffer* finalImage{ &buff };
 	if ( settings.antialiasing == Antialiasing::FXAA ) {
-		FXAA fxaa{ settings, &buff, true };
+		FXAA fxaa{ settings, &buff };
 		finalImage = fxaa.ApplyFXAA();
 	}
 
@@ -164,7 +188,7 @@ void Render::RenderBuckets() {
 
 	ppmFileStream.close();
 
-	if ( settings.antialiasing != Antialiasing::NO )
+	if ( settings.antialiasing == Antialiasing::FXAA )
 		delete finalImage;
 }
 
@@ -176,14 +200,32 @@ void Render::RenderTree( const Bucket& region, ImageBuffer& buff ) {
 	std::stack<int> nodeIndicesToCheck{};
 	nodeIndicesToCheck.push( 0 ); // 0 is always the root index
 
+	// SSAA Setup
+	unsigned subdivisions{};
+	if ( m_scene.settings.antialiasing == Antialiasing::SSAA )
+		subdivisions = m_scene.settings.subPixDepthAA;
+
+	unsigned subpixelsPerSide{ (subdivisions + 1u) };
+	float stepSize = 1.0f / subpixelsPerSide;
+	unsigned subpixelNum{ subpixelsPerSide * subpixelsPerSide };
+
 	for ( unsigned row{ region.startY }; row < region.endY; ++row ) {
 		for ( unsigned col{ region.startX }; col < region.endX; ++col ) {
-			Ray ray = camera.GenerateRay( col, row, m_scene.settings );
-			IntersectionData intersectData = IntersectRay( ray );
-			if ( !intersectData.filled )
-				pixelColor = m_scene.settings.BGColor;
-			else
-				pixelColor = Shade( ray, intersectData );
+			Color pixelColor{};
+			for ( unsigned subRow{}; subRow < subpixelsPerSide; ++subRow ) {
+				for ( unsigned subCol{}; subCol < subpixelsPerSide; ++subCol ) {
+					float x = toFloat( col ) + (toFloat( subCol ) + 0.5f) * stepSize;
+					float y = toFloat( row ) + (toFloat( subRow ) + 0.5f) * stepSize;
+					Ray ray = camera.GenerateRay( x, y, m_scene.settings );
+
+					IntersectionData intersectData = IntersectRay( ray );
+					if ( !intersectData.filled )
+						pixelColor += m_scene.settings.BGColor;
+					else
+						pixelColor += Shade( ray, intersectData );
+				}
+			}
+			pixelColor /= static_cast<float>( subpixelNum );
 			buff[row][col] = pixelColor;
 		}
 	}
