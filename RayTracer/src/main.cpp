@@ -36,9 +36,11 @@ int main( int argc, char* argv[] ) {
 	//Scene scene( "./rsc/RefractionBall.crtscene" );
 	//Scene scene( "./rsc/TestPlane.obj" );
 	scene.settings.renderMode = RenderMode::Material;
-	scene.settings.antialiasing = Antialiasing::NO;
+	scene.settings.antialiasing = Antialiasing::FXAA;
+	scene.settings.edgeDetectionTypeFXAA = EdgeDetection::LUMA;
 	scene.ParseSceneFile();
 	//scene.ParseObjFile();
+	scene.settings.subPixDepthAA = 2;
 
 	Render render( scene );
 

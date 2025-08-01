@@ -33,6 +33,7 @@ Color lineartoSRGBColor( const Color& color ) {
 		lineartoSRGBComponent( color.b )
 	};
 }
+
 Color lerpColor( const Color& colorA, const Color& colorB, const float t ) {
 	return {
 		lerp( colorA.r, colorB.r, t ),
@@ -52,4 +53,9 @@ float getLuminance_HSP( const Color& color ) {
 
 float getLuminance_BT601( const Color& color ) {
 	return 0.299f * color.r + 0.587f * color.g + 0.114f * color.b;
+}
+
+float getColorDifference( const Color& a, const Color& b ) {
+	Color diff{ a - b };
+	return std::sqrtf( diff.r * diff.r + diff.g * diff.g + diff.b * diff.b );
 }

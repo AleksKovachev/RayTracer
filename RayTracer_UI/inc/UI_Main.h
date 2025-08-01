@@ -73,8 +73,6 @@ public:
     QSpinBox *maxAABBTriCountSpin;
     QLabel *rendNameLabel;
     QLineEdit *rendNameEntry;
-    QLabel *antialiasLabel;
-    QComboBox *antialiasCombo;
     QPushButton *overrideBGColorBtn;
     QToolButton *colorPickerBtn;
     QPushButton *enableGIBtn;
@@ -107,6 +105,9 @@ public:
     QPushButton *custBucketSizeBtn;
     QPushButton *custWidthBtn;
     QPushButton *custHeightBtn;
+    QLabel *antialiasLabel;
+    QComboBox *antialiasCombo;
+    QSpinBox *SSAASpin;
     QGridLayout *viewerLayout;
     QVBoxLayout *viewportLayout;
     ImageViewer *qViewport;
@@ -188,7 +189,7 @@ public:
         settingsScrollArea->setWidgetResizable(true);
         scrollAreaContents = new QWidget();
         scrollAreaContents->setObjectName("scrollAreaContents");
-        scrollAreaContents->setGeometry(QRect(0, 0, 316, 718));
+        scrollAreaContents->setGeometry(QRect(0, -123, 312, 755));
         QSizePolicy sizePolicy(QSizePolicy::Policy::MinimumExpanding, QSizePolicy::Policy::Preferred);
         sizePolicy.setHorizontalStretch(0);
         sizePolicy.setVerticalStretch(0);
@@ -425,23 +426,6 @@ public:
 
         formLayout->setWidget(10, QFormLayout::FieldRole, rendNameEntry);
 
-        antialiasLabel = new QLabel(scrollSettingsFrame);
-        antialiasLabel->setObjectName("antialiasLabel");
-
-        formLayout->setWidget(11, QFormLayout::LabelRole, antialiasLabel);
-
-        antialiasCombo = new QComboBox(scrollSettingsFrame);
-        antialiasCombo->addItem(QString());
-        antialiasCombo->addItem(QString());
-        antialiasCombo->setObjectName("antialiasCombo");
-        antialiasCombo->setMaximumSize(QSize(110, 16777215));
-        antialiasCombo->setFocusPolicy(Qt::FocusPolicy::StrongFocus);
-        antialiasCombo->setStyleSheet(QString::fromUtf8("padding-left: 8px;\n"
-"padding-top: 1px;\n"
-"padding-bottom: 1px;"));
-
-        formLayout->setWidget(11, QFormLayout::FieldRole, antialiasCombo);
-
         overrideBGColorBtn = new QPushButton(scrollSettingsFrame);
         overrideBGColorBtn->setObjectName("overrideBGColorBtn");
         overrideBGColorBtn->setMaximumSize(QSize(150, 16777215));
@@ -493,13 +477,13 @@ public:
         enableGIBtn->setEnabled(false);
         enableGIBtn->setCheckable(true);
 
-        formLayout->setWidget(13, QFormLayout::LabelRole, enableGIBtn);
+        formLayout->setWidget(15, QFormLayout::LabelRole, enableGIBtn);
 
         giSamplesLabel = new QLabel(scrollSettingsFrame);
         giSamplesLabel->setObjectName("giSamplesLabel");
         giSamplesLabel->setEnabled(false);
 
-        formLayout->setWidget(14, QFormLayout::LabelRole, giSamplesLabel);
+        formLayout->setWidget(16, QFormLayout::LabelRole, giSamplesLabel);
 
         giSamplesSpin = new QSpinBox(scrollSettingsFrame);
         giSamplesSpin->setObjectName("giSamplesSpin");
@@ -514,7 +498,7 @@ public:
         giSamplesSpin->setMaximum(10000);
         giSamplesSpin->setValue(64);
 
-        formLayout->setWidget(14, QFormLayout::FieldRole, giSamplesSpin);
+        formLayout->setWidget(16, QFormLayout::FieldRole, giSamplesSpin);
 
         ignoreBackfaceBtn = new QPushButton(scrollSettingsFrame);
         ignoreBackfaceBtn->setObjectName("ignoreBackfaceBtn");
@@ -528,7 +512,7 @@ public:
         ignoreBackfaceBtn->setChecked(true);
         ignoreBackfaceBtn->setFlat(false);
 
-        formLayout->setWidget(15, QFormLayout::LabelRole, ignoreBackfaceBtn);
+        formLayout->setWidget(17, QFormLayout::LabelRole, ignoreBackfaceBtn);
 
         cameraBox = new QGroupBox(scrollSettingsFrame);
         cameraBox->setObjectName("cameraBox");
@@ -685,7 +669,7 @@ public:
         frameNumLabel = new QLabel(cameraBox);
         frameNumLabel->setObjectName("frameNumLabel");
 
-        gridLayout_3->addWidget(frameNumLabel, 5, 0, 1, 3);
+        gridLayout_3->addWidget(frameNumLabel, 5, 0, 1, 2);
 
         frameNumSpin = new QSpinBox(cameraBox);
         frameNumSpin->setObjectName("frameNumSpin");
@@ -700,7 +684,7 @@ public:
         gridLayout_3->addWidget(frameNumSpin, 5, 3, 1, 1);
 
 
-        formLayout->setWidget(17, QFormLayout::SpanningRole, cameraBox);
+        formLayout->setWidget(19, QFormLayout::SpanningRole, cameraBox);
 
         applyAntialiasBtn = new QPushButton(scrollSettingsFrame);
         applyAntialiasBtn->setObjectName("applyAntialiasBtn");
@@ -710,11 +694,11 @@ public:
 "padding-top: 2px;\n"
 "padding-bottom: 2px;"));
 
-        formLayout->setWidget(18, QFormLayout::LabelRole, applyAntialiasBtn);
+        formLayout->setWidget(20, QFormLayout::LabelRole, applyAntialiasBtn);
 
         verticalSpacer = new QSpacerItem(20, 40, QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Expanding);
 
-        formLayout->setItem(19, QFormLayout::LabelRole, verticalSpacer);
+        formLayout->setItem(21, QFormLayout::LabelRole, verticalSpacer);
 
         sRGBBtn = new QPushButton(scrollSettingsFrame);
         sRGBBtn->setObjectName("sRGBBtn");
@@ -725,7 +709,7 @@ public:
         sRGBBtn->setCheckable(true);
         sRGBBtn->setChecked(false);
 
-        formLayout->setWidget(16, QFormLayout::LabelRole, sRGBBtn);
+        formLayout->setWidget(18, QFormLayout::LabelRole, sRGBBtn);
 
         custBucketSizeBtn = new QPushButton(scrollSettingsFrame);
         custBucketSizeBtn->setObjectName("custBucketSizeBtn");
@@ -756,6 +740,36 @@ public:
         custHeightBtn->setCheckable(true);
 
         formLayout->setWidget(1, QFormLayout::LabelRole, custHeightBtn);
+
+        antialiasLabel = new QLabel(scrollSettingsFrame);
+        antialiasLabel->setObjectName("antialiasLabel");
+
+        formLayout->setWidget(13, QFormLayout::LabelRole, antialiasLabel);
+
+        antialiasCombo = new QComboBox(scrollSettingsFrame);
+        antialiasCombo->addItem(QString());
+        antialiasCombo->addItem(QString());
+        antialiasCombo->addItem(QString());
+        antialiasCombo->setObjectName("antialiasCombo");
+        antialiasCombo->setMaximumSize(QSize(110, 16777215));
+        antialiasCombo->setFocusPolicy(Qt::FocusPolicy::StrongFocus);
+        antialiasCombo->setStyleSheet(QString::fromUtf8("padding-left: 8px;\n"
+"padding-top: 1px;\n"
+"padding-bottom: 1px;"));
+
+        formLayout->setWidget(13, QFormLayout::FieldRole, antialiasCombo);
+
+        SSAASpin = new QSpinBox(scrollSettingsFrame);
+        SSAASpin->setObjectName("SSAASpin");
+        SSAASpin->setEnabled(false);
+        SSAASpin->setMaximumSize(QSize(110, 16777215));
+        SSAASpin->setButtonSymbols(QAbstractSpinBox::ButtonSymbols::NoButtons);
+        SSAASpin->setMinimum(1);
+        SSAASpin->setMaximum(10);
+        SSAASpin->setValue(1);
+        SSAASpin->setDisplayIntegerBase(10);
+
+        formLayout->setWidget(14, QFormLayout::FieldRole, SSAASpin);
 
 
         verticalLayout->addWidget(scrollSettingsFrame);
@@ -1030,22 +1044,6 @@ public:
         rendNameEntry->setText(QString());
         rendNameEntry->setPlaceholderText(QCoreApplication::translate("RayTracer", "<Default>", nullptr));
 #if QT_CONFIG(tooltip)
-        antialiasLabel->setToolTip(QCoreApplication::translate("RayTracer", "The antialiasing mode for the rendered image.", nullptr));
-#endif // QT_CONFIG(tooltip)
-#if QT_CONFIG(statustip)
-        antialiasLabel->setStatusTip(QCoreApplication::translate("RayTracer", "The antialiasing mode for the rendered image.", nullptr));
-#endif // QT_CONFIG(statustip)
-        antialiasLabel->setText(QCoreApplication::translate("RayTracer", "Antialiasing", nullptr));
-        antialiasCombo->setItemText(0, QCoreApplication::translate("RayTracer", "No Antialiasing", nullptr));
-        antialiasCombo->setItemText(1, QCoreApplication::translate("RayTracer", "FXAA", nullptr));
-
-#if QT_CONFIG(tooltip)
-        antialiasCombo->setToolTip(QCoreApplication::translate("RayTracer", "The antialiasing mode for the rendered image.", nullptr));
-#endif // QT_CONFIG(tooltip)
-#if QT_CONFIG(statustip)
-        antialiasCombo->setStatusTip(QCoreApplication::translate("RayTracer", "The antialiasing mode for the rendered image.", nullptr));
-#endif // QT_CONFIG(statustip)
-#if QT_CONFIG(tooltip)
         overrideBGColorBtn->setToolTip(QCoreApplication::translate("RayTracer", "Use custom color for the background instead of the one specified in the scene file (if at all).", nullptr));
 #endif // QT_CONFIG(tooltip)
 #if QT_CONFIG(statustip)
@@ -1208,7 +1206,7 @@ public:
 #if QT_CONFIG(statustip)
         frameNumLabel->setStatusTip(QCoreApplication::translate("RayTracer", "The number of frames to render.", nullptr));
 #endif // QT_CONFIG(statustip)
-        frameNumLabel->setText(QCoreApplication::translate("RayTracer", "Number of frames:", nullptr));
+        frameNumLabel->setText(QCoreApplication::translate("RayTracer", "Frames:", nullptr));
 #if QT_CONFIG(tooltip)
         frameNumSpin->setToolTip(QCoreApplication::translate("RayTracer", "The number of frames to render.", nullptr));
 #endif // QT_CONFIG(tooltip)
@@ -1250,6 +1248,29 @@ public:
         custHeightBtn->setStatusTip(QCoreApplication::translate("RayTracer", "Whether to use a custom value for the height of the rendered image. Defaults to the value specified in the scene file.", nullptr));
 #endif // QT_CONFIG(statustip)
         custHeightBtn->setText(QCoreApplication::translate("RayTracer", "Set Height", nullptr));
+#if QT_CONFIG(tooltip)
+        antialiasLabel->setToolTip(QCoreApplication::translate("RayTracer", "The antialiasing mode for the rendered image.", nullptr));
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(statustip)
+        antialiasLabel->setStatusTip(QCoreApplication::translate("RayTracer", "The antialiasing mode for the rendered image.", nullptr));
+#endif // QT_CONFIG(statustip)
+        antialiasLabel->setText(QCoreApplication::translate("RayTracer", "Antialiasing", nullptr));
+        antialiasCombo->setItemText(0, QCoreApplication::translate("RayTracer", "No Antialiasing", nullptr));
+        antialiasCombo->setItemText(1, QCoreApplication::translate("RayTracer", "FXAA", nullptr));
+        antialiasCombo->setItemText(2, QCoreApplication::translate("RayTracer", "SSAA", nullptr));
+
+#if QT_CONFIG(tooltip)
+        antialiasCombo->setToolTip(QCoreApplication::translate("RayTracer", "The antialiasing mode for the rendered image.", nullptr));
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(statustip)
+        antialiasCombo->setStatusTip(QCoreApplication::translate("RayTracer", "The antialiasing mode for the rendered image.", nullptr));
+#endif // QT_CONFIG(statustip)
+#if QT_CONFIG(tooltip)
+        SSAASpin->setToolTip(QCoreApplication::translate("RayTracer", "Supersampling Anti-Aliasing (SSAA) - each level subdivides further and that many rays are generated. Then all values are combined for the final value. Level one subdivides the pixel into 4 sub-pixels, level 2 - 9 sub-pixels, etc.", nullptr));
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(statustip)
+        SSAASpin->setStatusTip(QCoreApplication::translate("RayTracer", "Supersampling Anti-Aliasing (SSAA) - each level subdivides further and that many rays are generated. Then all values are combined for the final value. Level one subdivides the pixel into 4 sub-pixels, level 2 - 9 sub-pixels, etc.", nullptr));
+#endif // QT_CONFIG(statustip)
 #if QT_CONFIG(tooltip)
         openImgBtn->setToolTip(QCoreApplication::translate("RayTracer", "Browse to an image to open in the viewer.", nullptr));
 #endif // QT_CONFIG(tooltip)

@@ -10,7 +10,7 @@ struct ImagePlane;
 // @param[in] y: The y location of the center of the pixel.
 // @param[in] imgPlane: The camera's image plane used to get render resolution.
 // @return A vector representing the NDC coordinates in [0.0, 1.0] range.
-FVector2 ray2NDC( const int, const int, const ImagePlane& );
+FVector2 ray2NDC( const float, const float, const ImagePlane& );
 
 // Convert NDC to Screen Space (NSC to NDC - Normalized Device Coordinates) [-1.0, 1.0]
 // @param[in] coords: A vector with the NDC coordinates in [0.0, 1.0] range.

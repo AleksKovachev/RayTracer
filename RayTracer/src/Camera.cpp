@@ -52,7 +52,11 @@ void Camera::Move( const FVector3& relPos ) {
 		m_children[i]->Move( relPos + childrenRelPos[i] );
 }
 
-Ray Camera::GenerateRay( const int x, const int y, const Settings& settings ) const {
+Ray Camera::GenerateRay(
+	const float x,
+	const float y,
+	const Settings& settings
+) const {
 	FVector2 ndcCoords = ray2NDC( x, y, m_imgPlane );
 	FVector2 screenCoords = NDC2ScreenSpace( ndcCoords );
 	FVector2 fixedAspectRatio = getFixedAspectRatio( screenCoords, m_imgPlane );

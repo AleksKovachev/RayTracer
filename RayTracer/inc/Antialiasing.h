@@ -9,8 +9,16 @@ struct Settings;
 
 
 enum class Antialiasing {
-	NO, // No antialiasing
-	FXAA // Fast Approximate Anti-Aliasing
+	NO, // No antialiasing.
+	FXAA, // Fast Approximate Anti-Aliasing.
+	SSAA // Supersampling Anti-Aliasing - tracing sub-pixels.
+};
+
+
+enum class EdgeDetection {
+	LUMA, // Use luminance to determine the edge difference (standard FXAA).
+	CHROMA, // Use chromatic difference for edge detection.
+	COMBINED // Use both luminance and chromatic difference to detect edges.
 };
 
 
@@ -19,7 +27,7 @@ public:
 	// @param[in] settings: A reference to a settings object.
 	// @param[in] image: A pointer to an ImageBuffer object to be processed.
 	// @param[in] linear: If the image paramter contains linear values or sRGB.
-	FXAA( const Settings&, const ImageBuffer*, const bool );
+	FXAA( const Settings& settings, const ImageBuffer* image, const bool linear = true );
 
 	// Applies FXAA to the image.
 	// @return: A pointer to a new ImageBuffer containing the processed image.
@@ -31,11 +39,24 @@ private:
 	const unsigned m_height; // The height of the output image.
 	const ImageBuffer* m_image; // The image to be processed.
 	bool inputIsLinear; // If the data in m_image holds linearized values.
-	static constexpr float SPAN_MAX = 8.f; // Maximum distance to search for edge endpoints.
-	static constexpr float REDUCE_MUL = 1.f / 8.f; // Multiplier for blend factor reduction.
-	static constexpr float REDUCE_MIN = 1.f / 128.f; // Minimum blend factor reduction.
-	static constexpr float EDGE_THRESHOLD = 0.166f; // Absolute luminance contrast threshold.
-	static constexpr float EDGE_THRESHOLD_MIN = 0.063f; // Relative luminance contrast threshold.
+	EdgeDetection m_edgeDetection; // The edge detection type: [LUMA, CHROMA, COMBINED].
+
+	// Maximum distance to search for edge endpoints.[4,8].
+	// Lower number = higher performance.
+	static constexpr float SPAN_MAX = 8.f;
+	// Absolute luminance contrast threshold [0.125, 0.166], 0.1 acceptable.
+	// Lower values = more pixels processed.
+	static constexpr float EDGE_THRESHOLD = 0.125f;
+	// Relative luminance contrast threshold [0.03,0.063].
+	// Lower values = more pixels processed.
+	static constexpr float EDGE_THRESHOLD_MIN = 0.03f;
+	// Controls edge scan detection [0.1-0.15].
+	// Lower values = more aggressive edge detection.
+	static constexpr float LUMA_THRESHOLD_FACTOR = 0.125f;
+	// Multiplier for the edge strength to avoid over-blurring strong edges [~0.5].
+	static constexpr float EDGE_STRENGTH_MUL = 0.5f;
+	// When combined edge detection type is used, how much of each value is used.
+	static constexpr float CHROMA_LUMA_WEIGHT = 0.5f;
 
 	// Bilinear interpolation for a single channel.
 	// @param[in] row: The index of the image row.
@@ -49,14 +70,14 @@ private:
 	// @param[in] row: The index of the image row.
 	// @param[in] col: The index of the image column.
 	// @return: The luminance value at the calculated pixel.
-	float GetLuminanceFromImage( const float*, unsigned, unsigned );
+	float GetLuminanceFromImage( const float*, int, int );
 
 	// Applies FXAA to a single pixel.
 	// @param[in] row: The index of the image row.
 	// @param[in] col: The index of the image column.
 	// @param[in] luminanceImage: The pre-calculated luminance image.
 	// @return: A Color object if the processed color at the pixel.
-	Color ApplyFXAAtoPixel( unsigned, unsigned, const float* );
+	Color ApplyFXAAtoPixel( int, int, const float* );
 };
 
 

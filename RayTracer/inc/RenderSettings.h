@@ -46,6 +46,10 @@ struct Settings {
 	unsigned maxAABBTriangleCount{ 10u };
 	bool outputSRGB{ false }; // Whether the image is saved in linear or sRGB space.
 	Antialiasing antialiasing{ Antialiasing::NO }; // Antialiasing type.
+	// The number of times each pixel gets sub-divided when calculating Ray Traced AA.
+	unsigned subPixDepthAA{ 0 };
+	// The edge detection algorithm to use for FXAA.
+	EdgeDetection edgeDetectionTypeFXAA{ EdgeDetection::LUMA };
 
 	// Override the name of the saved file.
 	// @param[in] newName: The new name for the rendered image.

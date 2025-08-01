@@ -6,14 +6,20 @@
 #include "utils.h" // lerpColor
 
 #include <algorithm> // clamp
+#include <cmath> // fabs
 
 
-FXAA::FXAA( const Settings& settings, const ImageBuffer* image, const bool linear )
+FXAA::FXAA(
+	const Settings& settings,
+	const ImageBuffer* image,
+	const bool linear
+)
 	: m_settings{ settings },
 	m_image{ image },
 	m_width{ settings.renderWidth },
 	m_height{ settings.renderHeight },
-	inputIsLinear{ linear } {
+	inputIsLinear{ linear },
+	m_edgeDetection{ settings.edgeDetectionTypeFXAA } {
 	if ( m_image == nullptr )
 		throw std::invalid_argument( "ImageBuffer pointer cannot be nullptr." );
 }
@@ -27,8 +33,8 @@ const ImageBuffer* FXAA::ApplyFXAA() {
 	// Pre-calculate the luminance image
 	float* luminanceImage = new float[m_width * m_height];
 
-	for ( unsigned row{}; row < m_height; ++row ) {
-		for ( unsigned col{}; col < m_width; ++col ) {
+	for ( int row{}; row < static_cast<int>( m_height ); ++row ) {
+		for ( int col{}; col < static_cast<int>( m_width ); ++col ) {
 			Color pixelColor = (*m_image)[row][col];
 			float luminance = getLuminance_BT601( pixelColor );
 			luminanceImage[row * m_width + col] = luminance;
@@ -36,8 +42,8 @@ const ImageBuffer* FXAA::ApplyFXAA() {
 	}
 
 	// Apply FXAA using the pre-calculated luminance
-	for ( unsigned row{}; row < m_settings.renderHeight; ++row ) {
-		for ( unsigned col{}; col < m_settings.renderWidth; ++col ) {
+	for ( int row{}; row < static_cast<int>( m_height ); ++row ) {
+		for ( int col{}; col < static_cast<int>( m_width ); ++col ) {
 			Color newColor = ApplyFXAAtoPixel( row, col, luminanceImage );
 			(*processedImage)[row][col] = newColor;
 		}
@@ -74,105 +80,133 @@ float FXAA::BilinearInterpolate( const float row, const float col, const int cha
 }
 
 float FXAA::GetLuminanceFromImage(
-	const float* luminanceImage, unsigned row, unsigned col ) {
+	const float* luminanceImage, int row, int col ) {
 	// Clamp coordinates to image boundaries.
-	row = std::clamp( row, 0u, m_height - 1 );
-	col = std::clamp( col, 0u, m_width - 1 );
+	row = std::clamp( row, 0, static_cast<int>(m_height) - 1 );
+	col = std::clamp( col, 0, static_cast<int>(m_width) - 1 );
 
 	return luminanceImage[row * m_width + col];
 }
 
-Color FXAA::ApplyFXAAtoPixel(
-	unsigned row,
-	unsigned col,
-	const float* luminanceImage
-) {
+Color FXAA::ApplyFXAAtoPixel( int row, int col, const float* luminanceImage ) {
 	// Get center pixel luminance.
 	float lumaCenter = GetLuminanceFromImage( luminanceImage, row, col );
 
 	// Sample neighbors for luminance using a cross pattern to analyze gradients.
-	float lumaTL = GetLuminanceFromImage( luminanceImage, row - 1u, col - 1u );
-	float lumaTR = GetLuminanceFromImage( luminanceImage, row + 1u, col - 1u );
-	float lumaBL = GetLuminanceFromImage( luminanceImage, row - 1u, col + 1u );
-	float lumaBR = GetLuminanceFromImage( luminanceImage, row + 1u, col + 1u );
+	float lumaN = GetLuminanceFromImage( luminanceImage, row - 1, col );
+	float lumaNE = GetLuminanceFromImage( luminanceImage, row - 1, col + 1 );
+	float lumaE = GetLuminanceFromImage( luminanceImage, row, col + 1 );
+	float lumaSE = GetLuminanceFromImage( luminanceImage, row + 1, col + 1 );
+	float lumaS = GetLuminanceFromImage( luminanceImage, row + 1, col );
+	float lumaSW = GetLuminanceFromImage( luminanceImage, row + 1, col - 1 );
+	float lumaW = GetLuminanceFromImage( luminanceImage, row, col - 1 );
+	float lumaNW = GetLuminanceFromImage( luminanceImage, row - 1, col - 1 );
 
-	float lumaMin = std::min( lumaCenter, std::min(
-		std::min( lumaTL, lumaTR ), std::min( lumaBL, lumaBR ) ) );
-	float lumaMax = std::max( lumaCenter, std::max(
-		std::max( lumaTL, lumaTR ), std::max( lumaBL, lumaBR ) ) );
+	float lumaMin = std::min(
+		{ lumaCenter, lumaN, lumaNE, lumaE, lumaSE, lumaS, lumaSW, lumaW, lumaNW } );
+	float lumaMax = std::max(
+		{ lumaCenter, lumaN, lumaNE, lumaE, lumaSE, lumaS, lumaSW, lumaW, lumaNW } );
 
 	float lumaRange = lumaMax - lumaMin;
 
 	// Early exit if contrast is too low.
-	const Color& origPixelColor = (*m_image)[row][col];
+	const Color& centerColor = (*m_image)[row][col];
 	if ( lumaRange < EDGE_THRESHOLD )
-		return origPixelColor;
+		return centerColor;
 	if ( lumaRange < (lumaMax * EDGE_THRESHOLD_MIN) )
-		return origPixelColor;
+		return centerColor;
 
-	// Sample neighbors for luminance using a cross pattern to analyze gradients.
-	float lumaN = GetLuminanceFromImage( luminanceImage, row, col - 1u );
-	float lumaS = GetLuminanceFromImage( luminanceImage, row, col + 1u );
-	float lumaE = GetLuminanceFromImage( luminanceImage, row + 1u, col );
-	float lumaW = GetLuminanceFromImage( luminanceImage, row - 1u, col );
+	float colorDiffMax{};
+	const unsigned neighborSamples{ 8 };
+	if ( m_edgeDetection == EdgeDetection::CHROMA || m_edgeDetection == EdgeDetection::COMBINED ) {
+		const int safeNegRow{ std::max( row - 1, 0 ) };
+		const int safePosRow{ std::min( row + 1, static_cast<int>( m_height ) ) };
+		const int safeNegCol{ std::max( col - 1, 0 ) };
+		const int safePosCol{ std::min( col + 1, static_cast<int>( m_width ) ) };
+		const Color* neighborColors[neighborSamples]{
+			&(*m_image)[safeNegRow][col],        // N
+			&(*m_image)[safeNegRow][safePosCol], // NE
+			&(*m_image)[row][safePosCol],        // E
+			&(*m_image)[safePosRow][safePosCol], // SE
+			&(*m_image)[safePosRow][col],        // S
+			&(*m_image)[safePosRow][safeNegCol], // SW
+			&(*m_image)[row][safeNegCol],        // W
+			&(*m_image)[safeNegRow][safeNegCol]  // NW
+		};
+		for ( int i{}; i < 8; ++i ) {
+			float diff = getColorDifference( centerColor, (*neighborColors)[i] );
+			if ( diff > colorDiffMax )
+				colorDiffMax = diff;
+		}
+	}
 
-	// Determine edge direction (simplified: horizontal or vertical based on gradients).
-	float gradX = std::abs( lumaE - lumaW );
-	float gradY = std::abs( lumaS - lumaN );
+	// Compute blend factor based on local contrast and edge span.
+	float edgeStrengthLuma{ std::fabs(
+		lumaCenter - 0.5f * (lumaMin + lumaMax) ) / (lumaMax - lumaMin + 1e-6f) };
 
-	bool horizontal = gradX >= gradY;
+	float edgeStrength{};
+	switch ( m_edgeDetection ) {
+		case EdgeDetection::LUMA:
+			edgeStrength = edgeStrengthLuma;
+			break;
+		case EdgeDetection::CHROMA:
+			edgeStrength = colorDiffMax / 1.732f; // sqrtf( 3.f );
+			break;
+		case EdgeDetection::COMBINED:
+			float maxColorDist{ colorDiffMax / 1.732f }; // sqrtf( 3.f );
+			edgeStrength = std::max( edgeStrengthLuma, CHROMA_LUMA_WEIGHT * maxColorDist );
+			break;
+	}
 
-	// Calculate blend factor and subpixel offset.
-	float offset = 0.f;
+	// Early exit if strength is too low.
+	if ( edgeStrength < EDGE_THRESHOLD )
+		return centerColor;
+
+	// Determine edge orientation (horizontal or vertical based on gradients).
+	float gradHor = std::fabs( lumaW - lumaE );
+	float gradVer = std::fabs( lumaN - lumaS );
+	bool horizontal = gradHor >= gradVer;
+	int offX{ horizontal ? 1 : 0 };
+	int offY{ horizontal ? 0 : 1 };
+
+	float lumaThreshold{ LUMA_THRESHOLD_FACTOR * (lumaMax - lumaMin) };
+
+	int neg{};
+	int pos{};
+
+	while ( neg > -SPAN_MAX ) {
+		int cx = col - offX * (-neg);
+		int cy = row - offY * (-neg);
+		float luma = GetLuminanceFromImage( luminanceImage, cy, cx );
+		if ( std::fabs( luma - lumaCenter ) > lumaThreshold )
+			break;
+		--neg;
+	}
+	while ( pos < SPAN_MAX ) {
+		int cx = col + offX * (pos + 1);
+		int cy = row + offY * (pos + 1);
+		float luma = GetLuminanceFromImage( luminanceImage, cy, cx );
+		if ( std::fabs( luma - lumaCenter ) > lumaThreshold )
+			break;
+		++pos;
+	}
+
+	// Compute sub-pixel offset.
+	float span{ static_cast<float>(neg + pos) };
+	// Normalize to [-0.5, 0.f].
+	float subpixelOffset{ (span == 0 ? 0 : static_cast<float>(-neg) / span) - 0.5f };
+
 	float sampleCol{};
 	float sampleRow{};
 
 	if ( horizontal ) {
-		// Average of north and south neighbors for horizontal edge.
-		float lumaAvg = (lumaN + lumaS) * 0.5f;
-
-		// Determine offset direction
-		if ( lumaAvg < lumaCenter )
-			offset = 1.0f; // Sample "down".
-		else
-			offset = -1.0f; // Sample "up".
-
-		// Apply blend factor
-		offset *= std::max( REDUCE_MIN, lumaRange * REDUCE_MUL );
-
 		// Calculate exact sample position
-		sampleCol = static_cast<float>( col ) + offset;
-		sampleRow = static_cast<float>( row ); // X coordinate stays the same for horizontal edge.
-
-		// Sample original image at new offset (Y changes for horizontal edge)
-		// Using qRound for nearest neighbor. For better quality, implement bilinear.
-		//Color sampledColor = *originalImage[row][static_cast<int>(std::round( col + offset ))];
-
-		// Simplified averaging. Real FXAA uses more complex weighting.
-		//blendedColor = (*originalImage[row][col] + sampledColor) / 2.f;
-
-
+		sampleCol = static_cast<float>(col) + subpixelOffset;
+		sampleRow = static_cast<float>(row); // X coordinate stays the same for horizontal edge.
 	} else { // Vertical edge
-		// Average of east and west neighbors for vertical edge.
-		float lumaAvg = (lumaE + lumaW) * 0.5f;
-
-		// Determine offset direction
-		if ( lumaAvg < lumaCenter )
-			offset = 1.0f; // Sample "right"
-		else
-			offset = -1.0f; // Sample "left"
-
-		offset *= std::max( REDUCE_MIN, lumaRange * REDUCE_MUL );
-
 		// Calculate exact sample position
-		sampleRow = static_cast<float>( row ) + offset;
-		sampleCol = static_cast<float>( col ); // Y coordinate doesn't change for vertical edge
-
-		// Sample original image at new offset (X changes for vertical edge)
-		// Using qRound for nearest neighbor. For better quality, implement bilinear.
-		//Color sampledColor = *originalImage[static_cast<int>( std::round( row + offset ) )][col];
-
-		//blendedColor = (*originalImage[row][col] + sampledColor) / 2;
+		sampleRow = static_cast<float>(row) + subpixelOffset;
+		sampleCol = static_cast<float>(col); // Y coordinate doesn't change for vertical edge.
 	}
 
 	Color sampledColor{
@@ -180,9 +214,8 @@ Color FXAA::ApplyFXAAtoPixel(
 		BilinearInterpolate( sampleRow, sampleCol, 1 ),
 		BilinearInterpolate( sampleRow, sampleCol, 2 ) };
 
-	float blendFactor{ std::clamp( lumaRange, 0.f, 1.f ) };
+	// blendFactor scales edgeStrength to control over-blurring strong edges.
+	float blendFactor{ std::clamp( edgeStrength * EDGE_STRENGTH_MUL, 0.0f, 1.0f ) };
 
-	Color blendedColor{ lerpColor( origPixelColor, sampledColor, blendFactor ) };
-
-	return blendedColor;
+	return lerpColor( centerColor, sampledColor, blendFactor );
 }

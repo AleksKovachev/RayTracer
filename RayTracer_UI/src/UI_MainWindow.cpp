@@ -58,6 +58,8 @@ MainWindow::MainWindow( QWidget* parent )
 		&MainWindow::OnCameraActionChanged );
 	connect( sceneInitialCamPosBtn, &QPushButton::clicked, this,
 		&MainWindow::HandleSceneCameraPositionButtonClicked );
+	connect( antialiasCombo, &QComboBox::currentTextChanged, this,
+		[this]() { SSAASpin->setEnabled( antialiasCombo->currentText() == "SSAA" ); } );
 
 	connect( this, &MainWindow::FrameRendered, this, [this]( int frame, QString* imagePath ) {
 		statusBar()->showMessage( tr( "Rendering frame %1" ).arg( frame ) );
@@ -610,6 +612,7 @@ bool MainWindow::ManageSceneMainSettings() {
 	scene->settings.maxAABBTriangleCount = static_cast<unsigned>(maxAABBTriCountSpin->value());
 	scene->settings.outputSRGB = sRGBBtn->isChecked();
 	scene->settings.antialiasing = static_cast<Antialiasing>(antialiasCombo->currentIndex());
+	scene->settings.subPixDepthAA = SSAASpin->value();
 
 	if ( sceneFile.suffix().toLower() == "crtscene" ) {
 		scene->ParseSceneFile();
