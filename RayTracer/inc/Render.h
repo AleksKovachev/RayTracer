@@ -73,6 +73,9 @@ public:
 	// @return A const reference to the scene object.
 	const Scene& GetScene();
 
+	// Prepares a .PPM file to be filled in with color data.
+	// @return A stream to fill in the color data to.
+	std::ofstream PrepareScene();
 private:
 	const Scene& m_scene; // Reference to the scene object and properties.
 
@@ -165,10 +168,6 @@ private:
 	// @return Intersection data used for further color calculations.
 	IntersectionData IntersectRay(
 		const Ray& ray, const float maxT = std::numeric_limits<float>::max() ) const;
-
-	// Prepares a .PPM file to be filled in with color data.
-	// @return A stream to fill in the color data to.
-	std::ofstream PrepareScene();
 };
 
 #endif // RENDER_H

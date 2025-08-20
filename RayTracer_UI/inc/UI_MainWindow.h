@@ -66,6 +66,12 @@ private slots:
 	// @param[in] actionCoords: The relative coordinates / angles for the move / rotation.
 	void RunRender(
 		Render* const, std::string* const, Camera* const, const FVector3, const FVector3 );
+
+	// Handles the antialiasing type selection and sets up the UI accordingly.
+	void HandleAntialias();
+
+	// Applies FXAA to the currently opened image in the viewport.
+	void ApplyFXAAToOpenedImage();
 signals:
 	// Emitted when a render of a frame is finished when rendering animation.
 	// @param[in] frame: The frame number that was rendered.

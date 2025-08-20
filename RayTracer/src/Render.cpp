@@ -150,9 +150,8 @@ void Render::RenderBuckets() {
 				endY = height;
 
 			// Only add valid buckets.
-			if ( startX < endX && startY < endY ) {
+			if ( startX < endX && startY < endY )
 				buckets.push( Bucket( startX, startY, endX, endY ) );
-			}
 		}
 	}
 
@@ -336,7 +335,6 @@ bool Render::HasAABBCollision( const Ray& ray, const AABBox& aabb ) const {
 	float tMax{ std::numeric_limits<float>::max() }; // exit
 
 	for ( int i{}; i < 3; ++i ) {
-
 		if ( areEqual( std::abs( ray.direction[i] ), 0.f ) ) { // parallel
 			if ( ray.origin[i] < aabb.min[i] || ray.origin[i] > aabb.max[i] ) {
 				return false; // Ray is outside the axis slab.

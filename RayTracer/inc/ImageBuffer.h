@@ -1,6 +1,8 @@
 #ifndef IMAGE_BUFFER_H
 #define IMAGE_BUFFER_H
 
+#include <string> // string
+
 #include "Colors.h" // Color
 
 
@@ -17,9 +19,13 @@ public:
 
 	~ImageBuffer();
 
-	// Disable copy constructor and copy assignment operator
-	ImageBuffer( const ImageBuffer& ) = delete;
-	ImageBuffer& operator=( const ImageBuffer& ) = delete;
+	// Copy constructor allocates new memory and copies the data.
+	// @param[in] other: The ImageBuffer to copy from.
+	ImageBuffer( const ImageBuffer& );
+
+	// Copy assignment operator allocates new memory and copies the data.
+	// @param[in] other: The ImageBuffer to copy from.
+	ImageBuffer& operator=( const ImageBuffer& );
 
 	// Get the width of the image.
 	// @return The width as an unsigned int.
@@ -28,6 +34,10 @@ public:
 	// Get the height of the image.
 	// @return The height as an unsigned int.
 	unsigned GetHeight() const;
+
+	// Load a PPM file into an ImageBuffer.
+	// @param[in] path: The path to the PPM file to load.
+	static ImageBuffer LoadPPM( const std::string& path );
 
 	// Access operator for row-major order.
 	// Allows syntax like: imageBuffer[rowIdx][colIdx]
