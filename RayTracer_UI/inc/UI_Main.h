@@ -107,7 +107,10 @@ public:
     QPushButton *custHeightBtn;
     QLabel *antialiasLabel;
     QComboBox *antialiasCombo;
+    QComboBox *edgeDetectCombo;
     QSpinBox *SSAASpin;
+    QLabel *edgeDetectLabel;
+    QLabel *subdivLevelLabel;
     QGridLayout *viewerLayout;
     QVBoxLayout *viewportLayout;
     ImageViewer *qViewport;
@@ -189,7 +192,7 @@ public:
         settingsScrollArea->setWidgetResizable(true);
         scrollAreaContents = new QWidget();
         scrollAreaContents->setObjectName("scrollAreaContents");
-        scrollAreaContents->setGeometry(QRect(0, -123, 312, 755));
+        scrollAreaContents->setGeometry(QRect(0, -198, 312, 793));
         QSizePolicy sizePolicy(QSizePolicy::Policy::MinimumExpanding, QSizePolicy::Policy::Preferred);
         sizePolicy.setHorizontalStretch(0);
         sizePolicy.setVerticalStretch(0);
@@ -343,7 +346,7 @@ public:
         renderModeCombo->setFocusPolicy(Qt::FocusPolicy::StrongFocus);
         renderModeCombo->setContextMenuPolicy(Qt::ContextMenuPolicy::PreventContextMenu);
         renderModeCombo->setStyleSheet(QString::fromUtf8("padding-left: 8px;\n"
-"padding-top: 1px;\n"
+"padding-top: 2px;\n"
 "padding-bottom: 1px;"));
 
         formLayout->setWidget(6, QFormLayout::FieldRole, renderModeCombo);
@@ -477,13 +480,13 @@ public:
         enableGIBtn->setEnabled(false);
         enableGIBtn->setCheckable(true);
 
-        formLayout->setWidget(15, QFormLayout::LabelRole, enableGIBtn);
+        formLayout->setWidget(17, QFormLayout::LabelRole, enableGIBtn);
 
         giSamplesLabel = new QLabel(scrollSettingsFrame);
         giSamplesLabel->setObjectName("giSamplesLabel");
         giSamplesLabel->setEnabled(false);
 
-        formLayout->setWidget(16, QFormLayout::LabelRole, giSamplesLabel);
+        formLayout->setWidget(18, QFormLayout::LabelRole, giSamplesLabel);
 
         giSamplesSpin = new QSpinBox(scrollSettingsFrame);
         giSamplesSpin->setObjectName("giSamplesSpin");
@@ -498,7 +501,7 @@ public:
         giSamplesSpin->setMaximum(10000);
         giSamplesSpin->setValue(64);
 
-        formLayout->setWidget(16, QFormLayout::FieldRole, giSamplesSpin);
+        formLayout->setWidget(18, QFormLayout::FieldRole, giSamplesSpin);
 
         ignoreBackfaceBtn = new QPushButton(scrollSettingsFrame);
         ignoreBackfaceBtn->setObjectName("ignoreBackfaceBtn");
@@ -512,7 +515,7 @@ public:
         ignoreBackfaceBtn->setChecked(true);
         ignoreBackfaceBtn->setFlat(false);
 
-        formLayout->setWidget(17, QFormLayout::LabelRole, ignoreBackfaceBtn);
+        formLayout->setWidget(19, QFormLayout::LabelRole, ignoreBackfaceBtn);
 
         cameraBox = new QGroupBox(scrollSettingsFrame);
         cameraBox->setObjectName("cameraBox");
@@ -525,7 +528,7 @@ public:
         camActionCombo->setObjectName("camActionCombo");
         camActionCombo->setMaximumSize(QSize(120, 16777215));
         camActionCombo->setStyleSheet(QString::fromUtf8("padding-left: 8px;\n"
-"padding-top: 1px;\n"
+"padding-top: 2px;\n"
 "padding-bottom: 1px;"));
 
         gridLayout_3->addWidget(camActionCombo, 0, 0, 1, 4);
@@ -684,21 +687,21 @@ public:
         gridLayout_3->addWidget(frameNumSpin, 5, 3, 1, 1);
 
 
-        formLayout->setWidget(19, QFormLayout::SpanningRole, cameraBox);
+        formLayout->setWidget(21, QFormLayout::SpanningRole, cameraBox);
 
         applyAntialiasBtn = new QPushButton(scrollSettingsFrame);
         applyAntialiasBtn->setObjectName("applyAntialiasBtn");
-        applyAntialiasBtn->setEnabled(false);
+        applyAntialiasBtn->setEnabled(true);
         applyAntialiasBtn->setStyleSheet(QString::fromUtf8("padding-left: 8px;\n"
 "padding-right: 8px;\n"
 "padding-top: 2px;\n"
 "padding-bottom: 2px;"));
 
-        formLayout->setWidget(20, QFormLayout::LabelRole, applyAntialiasBtn);
+        formLayout->setWidget(22, QFormLayout::LabelRole, applyAntialiasBtn);
 
         verticalSpacer = new QSpacerItem(20, 40, QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Expanding);
 
-        formLayout->setItem(21, QFormLayout::LabelRole, verticalSpacer);
+        formLayout->setItem(23, QFormLayout::LabelRole, verticalSpacer);
 
         sRGBBtn = new QPushButton(scrollSettingsFrame);
         sRGBBtn->setObjectName("sRGBBtn");
@@ -709,7 +712,7 @@ public:
         sRGBBtn->setCheckable(true);
         sRGBBtn->setChecked(false);
 
-        formLayout->setWidget(18, QFormLayout::LabelRole, sRGBBtn);
+        formLayout->setWidget(20, QFormLayout::LabelRole, sRGBBtn);
 
         custBucketSizeBtn = new QPushButton(scrollSettingsFrame);
         custBucketSizeBtn->setObjectName("custBucketSizeBtn");
@@ -754,14 +757,26 @@ public:
         antialiasCombo->setMaximumSize(QSize(110, 16777215));
         antialiasCombo->setFocusPolicy(Qt::FocusPolicy::StrongFocus);
         antialiasCombo->setStyleSheet(QString::fromUtf8("padding-left: 8px;\n"
-"padding-top: 1px;\n"
+"padding-top: 2px;\n"
 "padding-bottom: 1px;"));
 
         formLayout->setWidget(13, QFormLayout::FieldRole, antialiasCombo);
 
+        edgeDetectCombo = new QComboBox(scrollSettingsFrame);
+        edgeDetectCombo->addItem(QString());
+        edgeDetectCombo->addItem(QString());
+        edgeDetectCombo->addItem(QString());
+        edgeDetectCombo->setObjectName("edgeDetectCombo");
+        edgeDetectCombo->setMaximumSize(QSize(110, 16777215));
+        edgeDetectCombo->setStyleSheet(QString::fromUtf8("padding-left: 8px;\n"
+"padding-top: 2px;\n"
+"padding-bottom: 1px;"));
+
+        formLayout->setWidget(15, QFormLayout::FieldRole, edgeDetectCombo);
+
         SSAASpin = new QSpinBox(scrollSettingsFrame);
         SSAASpin->setObjectName("SSAASpin");
-        SSAASpin->setEnabled(false);
+        SSAASpin->setEnabled(true);
         SSAASpin->setMaximumSize(QSize(110, 16777215));
         SSAASpin->setButtonSymbols(QAbstractSpinBox::ButtonSymbols::NoButtons);
         SSAASpin->setMinimum(1);
@@ -770,6 +785,16 @@ public:
         SSAASpin->setDisplayIntegerBase(10);
 
         formLayout->setWidget(14, QFormLayout::FieldRole, SSAASpin);
+
+        edgeDetectLabel = new QLabel(scrollSettingsFrame);
+        edgeDetectLabel->setObjectName("edgeDetectLabel");
+
+        formLayout->setWidget(15, QFormLayout::LabelRole, edgeDetectLabel);
+
+        subdivLevelLabel = new QLabel(scrollSettingsFrame);
+        subdivLevelLabel->setObjectName("subdivLevelLabel");
+
+        formLayout->setWidget(14, QFormLayout::LabelRole, subdivLevelLabel);
 
 
         verticalLayout->addWidget(scrollSettingsFrame);
@@ -1265,12 +1290,36 @@ public:
 #if QT_CONFIG(statustip)
         antialiasCombo->setStatusTip(QCoreApplication::translate("RayTracer", "The antialiasing mode for the rendered image.", nullptr));
 #endif // QT_CONFIG(statustip)
+        edgeDetectCombo->setItemText(0, QCoreApplication::translate("RayTracer", "LUMA", nullptr));
+        edgeDetectCombo->setItemText(1, QCoreApplication::translate("RayTracer", "CHROMA", nullptr));
+        edgeDetectCombo->setItemText(2, QCoreApplication::translate("RayTracer", "COMBINED", nullptr));
+
+#if QT_CONFIG(tooltip)
+        edgeDetectCombo->setToolTip(QCoreApplication::translate("RayTracer", "The type of edge detection algorithm used for applying FXAA.", nullptr));
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(statustip)
+        edgeDetectCombo->setStatusTip(QCoreApplication::translate("RayTracer", "The type of edge detection algorithm used for applying FXAA.", nullptr));
+#endif // QT_CONFIG(statustip)
 #if QT_CONFIG(tooltip)
         SSAASpin->setToolTip(QCoreApplication::translate("RayTracer", "Supersampling Anti-Aliasing (SSAA) - each level subdivides further and that many rays are generated. Then all values are combined for the final value. Level one subdivides the pixel into 4 sub-pixels, level 2 - 9 sub-pixels, etc.", nullptr));
 #endif // QT_CONFIG(tooltip)
 #if QT_CONFIG(statustip)
         SSAASpin->setStatusTip(QCoreApplication::translate("RayTracer", "Supersampling Anti-Aliasing (SSAA) - each level subdivides further and that many rays are generated. Then all values are combined for the final value. Level one subdivides the pixel into 4 sub-pixels, level 2 - 9 sub-pixels, etc.", nullptr));
 #endif // QT_CONFIG(statustip)
+#if QT_CONFIG(tooltip)
+        edgeDetectLabel->setToolTip(QCoreApplication::translate("RayTracer", "The type of edge detection algorithm used for applying FXAA.", nullptr));
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(statustip)
+        edgeDetectLabel->setStatusTip(QCoreApplication::translate("RayTracer", "The type of edge detection algorithm used for applying FXAA.", nullptr));
+#endif // QT_CONFIG(statustip)
+        edgeDetectLabel->setText(QCoreApplication::translate("RayTracer", "Edge Detection", nullptr));
+#if QT_CONFIG(tooltip)
+        subdivLevelLabel->setToolTip(QCoreApplication::translate("RayTracer", "Supersampling Anti-Aliasing (SSAA) - each level subdivides further and that many rays are generated. Then all values are combined for the final value. Level one subdivides the pixel into 4 sub-pixels, level 2 - 9 sub-pixels, etc.", nullptr));
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(statustip)
+        subdivLevelLabel->setStatusTip(QCoreApplication::translate("RayTracer", "Supersampling Anti-Aliasing (SSAA) - each level subdivides further and that many rays are generated. Then all values are combined for the final value. Level one subdivides the pixel into 4 sub-pixels, level 2 - 9 sub-pixels, etc.", nullptr));
+#endif // QT_CONFIG(statustip)
+        subdivLevelLabel->setText(QCoreApplication::translate("RayTracer", "Subdivision Levels", nullptr));
 #if QT_CONFIG(tooltip)
         openImgBtn->setToolTip(QCoreApplication::translate("RayTracer", "Browse to an image to open in the viewer.", nullptr));
 #endif // QT_CONFIG(tooltip)

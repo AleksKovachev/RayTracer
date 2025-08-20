@@ -1,6 +1,8 @@
+#include "Antialiasing.h" // Antialiasing, EdgeDetection, FXAA
 #include "Render.h" // Render
 #include "UI_MainWindow.h"
 #include "CustomWidgets.h" // ImageViewer
+#include "StandaloneOps.h" // applyFXAAToImage
 
 #include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QFileDialog>
@@ -31,6 +33,11 @@ MainWindow::MainWindow( QWidget* parent )
 	colorPickerBtn->setCursor( Qt::PointingHandCursor );
 
 	SetupCameraWidgets();
+	applyAntialiasBtn->hide();
+	edgeDetectCombo->hide();
+	SSAASpin->hide();
+	edgeDetectLabel->hide();
+	subdivLevelLabel->hide();
 
 	connect( custWidthBtn, &QPushButton::toggled, this, [this]() {
 		resWidthSpin->setEnabled( custWidthBtn->isChecked() ); } );
@@ -43,7 +50,9 @@ MainWindow::MainWindow( QWidget* parent )
 	connect( openImgBtn, &QToolButton::clicked, this, &MainWindow::OpenImageBtnClicked );
 	connect( colorPickerBtn, &QToolButton::clicked, this, &MainWindow::SetupColorPicker );
 	connect( zoomResetBtn, &QPushButton::clicked, [this]() {
-		qViewport->fitInView( qViewport->scene()->itemsBoundingRect(), Qt::KeepAspectRatio ); }
+		qViewport->fitInView( qViewport->scene()->itemsBoundingRect(), Qt::KeepAspectRatio );
+		qViewport->zoomFactor = 1.0f;
+		}
 	);
 	connect( actionExit, &QAction::triggered, this, &QApplication::quit );
 	connect( actionRender, &QAction::triggered, this, &MainWindow::OnRenderClicked );
@@ -59,7 +68,7 @@ MainWindow::MainWindow( QWidget* parent )
 	connect( sceneInitialCamPosBtn, &QPushButton::clicked, this,
 		&MainWindow::HandleSceneCameraPositionButtonClicked );
 	connect( antialiasCombo, &QComboBox::currentTextChanged, this,
-		[this]() { SSAASpin->setEnabled( antialiasCombo->currentText() == "SSAA" ); } );
+		&MainWindow::HandleAntialias );
 
 	connect( this, &MainWindow::FrameRendered, this, [this]( int frame, QString* imagePath ) {
 		statusBar()->showMessage( tr( "Rendering frame %1" ).arg( frame ) );
@@ -68,9 +77,12 @@ MainWindow::MainWindow( QWidget* parent )
 		} );
 	connect( enableGIBtn, &QPushButton::clicked, this, [this]() {
 		giSamplesLabel->setEnabled( enableGIBtn->isChecked() ); } );
+	connect( applyAntialiasBtn, &QPushButton::clicked, this,
+		&MainWindow::ApplyFXAAToOpenedImage );
 
 	colorPickerBtn->hide();
 }
+
 
 MainWindow::~MainWindow() {
 	// Just a good practice. All will be deleted with the parent (this).
@@ -307,7 +319,6 @@ void MainWindow::HandleSceneCameraPositionButtonClicked() {
 	camYInitialSpin->setDisabled( isBtnClicked );
 	zInitialLabel->setDisabled( isBtnClicked );
 	camZInitialSpin->setDisabled( isBtnClicked );
-
 }
 
 void MainWindow::SetupPostRenderWatcher(
@@ -394,6 +405,57 @@ void MainWindow::RunRender(
 	std::chrono::microseconds duration{
 		std::chrono::duration_cast<std::chrono::microseconds>(timerEnd - timerStart) };
 	execDuration = duration.count() / 1'000'000.0;
+}
+
+void MainWindow::HandleAntialias() {
+	if ( antialiasCombo->currentText() == "SSAA" ) {
+		SSAASpin->show();
+		subdivLevelLabel->show();
+		edgeDetectCombo->hide();
+		edgeDetectLabel->hide();
+		applyAntialiasBtn->hide();
+	}
+	else if ( antialiasCombo->currentText() == "FXAA" ) {
+		SSAASpin->hide();
+		edgeDetectCombo->show();
+		edgeDetectLabel->show();
+		subdivLevelLabel->hide();
+		applyAntialiasBtn->show();
+	}
+	else {
+		SSAASpin->hide();
+		edgeDetectCombo->hide();
+		edgeDetectLabel->hide();
+		subdivLevelLabel->hide();
+		applyAntialiasBtn->hide();
+	}
+}
+
+void MainWindow::ApplyFXAAToOpenedImage() {
+	scene = new Scene(); // Reset scene.
+
+	QString saveFileName{ rendNameEntry->text() };
+	if ( saveFileName.isEmpty() ) {
+		QFileInfo fileInfo( qViewport->GetCurrentImagePath() );
+		saveFileName = fileInfo.baseName();
+	}
+
+	scene->settings.SetSaveFileName( saveFileName.toStdString() );
+	scene->settings.edgeDetectionTypeFXAA = static_cast<EdgeDetection>(
+		edgeDetectCombo->currentIndex());
+	scene->settings.renderHeight = static_cast<unsigned>(
+		qViewport->currentImageSize.height() );
+	scene->settings.renderWidth = static_cast<unsigned>(
+		qViewport->currentImageSize.width());
+	Render render{ Render( *scene ) };
+	applyFXAAToImage( render, qViewport->GetCurrentImagePath().toStdString() );
+
+	QString dirName{ qViewport->GetCurrentImagePathDirname() };
+	QString pathToImage{ QDir( dirName ).filePath( saveFileName + ".ppm" ) };
+
+	qViewport->DisplayImage( pathToImage );
+
+	delete scene;
 }
 
 void MainWindow::SetupColorPicker() {
@@ -488,7 +550,6 @@ void MainWindow::SetupAnimationCoordinates( FVector3& initialPos, FVector3& acti
 			static_cast<float>(camXInitialSpin->value()),
 			static_cast<float>(camYInitialSpin->value()),
 			static_cast<float>(camZInitialSpin->value()) };
-		// TODO: Add initial rotation.
 
 	actionCoords = {
 		static_cast<float>(camXActionSpin->value()),
@@ -613,6 +674,8 @@ bool MainWindow::ManageSceneMainSettings() {
 	scene->settings.outputSRGB = sRGBBtn->isChecked();
 	scene->settings.antialiasing = static_cast<Antialiasing>(antialiasCombo->currentIndex());
 	scene->settings.subPixDepthAA = SSAASpin->value();
+	scene->settings.edgeDetectionTypeFXAA = static_cast<EdgeDetection>(
+		edgeDetectCombo->currentIndex());
 
 	if ( sceneFile.suffix().toLower() == "crtscene" ) {
 		scene->ParseSceneFile();

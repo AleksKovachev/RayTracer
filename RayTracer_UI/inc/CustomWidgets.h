@@ -10,8 +10,12 @@
 class ImageViewer : public QGraphicsView {
 	Q_OBJECT
 public:
+	QSize currentImageSize;
+	float zoomFactor = 1.f;
 	explicit ImageViewer( QWidget* parent = nullptr );
 	void DisplayImage( const QString& path );
+	const QString GetCurrentImagePath() const;
+	const QString GetCurrentImagePathDirname() const;
 
 protected:
 	void wheelEvent( QWheelEvent* event ) override;
@@ -29,7 +33,6 @@ private:
 	QGraphicsScene* qScene;
 	QFileSystemWatcher* qFileWatcher;
 	QString currentImagePath;
-	float zoomFactor = 1.f;
 	const float zoomIncrement = 0.1f; // 10% zoom per wheel step
 };
 

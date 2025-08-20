@@ -29,20 +29,29 @@ void ImageViewer::DisplayImage( const QString& path ) {
 	ReloadImage();
 }
 
+const QString ImageViewer::GetCurrentImagePath() const {
+	return currentImagePath;
+}
+
+const QString ImageViewer::GetCurrentImagePathDirname() const {
+	QFileInfo fileInfo( currentImagePath );
+	return fileInfo.absolutePath();
+}
+
 void ImageViewer::wheelEvent( QWheelEvent* event ) {
 	if ( scene()->items().isEmpty() ) {
 		QGraphicsView::wheelEvent( event );
 		return;
 	}
 
-	// Get mouse position before zoom
+	// Get mouse position before zoom.
 	QPointF oldPos = mapToScene( event->position().toPoint() );
 
-	// Determine zoom direction
+	// Determine zoom direction.
 	float factor = (event->angleDelta().y() > 0)
 		? (1.f + zoomIncrement) : (1.f - zoomIncrement);
 
-	// Limit zoom range
+	// Limit zoom range.
 	float newZoom = zoomFactor * factor;
 	float minZoom = 0.1f;
 	float maxZoom = 20.f;
@@ -51,13 +60,13 @@ void ImageViewer::wheelEvent( QWheelEvent* event ) {
 	}
 	zoomFactor = newZoom;
 
-	// Perform the zoom
+	// Perform the zoom.
 	scale( factor, factor );
 
-	// Get mouse position after zoom
+	// Get mouse position after zoom.
 	QPointF newPos = mapToScene( event->position().toPoint() );
 
-	// Adjust scrollbars to keep mouse position stable
+	// Adjust scrollbars to keep mouse position stable.
 	QPointF delta = newPos - oldPos;
 	translate( delta.x(), delta.y() );
 
@@ -78,12 +87,13 @@ void ImageViewer::ReloadImage() {
 		qWarning() << "Failed to load image:" << currentImagePath;
 		return;
 	}
+	currentImageSize = pixmap.size();
 
 	qScene->addItem( new QGraphicsPixmapItem( pixmap ) );
 	setSceneRect( pixmap.rect() );
 	fitInView( qScene->itemsBoundingRect(), Qt::KeepAspectRatio );
 
-	// Re-add the path in case it was overwritten (which removes it from watcher)
+	// Re-add the path in case it was overwritten (which removes it from watcher).
 	if ( !qFileWatcher->files().contains( currentImagePath ) ) {
 		qFileWatcher->addPath( currentImagePath );
 	}
@@ -98,6 +108,6 @@ void ImageViewer::mouseDoubleClickEvent( QMouseEvent* event ) {
 }
 
 void ImageViewer::keyPressEvent( QKeyEvent* event ) {
-	emit KeyPressed( event->key() );  // Forward to Main Window
+	emit KeyPressed( event->key() ); // Forward to Main Window.
 	QGraphicsView::keyPressEvent( event );
 }

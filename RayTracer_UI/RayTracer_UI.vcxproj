@@ -171,20 +171,6 @@
     <QtUic Include="rsc\RayTracer_responsive.ui" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\RayTracer\src\AccelerationStructures.cpp" />
-    <ClCompile Include="..\RayTracer\src\Antialiasing.cpp" />
-    <ClCompile Include="..\RayTracer\src\Bases.cpp" />
-    <ClCompile Include="..\RayTracer\src\Camera.cpp" />
-    <ClCompile Include="..\RayTracer\src\Colors.cpp" />
-    <ClCompile Include="..\RayTracer\src\ColorUtils.cpp" />
-    <ClCompile Include="..\RayTracer\src\ImageBuffer.cpp" />
-    <ClCompile Include="..\RayTracer\src\Materials.cpp" />
-    <ClCompile Include="..\RayTracer\src\Render.cpp" />
-    <ClCompile Include="..\RayTracer\src\Scene.cpp" />
-    <ClCompile Include="..\RayTracer\src\SpaceConversions.cpp" />
-    <ClCompile Include="..\RayTracer\src\Triangle.cpp" />
-    <ClCompile Include="..\RayTracer\src\utils.cpp" />
-    <ClCompile Include="..\RayTracer\src\Vectors.cpp" />
     <ClCompile Include="src\CustomWidgets.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\moc_UI_MainWindow.cpp" />
@@ -198,6 +184,11 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="rsc\appIcon.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\RayTracer\RayTracer.vcxproj">
+      <Project>{d40b06a9-d55a-4358-b3c3-5030863bc28b}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(QtMsBuild)\qt.targets" Condition="Exists('$(QtMsBuild)\qt.targets')" />

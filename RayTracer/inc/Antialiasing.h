@@ -44,17 +44,22 @@ private:
 	// Maximum distance to search for edge endpoints.[4,8].
 	// Lower number = higher performance.
 	static constexpr float SPAN_MAX = 8.f;
+
 	// Absolute luminance contrast threshold [0.125, 0.166], 0.1 acceptable.
 	// Lower values = more pixels processed.
 	static constexpr float EDGE_THRESHOLD = 0.125f;
+
 	// Relative luminance contrast threshold [0.03,0.063].
 	// Lower values = more pixels processed.
 	static constexpr float EDGE_THRESHOLD_MIN = 0.03f;
+
 	// Controls edge scan detection [0.1-0.15].
 	// Lower values = more aggressive edge detection.
 	static constexpr float LUMA_THRESHOLD_FACTOR = 0.125f;
+
 	// Multiplier for the edge strength to avoid over-blurring strong edges [~0.5].
 	static constexpr float EDGE_STRENGTH_MUL = 0.5f;
+
 	// When combined edge detection type is used, how much of each value is used.
 	static constexpr float CHROMA_LUMA_WEIGHT = 0.5f;
 
